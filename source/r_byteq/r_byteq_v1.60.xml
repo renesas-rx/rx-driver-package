@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<refinfo>
+
+    <!-- multiple versions permitted -->
+    <toolchain>
+        <brand>Renesas</brand>
+        <product>RXC</product>
+    </toolchain>
+
+    <!-- only one target entry allowed; multiple sub tags permitted -->
+    <target>
+        <family omit_series="true">RX</family>
+    </target>
+
+    <!-- only one package entry allowed -->
+    <!-- multiple dependencies, functions, and incdirs permitted -->
+    <package>
+        <type>fitmodule</type>
+        <name>r_byteq</name>
+        <version>1.60</version>
+        <zipsource>r_byteq_v1.60.zip</zipsource>
+        <dependency>
+            <module>r_bsp</module>
+            <version>3.10</version>
+        </dependency>
+        <application>Communications</application>
+        <application>Storage and Memory</application>
+        <desc>Byte-based circular buffer library.</desc>
+        <details>This module allocates a queue control block in an Open() call to handle indexing for buffers provided by the user application. Additional functions are provided to put and get data from the buffer queue, inspect the number of bytes available or in use, and to flush the queue. There is no limit to the number of queues supported, and queue control blocks can be allocated statically at build time or dynamically at run time.</details>
+        <incdir>r_config</incdir>
+        <incdir>r_byteq</incdir>
+        <incdir>r_byteq/src</incdir>
+    </package>
+
+</refinfo>
