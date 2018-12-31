@@ -78,8 +78,8 @@ extern void (*flash_ready_isr_handler)(void *);          /* Function pointer for
 
 #if (FLASH_CFG_CODE_FLASH_ENABLE == 1)
 /*All the functions below need to be placed in RAM if Code Flash programming is to be supported */
-#define FLASH_PE_MODE_SECTION    R_ATTRIB_SECTION_CHANGE(P, FRAM)
-#define FLASH_SECTION_CHANGE_END R_ATTRIB_SECTION_CHANGE_END
+#define FLASH_PE_MODE_SECTION    R_BSP_ATTRIB_SECTION_CHANGE(P, FRAM)
+#define FLASH_SECTION_CHANGE_END R_BSP_ATTRIB_SECTION_CHANGE_END
 #else
 #define FLASH_PE_MODE_SECTION
 #define FLASH_SECTION_CHANGE_END

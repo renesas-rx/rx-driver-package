@@ -67,7 +67,7 @@ extern "C" {
 /* Used for configuring the RIIC code */
     #include "r_riic_rx_config.h"
 
-    R_PRAGMA_UNPACK
+    R_BSP_PRAGMA_UNPACK
 
 /***********************************************************************************************************************
  Macro definitions
@@ -126,7 +126,7 @@ typedef enum
 typedef void (*riic_callback) (void); /* Callback function type */
 
 /* ---- IIC Information structure type. ---- */
-typedef volatile R_ATTRIB_BITFIELD_BIT_ORDER_LEFT_10
+typedef volatile R_BSP_ATTRIB_STRUCT_BIT_ORDER_LEFT_10
 (
     uint8_t              rsv2, /* reserved */
     uint8_t              rsv1, /* reserved */
@@ -146,7 +146,7 @@ typedef volatile R_ATTRIB_BITFIELD_BIT_ORDER_LEFT_10
 typedef union
 {
     uint32_t LONG;
-    R_ATTRIB_BITFIELD_BIT_ORDER_LEFT_21
+    R_BSP_ATTRIB_STRUCT_BIT_ORDER_LEFT_21
     (
         uint32_t rsv :12, /* reserve */
         uint32_t AAS2 :1, /* Slave2 address detection flag */
@@ -191,7 +191,7 @@ riic_return_t R_RIIC_Control (riic_info_t *, uint8_t ctrl_ptn);
 riic_return_t R_RIIC_Close (riic_info_t *);
 uint32_t R_RIIC_GetVersion (void);
 
-    R_PRAGMA_PACKOPTION
+    R_BSP_PRAGMA_PACKOPTION
 
 #ifdef __cplusplus
 }

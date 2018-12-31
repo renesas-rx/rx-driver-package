@@ -73,14 +73,14 @@ Private global variables and functions
 ***********************************************************************************************************************/
 void ether_enable_icu(uint32_t channel)
 {
-    volatile uint32_t   dummy; /* FIXME: Replace this line and last two lines to one "R_INTERNAL_NOT_USED(channel);". */
+    volatile uint32_t   dummy; /* FIXME: Replace this line and last two lines to one "INTERNAL_NOT_USED(channel);". */
 
     ICU.IPR[IPR_ETHER_EINT].BIT.IPR = ETHER_CFG_EINT_INT_PRIORITY;
 
     ICU.IER[IER_ETHER_EINT].BIT.IEN0 = 1;
 
     dummy = channel;
-    R_INTERNAL_NOT_USED(&dummy); /* The '&' is for the volatile declaration of the "dummy". */
+    INTERNAL_NOT_USED(&dummy); /* The '&' is for the volatile declaration of the "dummy". */
 } /* End of function ether_enable_icu() */
 
 /***********************************************************************************************************************
@@ -93,12 +93,12 @@ void ether_enable_icu(uint32_t channel)
 ***********************************************************************************************************************/
 void ether_disable_icu(uint32_t channel)
 {
-    volatile uint32_t   dummy; /* FIXME: Replace this line and last two lines to one "R_INTERNAL_NOT_USED(channel);". */
+    volatile uint32_t   dummy; /* FIXME: Replace this line and last two lines to one "INTERNAL_NOT_USED(channel);". */
 
     ICU.IER[IER_ETHER_EINT].BIT.IEN0 = 0;
 
     dummy = channel;
-    R_INTERNAL_NOT_USED(&dummy); /* The '&' is for the volatile declaration of the "dummy". */
+    INTERNAL_NOT_USED(&dummy); /* The '&' is for the volatile declaration of the "dummy". */
 } /* End of function ether_disable_icu() */
 
 /***********************************************************************************************************************

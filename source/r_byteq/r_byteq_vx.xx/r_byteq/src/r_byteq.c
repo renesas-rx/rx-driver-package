@@ -411,7 +411,7 @@ byteq_err_t R_BYTEQ_Close(byteq_hdl_t const hdl)
 * Arguments    : none
 * Return Value : version number
 ******************************************************************************/
-R_PRAGMA_INLINE(R_BYTEQ_GetVersion)
+R_BSP_PRAGMA_INLINE(R_BYTEQ_GetVersion)
 uint32_t  R_BYTEQ_GetVersion(void)
 {
 

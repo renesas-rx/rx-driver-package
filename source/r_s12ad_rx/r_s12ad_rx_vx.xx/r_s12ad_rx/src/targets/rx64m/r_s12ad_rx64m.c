@@ -1493,7 +1493,7 @@ static void adc_enable_s12gbadi(uint8_t unit)
 * Arguments    : none
 * Return Value : none
 ******************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(adc_s12adi0_isr, VECT(S12ADC0,S12ADI0))
+R_BSP_PRAGMA_STATIC_INTERRUPT(adc_s12adi0_isr, VECT(S12ADC0,S12ADI0))
 //#pragma interrupt adc_s12adi0_isr(vect=VECT(S12ADC0,S12ADI0), enable) // FOR TESTING ONLY!
 static void adc_s12adi0_isr(void)
 {
@@ -1515,7 +1515,7 @@ adc_cb_args_t   args;
 * Arguments    : none
 * Return Value : none
 ******************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(adc_s12adi1_isr, VECT(S12ADC1,S12ADI1))
+R_BSP_PRAGMA_STATIC_INTERRUPT(adc_s12adi1_isr, VECT(S12ADC1,S12ADI1))
 //#pragma interrupt adc_s12adi0_isr(vect=VECT(S12ADC1,S12ADI1), enable) // FOR TESTING ONLY!
 static void adc_s12adi1_isr(void)
 {
@@ -1536,7 +1536,7 @@ adc_cb_args_t   args;
 * Arguments    : none
 * Return Value : none
 ******************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(adc_s12gbadi0_isr, VECT(S12ADC0,S12GBADI0))
+R_BSP_PRAGMA_STATIC_INTERRUPT(adc_s12gbadi0_isr, VECT(S12ADC0,S12GBADI0))
 //#pragma interrupt adc_s12gbadi0_isr(vect=VECT(S12ADC0,S12GBADI0),enable)  // FOR TESTING ONLY!
 static void adc_s12gbadi0_isr(void)
 {
@@ -1557,7 +1557,7 @@ adc_cb_args_t   args;
 * Arguments    : none
 * Return Value : none
 ******************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(adc_s12gbadi1_isr, VECT(S12ADC1,S12GBADI1))
+R_BSP_PRAGMA_STATIC_INTERRUPT(adc_s12gbadi1_isr, VECT(S12ADC1,S12GBADI1))
 //#pragma interrupt adc_s12gbadi1_isr(vect=VECT(S12ADC1,S12GBADI1),enable)  // FOR TESTING ONLY!
 static void adc_s12gbadi1_isr(void)
 {

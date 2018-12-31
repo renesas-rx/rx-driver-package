@@ -1194,8 +1194,8 @@ void riic0_eei_isr (void * vect)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(riic0_txi_isr, VECT(RIIC0, TXI0))
-R_ATTRIB_STATIC_INTERRUPT void riic0_txi_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(riic0_txi_isr, VECT(RIIC0, TXI0))
+R_BSP_ATTRIB_STATIC_INTERRUPT void riic0_txi_isr (void)
 {
     riic0_txi_sub();
 } /* End of function riic0_txi_isr() */
@@ -1207,8 +1207,8 @@ R_ATTRIB_STATIC_INTERRUPT void riic0_txi_isr (void)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(riic0_rxi_isr, VECT(RIIC0, RXI0))
-R_ATTRIB_STATIC_INTERRUPT void riic0_rxi_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(riic0_rxi_isr, VECT(RIIC0, RXI0))
+R_BSP_ATTRIB_STATIC_INTERRUPT void riic0_rxi_isr (void)
 {
     riic0_rxi_sub();
 } /* End of function riic0_rxi_isr() */
@@ -1248,8 +1248,8 @@ void riic1_eei_isr (void * vect)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(riic1_txi_isr, VECT(RIIC1, TXI1))
-R_ATTRIB_STATIC_INTERRUPT void riic1_txi_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(riic1_txi_isr, VECT(RIIC1, TXI1))
+R_BSP_ATTRIB_STATIC_INTERRUPT void riic1_txi_isr (void)
 {
     riic1_txi_sub();
 } /* End of function riic1_txi_isr() */
@@ -1261,8 +1261,8 @@ R_ATTRIB_STATIC_INTERRUPT void riic1_txi_isr (void)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(riic1_rxi_isr, VECT(RIIC1, RXI1))
-R_ATTRIB_STATIC_INTERRUPT void riic1_rxi_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(riic1_rxi_isr, VECT(RIIC1, RXI1))
+R_BSP_ATTRIB_STATIC_INTERRUPT void riic1_rxi_isr (void)
 {
     riic1_rxi_sub();
 } /* End of function riic1_rxi_isr() */
@@ -1302,8 +1302,8 @@ void riic2_eei_isr(void * vect)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(riic2_txi_isr, VECT(RIIC2, TXI2))
-R_ATTRIB_STATIC_INTERRUPT void riic2_txi_isr(void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(riic2_txi_isr, VECT(RIIC2, TXI2))
+R_BSP_ATTRIB_STATIC_INTERRUPT void riic2_txi_isr(void)
 {
     riic2_txi_sub();
 } /* End of function riic2_txi_isr() */
@@ -1315,8 +1315,8 @@ R_ATTRIB_STATIC_INTERRUPT void riic2_txi_isr(void)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(riic2_rxi_isr, VECT(RIIC2, RXI2))
-R_ATTRIB_STATIC_INTERRUPT void riic2_rxi_isr(void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(riic2_rxi_isr, VECT(RIIC2, RXI2))
+R_BSP_ATTRIB_STATIC_INTERRUPT void riic2_rxi_isr(void)
 {
     riic2_rxi_sub();
 } /* End of function riic2_rxi_isr() */

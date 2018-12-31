@@ -157,8 +157,8 @@ flash_err_t flash_fcuram_codecopy(void)
 
 
 #if (FLASH_CFG_CODE_FLASH_ENABLE == 1)
-#define FLASH_PE_MODE_SECTION    R_ATTRIB_SECTION_CHANGE(P, FRAM)
-#define FLASH_SECTION_CHANGE_END R_ATTRIB_SECTION_CHANGE_END
+#define FLASH_PE_MODE_SECTION    R_BSP_ATTRIB_SECTION_CHANGE(P, FRAM)
+#define FLASH_SECTION_CHANGE_END R_BSP_ATTRIB_SECTION_CHANGE_END
 #else
 #define FLASH_PE_MODE_SECTION
 #define FLASH_SECTION_CHANGE_END
@@ -440,8 +440,8 @@ flash_err_t flash_erase(uint32_t block_address, uint32_t num_blocks)
 #endif
     flash_err_t err = FLASH_SUCCESS;
 
-    R_INTERNAL_NOT_USED(block_address);
-    R_INTERNAL_NOT_USED(num_blocks);
+    INTERNAL_NOT_USED(block_address);
+    INTERNAL_NOT_USED(num_blocks);
 
 
     /* Set Erasure Priority Mode */
@@ -675,9 +675,9 @@ flash_err_t flash_write(uint32_t src_start_address,
  * Arguments    : none
  * Return Value : none
  ***********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(Excep_FCU_FRDYI,VECT(FCU,FRDYI))
+R_BSP_PRAGMA_STATIC_INTERRUPT(Excep_FCU_FRDYI,VECT(FCU,FRDYI))
 FLASH_PE_MODE_SECTION
-R_ATTRIB_STATIC_INTERRUPT void Excep_FCU_FRDYI(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void Excep_FCU_FRDYI(void)
 {
 #if (FLASH_CFG_CODE_FLASH_ENABLE == 1)
     uint32_t    size_boundary;
@@ -881,9 +881,9 @@ R_ATTRIB_STATIC_INTERRUPT void Excep_FCU_FRDYI(void)
  * Arguments    : none
  * Return Value : none
  ***********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(Excep_FCU_FIFERR,VECT(FCU,FIFERR))
+R_BSP_PRAGMA_STATIC_INTERRUPT(Excep_FCU_FIFERR,VECT(FCU,FIFERR))
 FLASH_PE_MODE_SECTION
-R_ATTRIB_STATIC_INTERRUPT void Excep_FCU_FIFERR(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void Excep_FCU_FIFERR(void)
 {
     /* Check if Command Lock bit is set */
     if (1 == FLASH.FASTAT.BIT.CMDLK)

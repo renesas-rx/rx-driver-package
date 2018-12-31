@@ -89,7 +89,7 @@ void R_DF_Enable_DataFlashAccess(void)
 
     if(1 == FLASH.DFLCTL.BIT.DFLEN)
     {
-        R_NOP();
+        R_BSP_NOP();
     }
 
     /* Wait for 5us over (tDSTOP) */
@@ -492,7 +492,7 @@ static void r_df_write_fpmcr (uint8_t value)
 
     if(value == FLASH.FPMCR.BYTE)
     {
-        R_NOP();
+        R_BSP_NOP();
     }
 
 }

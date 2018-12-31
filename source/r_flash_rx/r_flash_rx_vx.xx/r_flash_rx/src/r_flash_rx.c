@@ -169,8 +169,8 @@ flash_err_t R_FLASH_Close(void)
 
 /* FUNCTIONS WHICH MUST BE RUN FROM RAM FOLLOW */
 #if (FLASH_CFG_CODE_FLASH_ENABLE == 1)
-#define FLASH_PE_MODE_SECTION    R_ATTRIB_SECTION_CHANGE(P, FRAM)
-#define FLASH_SECTION_CHANGE_END R_ATTRIB_SECTION_CHANGE_END
+#define FLASH_PE_MODE_SECTION    R_BSP_ATTRIB_SECTION_CHANGE(P, FRAM)
+#define FLASH_SECTION_CHANGE_END R_BSP_ATTRIB_SECTION_CHANGE_END
 #else
 #define FLASH_PE_MODE_SECTION
 #define FLASH_SECTION_CHANGE_END
@@ -260,7 +260,7 @@ flash_err_t R_FLASH_Control(flash_cmd_t cmd, void *pcfg)
 * Return Value : Version of this module.
 ***********************************************************************************************************************/
 FLASH_PE_MODE_SECTION
-R_PRAGMA_INLINE(R_FLASH_GetVersion)
+R_BSP_PRAGMA_INLINE(R_FLASH_GetVersion)
 uint32_t R_FLASH_GetVersion (void)
 {
     /* These version macros are defined in r_flash_if.h. */

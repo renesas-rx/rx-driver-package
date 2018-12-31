@@ -529,8 +529,8 @@ End of function  data_flash_write
 
 
 #if (FLASH_CFG_CODE_FLASH_ENABLE == 1)
-#define FLASH_PE_MODE_SECTION    R_ATTRIB_SECTION_CHANGE(P, FRAM)
-#define FLASH_SECTION_CHANGE_END R_ATTRIB_SECTION_CHANGE_END
+#define FLASH_PE_MODE_SECTION    R_BSP_ATTRIB_SECTION_CHANGE(P, FRAM)
+#define FLASH_SECTION_CHANGE_END R_BSP_ATTRIB_SECTION_CHANGE_END
 #else
 #define FLASH_PE_MODE_SECTION
 #define FLASH_SECTION_CHANGE_END
@@ -977,9 +977,9 @@ End of function  flash_lockbit_protection
 * Arguments    : none
 * Return Value : none
 ******************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(Excep_FCU_FIFERR, VECT(FCU, FIFERR))
+R_BSP_PRAGMA_STATIC_INTERRUPT(Excep_FCU_FIFERR, VECT(FCU, FIFERR))
 FLASH_PE_MODE_SECTION
-R_ATTRIB_STATIC_INTERRUPT void Excep_FCU_FIFERR(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void Excep_FCU_FIFERR(void)
 {
 
     /* Leave Program/Erase Mode and clear any error flags */
@@ -1004,9 +1004,9 @@ R_ATTRIB_STATIC_INTERRUPT void Excep_FCU_FIFERR(void)
 * Arguments    : none
 * Return Value : none
 ******************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(Excep_FCU_FRDYI, VECT(FCU, FRDYI))
+R_BSP_PRAGMA_STATIC_INTERRUPT(Excep_FCU_FRDYI, VECT(FCU, FRDYI))
 FLASH_PE_MODE_SECTION
-R_ATTRIB_STATIC_INTERRUPT void Excep_FCU_FRDYI(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void Excep_FCU_FRDYI(void)
 {
     /* Local variables */
     uint32_t num_byte_to_write;
@@ -1024,7 +1024,7 @@ R_ATTRIB_STATIC_INTERRUPT void Excep_FCU_FRDYI(void)
         (FLASH.FSTATR0.BIT.PRGERR == 1) )
     {
         /* Should never get here with FIFERR enabled */
-        R_NOP();
+        R_BSP_NOP();
     }
 
     /* Check state and see if anything else needs to be done */
@@ -1251,7 +1251,7 @@ R_ATTRIB_STATIC_INTERRUPT void Excep_FCU_FRDYI(void)
          * traced occurrence of this is doing a large write to data flash when
          * the area is not erased first.
          */
-        R_NOP();
+        R_BSP_NOP();
     }
 }
 /******************************************************************************
@@ -2836,8 +2836,8 @@ static uint32_t flash_get_program_size (uint32_t bytes, uint32_t flash_addr)
     uint32_t num_byte_to_write = 0;
 
 #if !defined(DF_PROGRAM_SIZE_LARGE)
-    R_INTERNAL_NOT_USED(bytes);
-    R_INTERNAL_NOT_USED(flash_addr);
+    INTERNAL_NOT_USED(bytes);
+    INTERNAL_NOT_USED(flash_addr);
 #endif
 
     if( g_current_mode == FLD_PE_MODE )

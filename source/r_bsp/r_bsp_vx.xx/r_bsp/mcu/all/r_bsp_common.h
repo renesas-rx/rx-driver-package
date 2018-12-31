@@ -99,7 +99,7 @@ Macro definitions
  * CC-RX's 'W0520550:Variable "XXXX" was set but never used'
  * GNURX's 'unused parameter 'XXXX' [-Wunused-parameter]'
  * GNURX's 'variable 'XXXX' set but not used [-Wunused-but-set-variable]'
- * When the variable is declared as volatile, the '&' can be applied like 'R_INTERNAL_NOT_USED(&volatile_variable);'.
+ * When the variable is declared as volatile, the '&' can be applied like 'INTERNAL_NOT_USED(&volatile_variable);'.
  */
 #define INTERNAL_NOT_USED(p)        ((void)(p))
 

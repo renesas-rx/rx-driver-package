@@ -233,9 +233,9 @@ static const pauseresolution_t pause_resolution[PAUSE_TABLE_ENTRIES] =
  * defined with section pragma directives to easily locate them
  * on the memory map.
  */
-R_ATTRIB_SECTION_CHANGE(B, _RX_DESC, 1)
+R_BSP_ATTRIB_SECTION_CHANGE(B, _RX_DESC, 1)
 static descriptor_t rx_descriptors[ETHER_CHANNEL_MAX][ETHER_CFG_EMAC_RX_DESCRIPTORS];
-R_ATTRIB_SECTION_CHANGE(B, _TX_DESC, 1)
+R_BSP_ATTRIB_SECTION_CHANGE(B, _TX_DESC, 1)
 static descriptor_t tx_descriptors[ETHER_CHANNEL_MAX][ETHER_CFG_EMAC_TX_DESCRIPTORS];
 
 /* 
@@ -245,10 +245,10 @@ static descriptor_t tx_descriptors[ETHER_CHANNEL_MAX][ETHER_CFG_EMAC_TX_DESCRIPT
  * The ETHER_CFG_BUFSIZE and EMAC_NUM_BUFFERS are defined by macro in the file "r_ether_private.h".
  * It is sequentially used from the head of the buffer as a receive buffer or a transmission buffer.
  */
-R_ATTRIB_SECTION_CHANGE(B, _ETHERNET_BUFFERS, 1)
+R_BSP_ATTRIB_SECTION_CHANGE(B, _ETHERNET_BUFFERS, 1)
 static etherbuffer_t ether_buffers[ETHER_CHANNEL_MAX];
 
-R_ATTRIB_SECTION_CHANGE_END
+R_BSP_ATTRIB_SECTION_CHANGE_END
 
 static uint8_t promiscuous_mode[ETHER_CHANNEL_MAX];
 
@@ -437,9 +437,9 @@ ether_return_t R_ETHER_Open_ZC2 (uint32_t channel, const uint8_t mac_addr[], uin
     if (false == is_entry)
     {
         bsp_int_err = R_BSP_InterruptWrite(BSP_INT_SRC_AL1_EDMAC0_EINT0, ether_eint0); /* EINT0 */
-        R_INTERNAL_NOT_USED(&bsp_int_err); /* The '&' is for the volatile declaration of the "bsp_int_err". */
+        INTERNAL_NOT_USED(&bsp_int_err); /* The '&' is for the volatile declaration of the "bsp_int_err". */
         bsp_int_err = R_BSP_InterruptWrite(BSP_INT_SRC_AL1_EDMAC1_EINT1, ether_eint1); /* EINT1 */
-        R_INTERNAL_NOT_USED(&bsp_int_err); /* The '&' is for the volatile declaration of the "bsp_int_err". */
+        INTERNAL_NOT_USED(&bsp_int_err); /* The '&' is for the volatile declaration of the "bsp_int_err". */
         is_entry = true;
     }
 #elif (defined(BSP_MCU_RX65N))
@@ -447,7 +447,7 @@ ether_return_t R_ETHER_Open_ZC2 (uint32_t channel, const uint8_t mac_addr[], uin
     if (false == is_entry)
     {
         bsp_int_err = R_BSP_InterruptWrite(BSP_INT_SRC_AL1_EDMAC0_EINT0, ether_eint0); /* EINT0 */
-        R_INTERNAL_NOT_USED(&bsp_int_err); /* The '&' is for the volatile declaration of the "bsp_int_err". */
+        INTERNAL_NOT_USED(&bsp_int_err); /* The '&' is for the volatile declaration of the "bsp_int_err". */
         is_entry = true;
     }
 #endif
@@ -1454,7 +1454,7 @@ ether_return_t R_ETHER_Control (ether_cmd_t const cmd, ether_param_t const contr
  * Arguments    : none
  * Return Value : Version number
  ***********************************************************************************************************************/
-R_PRAGMA_INLINE(R_ETHER_GetVersion)
+R_BSP_PRAGMA_INLINE(R_ETHER_GetVersion)
 uint32_t R_ETHER_GetVersion (void)
 {
     return ((((uint32_t) ETHER_RX_VERSION_MAJOR) << 16) | ((uint32_t) ETHER_RX_VERSION_MINOR));
@@ -2502,8 +2502,8 @@ static uint8_t check_mpde_bit (void)
  * Arguments    : none
  * Return Value : none
  ***********************************************************************************************************************/
-R_PRAGMA_INTERRUPT(ether_eint, VECT(ETHER,EINT))
-R_ATTRIB_INTERRUPT void ether_eint(void)
+R_BSP_PRAGMA_INTERRUPT(ether_eint, VECT(ETHER,EINT))
+R_BSP_ATTRIB_INTERRUPT void ether_eint(void)
 {
     ether_int_common(ETHER_CHANNEL_0);
 } /* End of function ether_eint() */
@@ -2518,12 +2518,12 @@ R_ATTRIB_INTERRUPT void ether_eint(void)
  ***********************************************************************************************************************/
 static void ether_eint0 (void * pparam)
 {
-    volatile uint32_t dummy; /* FIXME: Replace this line and last two lines to one "R_INTERNAL_NOT_USED(pparam);". */
+    volatile uint32_t dummy; /* FIXME: Replace this line and last two lines to one "INTERNAL_NOT_USED(pparam);". */
 
     ether_int_common(ETHER_CHANNEL_0);
 
     dummy = (uint32_t) pparam;
-    R_INTERNAL_NOT_USED(&dummy); /* The '&' is for the volatile declaration of the "dummy". */
+    INTERNAL_NOT_USED(&dummy); /* The '&' is for the volatile declaration of the "dummy". */
 } /* End of function ether_eint0() */
 #endif
 
@@ -2537,12 +2537,12 @@ static void ether_eint0 (void * pparam)
  ***********************************************************************************************************************/
 static void ether_eint1(void * pparam)
 {
-    volatile uint32_t dummy; /* FIXME: Replace this line and last two lines to one "R_INTERNAL_NOT_USED(pparam);". */
+    volatile uint32_t dummy; /* FIXME: Replace this line and last two lines to one "INTERNAL_NOT_USED(pparam);". */
 
     ether_int_common(ETHER_CHANNEL_1);
 
     dummy = (uint32_t)pparam;
-    R_INTERNAL_NOT_USED(&dummy); /* The '&' is for the volatile declaration of the "dummy". */
+    INTERNAL_NOT_USED(&dummy); /* The '&' is for the volatile declaration of the "dummy". */
 } /* End of function ether_eint1() */
 #endif
 

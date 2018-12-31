@@ -64,8 +64,8 @@ Private global variables and functions
 static void r_cf_extra_operation (const uint32_t start_addr_startup_value, const uint32_t end_addr, r_flash_command_t command);
 static flash_err_t r_cf_set_startup_area (uint32_t value);
 
-#define FLASH_PE_MODE_SECTION    R_ATTRIB_SECTION_CHANGE(P, FRAM)
-#define FLASH_SECTION_CHANGE_END R_ATTRIB_SECTION_CHANGE_END
+#define FLASH_PE_MODE_SECTION    R_BSP_ATTRIB_SECTION_CHANGE(P, FRAM)
+#define FLASH_SECTION_CHANGE_END R_BSP_ATTRIB_SECTION_CHANGE_END
 
 /*******************************************************************************
 * Outline      : Setting the access window

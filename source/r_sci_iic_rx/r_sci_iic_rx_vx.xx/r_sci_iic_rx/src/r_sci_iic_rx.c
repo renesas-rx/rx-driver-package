@@ -888,7 +888,7 @@ static void sci_iic_close (sci_iic_info_t * p_sci_iic_info)
  * Arguments    : none
  * Return Value : version number
  **********************************************************************************************************************/
-R_PRAGMA_INLINE(R_SCI_IIC_GetVersion)
+R_BSP_PRAGMA_INLINE(R_SCI_IIC_GetVersion)
 uint32_t R_SCI_IIC_GetVersion (void)
 {
     uint32_t const version = (SCI_IIC_VERSION_MAJOR << 16) | SCI_IIC_VERSION_MINOR;
@@ -2111,7 +2111,7 @@ static void sci_iic_set_sending_data (sci_iic_info_t * p_sci_iic_info, uint8_t *
     /* dummy read */
     if (pregs->TDR)
     {
-        R_NOP();
+        R_BSP_NOP();
     }
 } /* End of function sci_iic_set_sending_data() */
 
@@ -2160,7 +2160,7 @@ static void sci_iic_iic_disable (sci_iic_info_t * p_sci_iic_info)
     /* dummy read */
     if (pregs->SCMR.BYTE)
     {
-        R_NOP();
+        R_BSP_NOP();
     }
 } /* End of function sci_iic_iic_disable() */
 

@@ -2016,7 +2016,7 @@ static void adc_enable_s12gcadi(uint8_t unit)
 * Arguments    : none
 * Return Value : none
 ******************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(adc_s12adi0_isr, VECT(S12ADC0,S12ADI0))
+R_BSP_PRAGMA_STATIC_INTERRUPT(adc_s12adi0_isr, VECT(S12ADC0,S12ADI0))
 static void adc_s12adi0_isr(void)
 {
 adc_cb_args_t   args;
@@ -2037,7 +2037,7 @@ adc_cb_args_t   args;
 * Arguments    : none
 * Return Value : none
 ******************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(adc_s12adi1_isr, VECT(S12ADC1,S12ADI1))
+R_BSP_PRAGMA_STATIC_INTERRUPT(adc_s12adi1_isr, VECT(S12ADC1,S12ADI1))
 static void adc_s12adi1_isr(void)
 {
 adc_cb_args_t   args;
@@ -2057,7 +2057,7 @@ adc_cb_args_t   args;
 * Arguments    : none
 * Return Value : none
 ******************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(adc_s12gbadi0_isr, VECT(S12ADC0,S12GBADI0))
+R_BSP_PRAGMA_STATIC_INTERRUPT(adc_s12gbadi0_isr, VECT(S12ADC0,S12GBADI0))
 static void adc_s12gbadi0_isr(void)
 {
 adc_cb_args_t   args;
@@ -2077,7 +2077,7 @@ adc_cb_args_t   args;
 * Arguments    : none
 * Return Value : none
 ******************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(adc_s12gbadi1_isr, VECT(S12ADC1,S12GBADI1))
+R_BSP_PRAGMA_STATIC_INTERRUPT(adc_s12gbadi1_isr, VECT(S12ADC1,S12GBADI1))
 static void adc_s12gbadi1_isr(void)
 {
 adc_cb_args_t   args;
@@ -2097,7 +2097,7 @@ adc_cb_args_t   args;
 * Arguments    : none
 * Return Value : none
 ******************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(adc_s12gcadi0_isr, VECT(S12ADC0,S12GCADI0))
+R_BSP_PRAGMA_STATIC_INTERRUPT(adc_s12gcadi0_isr, VECT(S12ADC0,S12GCADI0))
 static void adc_s12gcadi0_isr(void)
 {
 adc_cb_args_t   args;
@@ -2117,7 +2117,7 @@ adc_cb_args_t   args;
 * Arguments    : none
 * Return Value : none
 ******************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(adc_s12gcadi1_isr, VECT(S12ADC1,S12GCADI1))
+R_BSP_PRAGMA_STATIC_INTERRUPT(adc_s12gcadi1_isr, VECT(S12ADC1,S12GCADI1))
 static void adc_s12gcadi1_isr(void)
 {
 adc_cb_args_t   args;

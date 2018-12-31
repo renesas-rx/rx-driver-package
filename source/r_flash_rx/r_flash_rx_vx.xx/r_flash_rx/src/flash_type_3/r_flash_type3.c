@@ -65,8 +65,8 @@ lkbit_mode_t g_lkbit_mode = FLASH_LOCKBIT_MODE_NORMAL;
 #if (FLASH_CFG_CODE_FLASH_ENABLE == 1)
 static flash_err_t flash_lockbit_write(flash_block_address_t block_address, uint32_t num_blocks);
 
-#define FLASH_PE_MODE_SECTION    R_ATTRIB_SECTION_CHANGE(P, FRAM)
-#define FLASH_SECTION_CHANGE_END R_ATTRIB_SECTION_CHANGE_END
+#define FLASH_PE_MODE_SECTION    R_BSP_ATTRIB_SECTION_CHANGE(P, FRAM)
+#define FLASH_SECTION_CHANGE_END R_BSP_ATTRIB_SECTION_CHANGE_END
 #else
 #define FLASH_PE_MODE_SECTION
 #define FLASH_SECTION_CHANGE_END

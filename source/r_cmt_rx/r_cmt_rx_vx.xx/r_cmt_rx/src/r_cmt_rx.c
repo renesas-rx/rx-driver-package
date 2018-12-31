@@ -860,7 +860,7 @@ static bool cmt_setup_channel (uint32_t channel, uint32_t frequency_hz)
 * Arguments    : none
 * Return Value : Version of this module.
 ***********************************************************************************************************************/
-R_PRAGMA_INLINE(R_CMT_GetVersion)
+R_BSP_PRAGMA_INLINE(R_CMT_GetVersion)
 uint32_t R_CMT_GetVersion (void)
 {
     /* These version macros are defined in r_cmt_rx_if.h. */
@@ -874,7 +874,7 @@ uint32_t R_CMT_GetVersion (void)
 *                    Which channel this is for.
 * Return Value : none
 ***********************************************************************************************************************/
-R_PRAGMA_STATIC_INLINE(cmt_isr_common)
+R_BSP_PRAGMA_STATIC_INLINE(cmt_isr_common)
 void cmt_isr_common (uint32_t channel)
 {
     /* If this is one-shot mode then stop timer. */
@@ -898,14 +898,14 @@ void cmt_isr_common (uint32_t channel)
 * Return Value : none
 ***********************************************************************************************************************/
 #if BSP_CFG_RTOS_USED == 0      // Non-OS
-R_PRAGMA_STATIC_INTERRUPT(cmt0_isr, VECT(CMT0, CMI0))
-R_ATTRIB_STATIC_INTERRUPT void cmt0_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(cmt0_isr, VECT(CMT0, CMI0))
+R_BSP_ATTRIB_STATIC_INTERRUPT void cmt0_isr (void)
 {
     cmt_isr_common(0);
 }
 #elif BSP_CFG_RTOS_USED == 1    // FreeRTOS
     #if (BSP_CFG_RTOS_SYSTEM_TIMER != 0)
-        R_PRAGMA_STATIC_INTERRUPT(cmt0_isr, VECT(CMT0, CMI0))
+        R_BSP_PRAGMA_STATIC_INTERRUPT(cmt0_isr, VECT(CMT0, CMI0))
         static void cmt0_isr (void)
         {
             cmt_isr_common(0);
@@ -923,14 +923,14 @@ R_ATTRIB_STATIC_INTERRUPT void cmt0_isr (void)
 * Return Value : none
 ***********************************************************************************************************************/
 #if BSP_CFG_RTOS_USED == 0      // Non-OS
-R_PRAGMA_STATIC_INTERRUPT(cmt1_isr, VECT(CMT1, CMI1))
-R_ATTRIB_STATIC_INTERRUPT void cmt1_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(cmt1_isr, VECT(CMT1, CMI1))
+R_BSP_ATTRIB_STATIC_INTERRUPT void cmt1_isr (void)
 {
     cmt_isr_common(1);
 }
 #elif BSP_CFG_RTOS_USED == 1    // FreeRTOS
     #if (BSP_CFG_RTOS_SYSTEM_TIMER != 1)
-        R_PRAGMA_STATIC_INTERRUPT(cmt1_isr, VECT(CMT1, CMI1))
+        R_BSP_PRAGMA_STATIC_INTERRUPT(cmt1_isr, VECT(CMT1, CMI1))
         static void cmt1_isr (void)
         {
             cmt_isr_common(1);
@@ -949,14 +949,14 @@ R_ATTRIB_STATIC_INTERRUPT void cmt1_isr (void)
 * Return Value : none
 ***********************************************************************************************************************/
 #if BSP_CFG_RTOS_USED == 0      // Non-OS
-R_PRAGMA_STATIC_INTERRUPT(cmt2_isr, VECT(CMT2, CMI2))
-R_ATTRIB_STATIC_INTERRUPT void cmt2_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(cmt2_isr, VECT(CMT2, CMI2))
+R_BSP_ATTRIB_STATIC_INTERRUPT void cmt2_isr (void)
 {
     cmt_isr_common(2);
 }
 #elif BSP_CFG_RTOS_USED == 1    // FreeRTOS
     #if (BSP_CFG_RTOS_SYSTEM_TIMER != 2)
-        R_PRAGMA_STATIC_INTERRUPT(cmt2_isr, VECT(CMT2, CMI2))
+        R_BSP_PRAGMA_STATIC_INTERRUPT(cmt2_isr, VECT(CMT2, CMI2))
         static void cmt2_isr (void)
         {
             cmt_isr_common(2);
@@ -974,14 +974,14 @@ R_ATTRIB_STATIC_INTERRUPT void cmt2_isr (void)
 * Return Value : none
 ***********************************************************************************************************************/
 #if BSP_CFG_RTOS_USED == 0      // Non-OS
-R_PRAGMA_STATIC_INTERRUPT(cmt3_isr, VECT(CMT3, CMI3))
-R_ATTRIB_STATIC_INTERRUPT void cmt3_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(cmt3_isr, VECT(CMT3, CMI3))
+R_BSP_ATTRIB_STATIC_INTERRUPT void cmt3_isr (void)
 {
     cmt_isr_common(3);
 }
 #elif BSP_CFG_RTOS_USED == 1    // FreeRTOS
     #if (BSP_CFG_RTOS_SYSTEM_TIMER != 3)
-        R_PRAGMA_STATIC_INTERRUPT(cmt3_isr, VECT(CMT3, CMI3))
+        R_BSP_PRAGMA_STATIC_INTERRUPT(cmt3_isr, VECT(CMT3, CMI3))
         static void cmt3_isr (void)
         {
             cmt_isr_common(3);

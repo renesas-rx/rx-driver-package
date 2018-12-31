@@ -73,7 +73,7 @@ Private global variables and functions
 ***********************************************************************************************************************/
 void ether_enable_icu(uint32_t channel)
 {
-    volatile uint32_t   dummy; /* FIXME: Replace this line and last two lines to one "R_INTERNAL_NOT_USED(channel);". */
+    volatile uint32_t   dummy; /* FIXME: Replace this line and last two lines to one "INTERNAL_NOT_USED(channel);". */
 	bsp_int_ctrl_t int_ctrl;
 
     ICU.GENAL1.BIT.EN4 = 1;
@@ -82,7 +82,7 @@ void ether_enable_icu(uint32_t channel)
     R_BSP_InterruptControl(BSP_INT_SRC_AL1_EDMAC0_EINT0, BSP_INT_CMD_GROUP_INTERRUPT_ENABLE, &int_ctrl);
 
     dummy = channel;
-    R_INTERNAL_NOT_USED(&dummy); /* The '&' is for the volatile declaration of the "dummy". */
+    INTERNAL_NOT_USED(&dummy); /* The '&' is for the volatile declaration of the "dummy". */
 } /* End of function ether_enable_icu() */
 
 /***********************************************************************************************************************
@@ -95,14 +95,14 @@ void ether_enable_icu(uint32_t channel)
 ***********************************************************************************************************************/
 void ether_disable_icu(uint32_t channel)
 {
-    volatile uint32_t   dummy; /* FIXME: Replace this line and last two lines to one "R_INTERNAL_NOT_USED(channel);". */
+    volatile uint32_t   dummy; /* FIXME: Replace this line and last two lines to one "INTERNAL_NOT_USED(channel);". */
 
     ICU.GENAL1.BIT.EN4 = 0;
 
     R_BSP_InterruptControl(BSP_INT_SRC_AL1_EDMAC0_EINT0, BSP_INT_CMD_GROUP_INTERRUPT_DISABLE, FIT_NO_PTR);
 
     dummy = channel;
-    R_INTERNAL_NOT_USED(&dummy); /* The '&' is for the volatile declaration of the "dummy". */
+    INTERNAL_NOT_USED(&dummy); /* The '&' is for the volatile declaration of the "dummy". */
 } /* End of function ether_disable_icu() */
 
 /***********************************************************************************************************************

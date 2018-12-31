@@ -65,8 +65,8 @@ static r_codeflash_data_t  code_flash_info;
 static void r_cf_write_fpmcr (uint8_t value);
 extern void r_flash_delay_us (unsigned long us, unsigned long khz);
 
-#define FLASH_PE_MODE_SECTION    R_ATTRIB_SECTION_CHANGE(P, FRAM)
-#define FLASH_SECTION_CHANGE_END R_ATTRIB_SECTION_CHANGE_END
+#define FLASH_PE_MODE_SECTION    R_BSP_ATTRIB_SECTION_CHANGE(P, FRAM)
+#define FLASH_SECTION_CHANGE_END R_BSP_ATTRIB_SECTION_CHANGE_END
 
 /*******************************************************************************
 * Outline      : Transition to P/E mode
@@ -479,7 +479,7 @@ static void r_cf_write_fpmcr (uint8_t value)
 
     if(value == FLASH.FPMCR.BYTE)
     {
-        R_NOP();
+        R_BSP_NOP();
     }
 
 }

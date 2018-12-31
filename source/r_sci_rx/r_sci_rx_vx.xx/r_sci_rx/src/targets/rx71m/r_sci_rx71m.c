@@ -46,48 +46,48 @@ Macro definitions
 Private global variables and functions
 ******************************************************************************/
 #if SCI_CFG_CH0_INCLUDED
-R_PRAGMA_STATIC_INTERRUPT(sci0_txi0_isr, VECT(SCI0,TXI0))
-R_PRAGMA_STATIC_INTERRUPT(sci0_rxi0_isr, VECT(SCI0,RXI0))
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci0_txi0_isr, VECT(SCI0,TXI0))
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci0_rxi0_isr, VECT(SCI0,RXI0))
 #endif
 
 #if SCI_CFG_CH1_INCLUDED
-R_PRAGMA_STATIC_INTERRUPT(sci1_txi1_isr, VECT(SCI1,TXI1))
-R_PRAGMA_STATIC_INTERRUPT(sci1_rxi1_isr, VECT(SCI1,RXI1))
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci1_txi1_isr, VECT(SCI1,TXI1))
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci1_rxi1_isr, VECT(SCI1,RXI1))
 #endif
 
 #if SCI_CFG_CH2_INCLUDED
-R_PRAGMA_STATIC_INTERRUPT(sci2_txi2_isr, VECT(SCI2,TXI2))
-R_PRAGMA_STATIC_INTERRUPT(sci2_rxi2_isr, VECT(SCI2,RXI2))
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci2_txi2_isr, VECT(SCI2,TXI2))
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci2_rxi2_isr, VECT(SCI2,RXI2))
 #endif
 
 #if SCI_CFG_CH3_INCLUDED
-R_PRAGMA_STATIC_INTERRUPT(sci3_txi3_isr, VECT(SCI3,TXI3))
-R_PRAGMA_STATIC_INTERRUPT(sci3_rxi3_isr, VECT(SCI3,RXI3))
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci3_txi3_isr, VECT(SCI3,TXI3))
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci3_rxi3_isr, VECT(SCI3,RXI3))
 #endif
 
 #if SCI_CFG_CH4_INCLUDED
-R_PRAGMA_STATIC_INTERRUPT(sci4_txi4_isr, VECT(SCI4,TXI4))
-R_PRAGMA_STATIC_INTERRUPT(sci4_rxi4_isr, VECT(SCI4,RXI4))
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci4_txi4_isr, VECT(SCI4,TXI4))
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci4_rxi4_isr, VECT(SCI4,RXI4))
 #endif
 
 #if SCI_CFG_CH5_INCLUDED
-R_PRAGMA_STATIC_INTERRUPT(sci5_txi5_isr, VECT(SCI5,TXI5))
-R_PRAGMA_STATIC_INTERRUPT(sci5_rxi5_isr, VECT(SCI5,RXI5))
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci5_txi5_isr, VECT(SCI5,TXI5))
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci5_rxi5_isr, VECT(SCI5,RXI5))
 #endif
 
 #if SCI_CFG_CH6_INCLUDED
-R_PRAGMA_STATIC_INTERRUPT(sci6_txi6_isr, VECT(SCI6,TXI6))
-R_PRAGMA_STATIC_INTERRUPT(sci6_rxi6_isr, VECT(SCI6,RXI6))
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci6_txi6_isr, VECT(SCI6,TXI6))
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci6_rxi6_isr, VECT(SCI6,RXI6))
 #endif
 
 #if SCI_CFG_CH7_INCLUDED
-R_PRAGMA_STATIC_INTERRUPT(sci7_txi7_isr, VECT(SCI7,TXI7))
-R_PRAGMA_STATIC_INTERRUPT(sci7_rxi7_isr, VECT(SCI7,RXI7))
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci7_txi7_isr, VECT(SCI7,TXI7))
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci7_rxi7_isr, VECT(SCI7,RXI7))
 #endif
 
 #if SCI_CFG_CH12_INCLUDED
-R_PRAGMA_STATIC_INTERRUPT(sci12_txi12_isr, VECT(SCI12,TXI12))
-R_PRAGMA_STATIC_INTERRUPT(sci12_rxi12_isr, VECT(SCI12,RXI12))
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci12_txi12_isr, VECT(SCI12,TXI12))
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci12_rxi12_isr, VECT(SCI12,RXI12))
 #endif
 
 /*****************************************************************************
@@ -411,63 +411,63 @@ void sci_disable_ints(sci_hdl_t const hdl)
 ******************************************************************************/
 
 #if SCI_CFG_CH0_INCLUDED
-R_ATTRIB_STATIC_INTERRUPT void sci0_txi0_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci0_txi0_isr(void)
 {
     txi_handler(&ch0_ctrl);
 } /* End of function sci0_txi0_isr() */
 #endif
 
 #if SCI_CFG_CH1_INCLUDED
-R_ATTRIB_STATIC_INTERRUPT void sci1_txi1_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci1_txi1_isr(void)
 {
     txi_handler(&ch1_ctrl);
 } /* End of function sci1_txi1_isr() */
 #endif
 
 #if SCI_CFG_CH2_INCLUDED
-R_ATTRIB_STATIC_INTERRUPT void sci2_txi2_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci2_txi2_isr(void)
 {
     txi_handler(&ch2_ctrl);
 } /* End of function sci2_txi2_isr() */
 #endif
 
 #if SCI_CFG_CH3_INCLUDED
-R_ATTRIB_STATIC_INTERRUPT void sci3_txi3_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci3_txi3_isr(void)
 {
     txi_handler(&ch3_ctrl);
 } /* End of function sci3_txi3_isr() */
 #endif
 
 #if SCI_CFG_CH4_INCLUDED
-R_ATTRIB_STATIC_INTERRUPT void sci4_txi4_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci4_txi4_isr(void)
 {
     txi_handler(&ch4_ctrl);
 } /* End of function sci4_txi4_isr() */
 #endif
 
 #if SCI_CFG_CH5_INCLUDED
-R_ATTRIB_STATIC_INTERRUPT void sci5_txi5_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci5_txi5_isr(void)
 {
     txi_handler(&ch5_ctrl);
 } /* End of function sci5_txi5_isr() */
 #endif
 
 #if SCI_CFG_CH6_INCLUDED
-R_ATTRIB_STATIC_INTERRUPT void sci6_txi6_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci6_txi6_isr(void)
 {
     txi_handler(&ch6_ctrl);
 } /* End of function sci6_txi6_isr() */
 #endif
 
 #if SCI_CFG_CH7_INCLUDED
-R_ATTRIB_STATIC_INTERRUPT void sci7_txi7_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci7_txi7_isr(void)
 {
     txi_handler(&ch7_ctrl);
 } /* End of function sci7_txi7_isr() */
 #endif
 
 #if SCI_CFG_CH12_INCLUDED
-R_ATTRIB_STATIC_INTERRUPT void sci12_txi12_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci12_txi12_isr(void)
 {
     txi_handler(&ch12_ctrl);
 } /* End of function sci12_txi12_isr() */
@@ -487,7 +487,7 @@ R_ATTRIB_STATIC_INTERRUPT void sci12_txi12_isr(void)
 #if SCI_CFG_CH0_INCLUDED
 void sci0_tei0_isr(void *cb_args)
 {
-    R_INTERNAL_NOT_USED(cb_args);
+    INTERNAL_NOT_USED(cb_args);
     tei_handler(&ch0_ctrl);
 } /* End of function sci0_tei0_isr() */
 #endif
@@ -495,7 +495,7 @@ void sci0_tei0_isr(void *cb_args)
 #if SCI_CFG_CH1_INCLUDED
 void sci1_tei1_isr(void *cb_args)
 {
-    R_INTERNAL_NOT_USED(cb_args);
+    INTERNAL_NOT_USED(cb_args);
     tei_handler(&ch1_ctrl);
 } /* End of function sci1_tei1_isr() */
 #endif
@@ -503,7 +503,7 @@ void sci1_tei1_isr(void *cb_args)
 #if SCI_CFG_CH2_INCLUDED
 void sci2_tei2_isr(void *cb_args)
 {
-    R_INTERNAL_NOT_USED(cb_args);
+    INTERNAL_NOT_USED(cb_args);
     tei_handler(&ch2_ctrl);
 } /* End of function sci2_tei2_isr() */
 #endif
@@ -511,7 +511,7 @@ void sci2_tei2_isr(void *cb_args)
 #if SCI_CFG_CH3_INCLUDED
 void sci3_tei3_isr(void *cb_args)
 {
-    R_INTERNAL_NOT_USED(cb_args);
+    INTERNAL_NOT_USED(cb_args);
     tei_handler(&ch3_ctrl);
 } /* End of function sci3_tei3_isr() */
 #endif
@@ -519,7 +519,7 @@ void sci3_tei3_isr(void *cb_args)
 #if SCI_CFG_CH4_INCLUDED
 void sci4_tei4_isr(void *cb_args)
 {
-    R_INTERNAL_NOT_USED(cb_args);
+    INTERNAL_NOT_USED(cb_args);
     tei_handler(&ch4_ctrl);
 } /* End of function sci4_tei4_isr() */
 #endif
@@ -527,7 +527,7 @@ void sci4_tei4_isr(void *cb_args)
 #if SCI_CFG_CH5_INCLUDED
 void sci5_tei5_isr(void *cb_args)
 {
-    R_INTERNAL_NOT_USED(cb_args);
+    INTERNAL_NOT_USED(cb_args);
     tei_handler(&ch5_ctrl);
 } /* End of function sci5_tei5_isr() */
 #endif
@@ -535,7 +535,7 @@ void sci5_tei5_isr(void *cb_args)
 #if SCI_CFG_CH6_INCLUDED
 void sci6_tei6_isr(void *cb_args)
 {
-    R_INTERNAL_NOT_USED(cb_args);
+    INTERNAL_NOT_USED(cb_args);
     tei_handler(&ch6_ctrl);
 } /* End of function sci6_tei6_isr() */
 #endif
@@ -543,7 +543,7 @@ void sci6_tei6_isr(void *cb_args)
 #if SCI_CFG_CH7_INCLUDED
 void sci7_tei7_isr(void *cb_args)
 {
-    R_INTERNAL_NOT_USED(cb_args);
+    INTERNAL_NOT_USED(cb_args);
     tei_handler(&ch7_ctrl);
 } /* End of function sci7_tei7_isr() */
 #endif
@@ -551,7 +551,7 @@ void sci7_tei7_isr(void *cb_args)
 #if SCI_CFG_CH12_INCLUDED
 void sci12_tei12_isr(void *cb_args)
 {
-    R_INTERNAL_NOT_USED(cb_args);
+    INTERNAL_NOT_USED(cb_args);
     tei_handler(&ch12_ctrl);
 } /* End of function sci12_tei12_isr() */
 #endif
@@ -565,63 +565,63 @@ void sci12_tei12_isr(void *cb_args)
 ******************************************************************************/
 
 #if SCI_CFG_CH0_INCLUDED
-R_ATTRIB_STATIC_INTERRUPT void sci0_rxi0_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci0_rxi0_isr(void)
 {
     rxi_handler(&ch0_ctrl);
 } /* End of function sci0_rxi0_isr() */
 #endif
 
 #if SCI_CFG_CH1_INCLUDED
-R_ATTRIB_STATIC_INTERRUPT void sci1_rxi1_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci1_rxi1_isr(void)
 {
     rxi_handler(&ch1_ctrl);
 } /* End of function sci1_rxi1_isr() */
 #endif
 
 #if SCI_CFG_CH2_INCLUDED
-R_ATTRIB_STATIC_INTERRUPT void sci2_rxi2_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci2_rxi2_isr(void)
 {
     rxi_handler(&ch2_ctrl);
 } /* End of function sci2_rxi2_isr() */
 #endif
 
 #if SCI_CFG_CH3_INCLUDED
-R_ATTRIB_STATIC_INTERRUPT void sci3_rxi3_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci3_rxi3_isr(void)
 {
     rxi_handler(&ch3_ctrl);
 } /* End of function sci3_rxi3_isr() */
 #endif
 
 #if SCI_CFG_CH4_INCLUDED
-R_ATTRIB_STATIC_INTERRUPT void sci4_rxi4_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci4_rxi4_isr(void)
 {
     rxi_handler(&ch4_ctrl);
 } /* End of function sci4_rxi4_isr() */
 #endif
 
 #if SCI_CFG_CH5_INCLUDED
-R_ATTRIB_STATIC_INTERRUPT void sci5_rxi5_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci5_rxi5_isr(void)
 {
     rxi_handler(&ch5_ctrl);
 } /* End of function sci5_rxi5_isr() */
 #endif
 
 #if SCI_CFG_CH6_INCLUDED
-R_ATTRIB_STATIC_INTERRUPT void sci6_rxi6_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci6_rxi6_isr(void)
 {
     rxi_handler(&ch6_ctrl);
 } /* End of function sci6_rxi6_isr() */
 #endif
 
 #if SCI_CFG_CH7_INCLUDED
-R_ATTRIB_STATIC_INTERRUPT void sci7_rxi7_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci7_rxi7_isr(void)
 {
     rxi_handler(&ch7_ctrl);
 } /* End of function sci7_rxi7_isr() */
 #endif
 
 #if SCI_CFG_CH12_INCLUDED
-R_ATTRIB_STATIC_INTERRUPT void sci12_rxi12_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci12_rxi12_isr(void)
 {
     rxi_handler(&ch12_ctrl);
 } /* End of function sci12_rxi12_isr() */
@@ -638,7 +638,7 @@ R_ATTRIB_STATIC_INTERRUPT void sci12_rxi12_isr(void)
 #if SCI_CFG_CH0_INCLUDED
 void sci0_eri0_isr(void *cb_args)
 {
-    R_INTERNAL_NOT_USED(cb_args);
+    INTERNAL_NOT_USED(cb_args);
     eri_handler(&ch0_ctrl);
 } /* End of function sci0_eri0_isr() */
 #endif
@@ -646,7 +646,7 @@ void sci0_eri0_isr(void *cb_args)
 #if SCI_CFG_CH1_INCLUDED
 void sci1_eri1_isr(void *cb_args)
 {
-    R_INTERNAL_NOT_USED(cb_args);
+    INTERNAL_NOT_USED(cb_args);
     eri_handler(&ch1_ctrl);
 } /* End of function sci1_eri1_isr() */
 #endif
@@ -654,7 +654,7 @@ void sci1_eri1_isr(void *cb_args)
 #if SCI_CFG_CH2_INCLUDED
 void sci2_eri2_isr(void *cb_args)
 {
-    R_INTERNAL_NOT_USED(cb_args);
+    INTERNAL_NOT_USED(cb_args);
     eri_handler(&ch2_ctrl);
 } /* End of function sci2_eri2_isr() */
 #endif
@@ -662,7 +662,7 @@ void sci2_eri2_isr(void *cb_args)
 #if SCI_CFG_CH3_INCLUDED
 void sci3_eri3_isr(void *cb_args)
 {
-    R_INTERNAL_NOT_USED(cb_args);
+    INTERNAL_NOT_USED(cb_args);
     eri_handler(&ch3_ctrl);
 } /* End of function sci3_eri3_isr() */
 #endif
@@ -670,7 +670,7 @@ void sci3_eri3_isr(void *cb_args)
 #if SCI_CFG_CH4_INCLUDED
 void sci4_eri4_isr(void *cb_args)
 {
-    R_INTERNAL_NOT_USED(cb_args);
+    INTERNAL_NOT_USED(cb_args);
     eri_handler(&ch4_ctrl);
 } /* End of function sci4_eri4_isr() */
 #endif
@@ -678,7 +678,7 @@ void sci4_eri4_isr(void *cb_args)
 #if SCI_CFG_CH5_INCLUDED
 void sci5_eri5_isr(void *cb_args)
 {
-    R_INTERNAL_NOT_USED(cb_args);
+    INTERNAL_NOT_USED(cb_args);
     eri_handler(&ch5_ctrl);
 } /* End of function sci5_eri5_isr() */
 #endif
@@ -686,7 +686,7 @@ void sci5_eri5_isr(void *cb_args)
 #if SCI_CFG_CH6_INCLUDED
 void sci6_eri6_isr(void *cb_args)
 {
-    R_INTERNAL_NOT_USED(cb_args);
+    INTERNAL_NOT_USED(cb_args);
     eri_handler(&ch6_ctrl);
 } /* End of function sci6_eri6_isr() */
 #endif
@@ -694,7 +694,7 @@ void sci6_eri6_isr(void *cb_args)
 #if SCI_CFG_CH7_INCLUDED
 void sci7_eri7_isr(void *cb_args)
 {
-    R_INTERNAL_NOT_USED(cb_args);
+    INTERNAL_NOT_USED(cb_args);
     eri_handler(&ch7_ctrl);
 } /* End of function sci7_eri7_isr() */
 #endif
@@ -702,7 +702,7 @@ void sci7_eri7_isr(void *cb_args)
 #if SCI_CFG_CH12_INCLUDED
 void sci12_eri12_isr(void *cb_args)
 {
-    R_INTERNAL_NOT_USED(cb_args);
+    INTERNAL_NOT_USED(cb_args);
     eri_handler(&ch12_ctrl);
 } /* End of function sci12_eri12_isr() */
 #endif
@@ -820,7 +820,7 @@ sci_err_t sci_async_cmds(sci_hdl_t const hdl,
             SCI_TDR(0);
             while (0 == hdl->rom->regs->SSR.BIT.TEND)
             {
-                R_NOP();
+                R_BSP_NOP();
             }
 
             /* restore original baud rate */

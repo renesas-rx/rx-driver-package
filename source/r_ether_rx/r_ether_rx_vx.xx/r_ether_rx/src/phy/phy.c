@@ -230,7 +230,7 @@ void phy_start_autonegotiate (uint32_t ether_channel, uint8_t pause)
     PHY_CONTROL_AN_RESTART));
 
     reg = phy_read(ether_channel, PHY_REG_AN_ADVERTISEMENT);
-    R_INTERNAL_NOT_USED(&reg); /* The '&' is for the volatile declaration of the "reg". */
+    INTERNAL_NOT_USED(&reg); /* The '&' is for the volatile declaration of the "reg". */
 
 } /* End of function phy_start_autonegotiate() */
 
@@ -264,7 +264,7 @@ int16_t phy_set_autonegotiate (uint32_t ether_channel, uint16_t *pline_speed_dup
     /* When the link isn't up, return error */
     if (PHY_STATUS_LINK_UP != (reg & PHY_STATUS_LINK_UP))
     {
-        R_NOP();
+        R_BSP_NOP();
         return R_PHY_ERROR;
     }
 
@@ -343,7 +343,7 @@ int16_t phy_get_link_status (uint32_t ether_channel)
     /* When the link isn't up, return error */
     if (PHY_STATUS_LINK_UP != (reg & PHY_STATUS_LINK_UP))
     {
-        R_NOP();
+        R_BSP_NOP();
 
         /* Link is down */
         return R_PHY_ERROR;

@@ -74,8 +74,8 @@ Includes   <System Includes> , "Project Includes"
 
 
 #if (FLASH_CFG_CODE_FLASH_ENABLE == 1)
-#define FLASH_PE_MODE_SECTION    R_ATTRIB_SECTION_CHANGE(P, FRAM)
-#define FLASH_SECTION_CHANGE_END R_ATTRIB_SECTION_CHANGE_END
+#define FLASH_PE_MODE_SECTION    R_BSP_ATTRIB_SECTION_CHANGE(P, FRAM)
+#define FLASH_SECTION_CHANGE_END R_BSP_ATTRIB_SECTION_CHANGE_END
 #else
 #define FLASH_PE_MODE_SECTION
 #define FLASH_SECTION_CHANGE_END
@@ -117,7 +117,7 @@ flash_err_t flash_get_status (void)
 * Return Value : none
 *******************************************************************************/
 FLASH_PE_MODE_SECTION
-R_PRAGMA_STATIC_INLINE_ASM(r_flash_delay)
+R_BSP_PRAGMA_STATIC_INLINE_ASM(r_flash_delay)
 void r_flash_delay (unsigned long loop_cnt)
 {
     R_ASM_INTERNAL_USED(loop_cnt)
@@ -170,9 +170,9 @@ void r_flash_delay_us (unsigned long us, unsigned long khz)
 * Arguments    : none
 * Return Value : none
 ******************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(Excep_FCU_FRDYI, VECT(FCU, FRDYI))
+R_BSP_PRAGMA_STATIC_INTERRUPT(Excep_FCU_FRDYI, VECT(FCU, FRDYI))
 FLASH_PE_MODE_SECTION
-R_ATTRIB_STATIC_INTERRUPT void Excep_FCU_FRDYI(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void Excep_FCU_FRDYI(void)
 {
     flash_err_t err = FLASH_SUCCESS;
 

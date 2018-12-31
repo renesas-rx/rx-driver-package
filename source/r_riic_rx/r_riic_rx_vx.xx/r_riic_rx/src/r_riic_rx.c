@@ -1465,7 +1465,7 @@ static void riic_close (riic_info_t * p_riic_info)
  * Arguments    : none
  * Return Value : version number
  **********************************************************************************************************************/
-R_PRAGMA_INLINE(R_RIIC_GetVersion)
+R_BSP_PRAGMA_INLINE(R_RIIC_GetVersion)
 uint32_t R_RIIC_GetVersion (void)
 {
     uint32_t const version = (RIIC_VERSION_MAJOR << 16) | RIIC_VERSION_MINOR;

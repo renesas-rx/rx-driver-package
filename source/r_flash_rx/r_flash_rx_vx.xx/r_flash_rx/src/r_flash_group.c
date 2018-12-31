@@ -309,8 +309,8 @@ flash_err_t r_flash_close(void)
 
 /* FUNCTIONS WHICH MUST BE RUN FROM RAM FOLLOW */
 #if (FLASH_CFG_CODE_FLASH_ENABLE == 1)
-#define FLASH_PE_MODE_SECTION    R_ATTRIB_SECTION_CHANGE(P, FRAM)
-#define FLASH_SECTION_CHANGE_END R_ATTRIB_SECTION_CHANGE_END
+#define FLASH_PE_MODE_SECTION    R_BSP_ATTRIB_SECTION_CHANGE(P, FRAM)
+#define FLASH_SECTION_CHANGE_END R_BSP_ATTRIB_SECTION_CHANGE_END
 #else
 #define FLASH_PE_MODE_SECTION
 #define FLASH_SECTION_CHANGE_END
@@ -1312,7 +1312,7 @@ flash_err_t r_flash_control(flash_cmd_t cmd, void *pcfg)
         FLASH.ROMCIV.BIT.ROMCIV = 1;                // start invalidation
         while (FLASH.ROMCIV.BIT.ROMCIV != 0)        // wait for invalidation to complete
         {
-            R_NOP();
+            R_BSP_NOP();
         }
         FLASH.ROMCE.BIT.ROMCEN = 1;                 // enable cache
         if (FLASH.ROMCE.BIT.ROMCEN != 1)

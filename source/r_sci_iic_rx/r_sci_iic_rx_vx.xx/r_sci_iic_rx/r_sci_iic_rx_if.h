@@ -43,7 +43,7 @@
 extern "C" {
 #endif
 
-    R_PRAGMA_UNPACK
+    R_BSP_PRAGMA_UNPACK
 
 /***********************************************************************************************************************
  Macro definitions
@@ -98,7 +98,7 @@ typedef void (*sci_iic_callback) (void); /* Callback function type */
 
 /*----- Structure type. -----*/
 /* SCI_IIC Information structure. */
-typedef R_ATTRIB_BITFIELD_BIT_ORDER_LEFT_10
+typedef R_BSP_ATTRIB_STRUCT_BIT_ORDER_LEFT_10
 (
     uint8_t                 rsv2, /* reserved */
     uint8_t                 rsv1, /* reserved */
@@ -118,7 +118,7 @@ typedef R_ATTRIB_BITFIELD_BIT_ORDER_LEFT_10
 typedef union
 {
     uint32_t                LONG;
-    R_ATTRIB_BITFIELD_BIT_ORDER_LEFT_6
+    R_BSP_ATTRIB_STRUCT_BIT_ORDER_LEFT_6
     (
         uint32_t rsv :27, /* reserve */
         uint32_t SCLI :1, /* SSCL Pin Level */
@@ -146,7 +146,7 @@ sci_iic_return_t R_SCI_IIC_Control (sci_iic_info_t * p_sci_iic_info, sci_iic_ctr
 sci_iic_return_t R_SCI_IIC_Close (sci_iic_info_t * p_sci_iic_info);
 uint32_t R_SCI_IIC_GetVersion (void);
 
-    R_PRAGMA_PACKOPTION
+    R_BSP_PRAGMA_PACKOPTION
 
 #ifdef __cplusplus
 }

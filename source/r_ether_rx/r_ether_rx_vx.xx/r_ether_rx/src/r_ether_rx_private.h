@@ -198,7 +198,7 @@
  * EDMAC descriptor as defined in the hardware manual. It is
  * modified to support little endian CPU mode.
  */
-    R_PRAGMA_PACK
+    R_BSP_PRAGMA_PACK
 typedef struct DescriptorS
 {
     __evenaccess uint32_t           status;
@@ -292,7 +292,7 @@ typedef struct
     uint32_t              phy_access;
 } ether_ch_control_t;
 
-    R_PRAGMA_PACKOPTION
+    R_BSP_PRAGMA_PACKOPTION
 
 /***********************************************************************************************************************
  Exported global variables

@@ -369,7 +369,7 @@ adc_err_t   R_ADC_Close(uint8_t const unit)
 * Arguments    : none
 * Return Value : version number
 ******************************************************************************/
-R_PRAGMA_INLINE(R_ADC_GetVersion)
+R_BSP_PRAGMA_INLINE(R_ADC_GetVersion)
 uint32_t  R_ADC_GetVersion(void)
 {
 uint32_t const version = (ADC_VERSION_MAJOR << 16) | ADC_VERSION_MINOR;
@@ -408,7 +408,7 @@ void adc_enable_s12adi0(void)
 * Arguments    : none
 * Return Value : none
 ******************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(adc_s12adi0_isr, VECT(S12AD,S12ADI0))
+R_BSP_PRAGMA_STATIC_INTERRUPT(adc_s12adi0_isr, VECT(S12AD,S12ADI0))
 //#pragma interrupt adc_s12adi0_isr(vect=VECT(S12AD,S12ADI0), enable) // FOR TESTING ONLY!
 static void adc_s12adi0_isr(void)
 {
@@ -429,7 +429,7 @@ adc_cb_evt_t    event=ADC_EVT_SCAN_COMPLETE;
 * Arguments    : none
 * Return Value : none
 ******************************************************************************/
-R_PRAGMA_INTERRUPT(adc_gbadi_isr, VECT(S12AD,GBADI))
+R_BSP_PRAGMA_INTERRUPT(adc_gbadi_isr, VECT(S12AD,GBADI))
 //#pragma interrupt adc_gbadi_isr(vect=VECT(S12AD,GBADI),enable)  // FOR TESTING ONLY!
 static void adc_gbadi_isr(void)
 {

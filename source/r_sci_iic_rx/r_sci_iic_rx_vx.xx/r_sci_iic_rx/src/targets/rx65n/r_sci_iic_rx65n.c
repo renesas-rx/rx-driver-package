@@ -773,7 +773,7 @@ void r_sci_iic_io_open (uint8_t port_gr, uint8_t pin_num)
     /* dummy read */
     if (*podr1)
     {
-        R_NOP();
+        R_BSP_NOP();
     }
 } /* End of function r_sci_iic_io_open() */
 
@@ -900,7 +900,7 @@ void r_sci_iic_int_disable (sci_iic_info_t * p_sci_iic_info)
     /* dummy read */
     if (*prom->pipr)
     {
-        R_NOP();
+        R_BSP_NOP();
     }
 
     /* Disables GROUPBL0 interrupt request enable register. */
@@ -943,7 +943,7 @@ void r_sci_iic_int_enable (sci_iic_info_t * p_sci_iic_info)
     /* dummy read */
     if (*prom->pipr)
     {
-        R_NOP();
+        R_BSP_NOP();
     }
 
     /* Enables GROUPBL0 interrupt request enable register. */
@@ -1064,7 +1064,7 @@ void r_sci_iic_mpc_setting (uint8_t port_gr, uint8_t pin_num, uint8_t set_value)
         /* dummy read */
         if (*ppmr)
         {
-            R_NOP();
+            R_BSP_NOP();
         }
     }
 } /* End of function r_sci_iic_mpc_setting() */
@@ -1099,7 +1099,7 @@ static void sci_iic_clear_ir_flag (sci_iic_info_t * p_sci_iic_info)
         /* dummy read */
         if (*prom->pir_txi)
         {
-            R_NOP();
+            R_BSP_NOP();
         }
 
         /* Re-initializes SCI_IIC register because cleared ICCR1.ICE bit. */
@@ -1116,8 +1116,8 @@ static void sci_iic_clear_ir_flag (sci_iic_info_t * p_sci_iic_info)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic0_txi_isr, VECT_SCI0_TXI0)
-R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic0_txi_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic0_txi_isr, VECT_SCI0_TXI0)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic0_txi_isr (void)
 {
     r_sci_iic_txi_isr_processing(SCI_IIC_NUM_CH0);
 
@@ -1134,8 +1134,8 @@ R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic0_txi_isr (void)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic1_txi_isr, VECT_SCI1_TXI1)
-R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic1_txi_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic1_txi_isr, VECT_SCI1_TXI1)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic1_txi_isr (void)
 {
     r_sci_iic_txi_isr_processing(SCI_IIC_NUM_CH1);
 
@@ -1152,8 +1152,8 @@ R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic1_txi_isr (void)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic2_txi_isr, VECT_SCI2_TXI2)
-R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic2_txi_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic2_txi_isr, VECT_SCI2_TXI2)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic2_txi_isr (void)
 {
     r_sci_iic_txi_isr_processing(SCI_IIC_NUM_CH2);
 
@@ -1170,8 +1170,8 @@ R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic2_txi_isr (void)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic3_txi_isr, VECT_SCI3_TXI3)
-R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic3_txi_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic3_txi_isr, VECT_SCI3_TXI3)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic3_txi_isr (void)
 {
     r_sci_iic_txi_isr_processing(SCI_IIC_NUM_CH3);
 
@@ -1188,8 +1188,8 @@ R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic3_txi_isr (void)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic4_txi_isr, VECT_SCI4_TXI4)
-R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic4_txi_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic4_txi_isr, VECT_SCI4_TXI4)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic4_txi_isr (void)
 {
     r_sci_iic_txi_isr_processing(SCI_IIC_NUM_CH4);
 
@@ -1206,8 +1206,8 @@ R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic4_txi_isr (void)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic5_txi_isr, VECT_SCI5_TXI5)
-R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic5_txi_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic5_txi_isr, VECT_SCI5_TXI5)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic5_txi_isr (void)
 {
     r_sci_iic_txi_isr_processing(SCI_IIC_NUM_CH5);
 
@@ -1224,8 +1224,8 @@ R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic5_txi_isr (void)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic6_txi_isr, VECT_SCI6_TXI6)
-R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic6_txi_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic6_txi_isr, VECT_SCI6_TXI6)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic6_txi_isr (void)
 {
     r_sci_iic_txi_isr_processing(SCI_IIC_NUM_CH6);
 
@@ -1242,8 +1242,8 @@ R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic6_txi_isr (void)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic7_txi_isr, VECT_SCI7_TXI7)
-R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic7_txi_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic7_txi_isr, VECT_SCI7_TXI7)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic7_txi_isr (void)
 {
     r_sci_iic_txi_isr_processing(SCI_IIC_NUM_CH7);
 
@@ -1260,8 +1260,8 @@ R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic7_txi_isr (void)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic8_txi_isr, VECT_SCI8_TXI8)
-R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic8_txi_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic8_txi_isr, VECT_SCI8_TXI8)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic8_txi_isr (void)
 {
     r_sci_iic_txi_isr_processing(SCI_IIC_NUM_CH8);
 
@@ -1278,8 +1278,8 @@ R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic8_txi_isr (void)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic9_txi_isr, VECT_SCI9_TXI9)
-R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic9_txi_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic9_txi_isr, VECT_SCI9_TXI9)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic9_txi_isr (void)
 {
     r_sci_iic_txi_isr_processing(SCI_IIC_NUM_CH9);
 
@@ -1296,8 +1296,8 @@ R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic9_txi_isr (void)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic10_txi_isr, VECT_SCI10_TXI10)
-R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic10_txi_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic10_txi_isr, VECT_SCI10_TXI10)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic10_txi_isr (void)
 {
     r_sci_iic_txi_isr_processing(SCI_IIC_NUM_CH10);
 
@@ -1314,8 +1314,8 @@ R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic10_txi_isr (void)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic11_txi_isr, VECT_SCI11_TXI11)
-R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic11_txi_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic11_txi_isr, VECT_SCI11_TXI11)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic11_txi_isr (void)
 {
     r_sci_iic_txi_isr_processing(SCI_IIC_NUM_CH11);
 
@@ -1332,8 +1332,8 @@ R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic11_txi_isr (void)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic12_txi_isr, VECT_SCI12_TXI12)
-R_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic12_txi_isr (void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(sci_iic_int_sci_iic12_txi_isr, VECT_SCI12_TXI12)
+R_BSP_ATTRIB_STATIC_INTERRUPT void sci_iic_int_sci_iic12_txi_isr (void)
 {
     r_sci_iic_txi_isr_processing(SCI_IIC_NUM_CH12);
 
