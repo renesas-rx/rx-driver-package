@@ -31,26 +31,33 @@ MultiBuffering:
   In that case DoubleBuffering is used. In that mode the CPU has to
   wait for the next VSYNC interrupt in case of a new frame buffer.
 
-SDRAM unavailable:
-  According to R20UT3887EG SDRAM could not be used
-  with OnTFT (see 'Bus Switch Select Configuration').
-  When setting SW4 Pin4 to 'On', SDRAM is unavailable.
-
 32bpp mode:
   Has not been tested because of a lack of RAM.
 
 ---------------------------END-OF-HEADER------------------------------
 */
 
-#include "GUI.h"
+#include <stdlib.h>
+
+#include "GUI_Private.h"
 #include "GUIDRV_Lin.h"
+#include "LCDConf.h"
 
 #ifdef __RX
   #include "platform.h"
+  #include "r_glcdc_rx_if.h"
+  #include "r_pinset.h"
+  #include "r_dmaca_rx_if.h"
 #endif
 #ifdef __ICCRX__
   #include "iorx65n.h"
 #endif
+
+#include "dave_base.h"
+#include "dave_videomodes.h"
+#include "dave_driver.h"
+
+extern void drw_int_isr(void);
 
 /*********************************************************************
 *
@@ -67,12 +74,7 @@ SDRAM unavailable:
 //
 // Color depth
 //
-#define BITS_PER_PIXEL 8  // Allowed values: 1, 4, 8, 16, 32
-
-//
-// Frame buffer
-//
-#define FRAMEBUFFER_START 0x800000  // Begin of Expansion RAM
+#define BITS_PER_PIXEL 16  // Allowed values: 1, 4, 8, 16, 32
 
 /*********************************************************************
 *
@@ -83,14 +85,14 @@ SDRAM unavailable:
 //
 // Color format selection
 //
-#define FORMAT_RGB_565   0
-#define FORMAT_RGB_888   1
-#define FORMAT_ARGB_1555 2
-#define FORMAT_ARGB_4444 3
-#define FORMAT_ARGB_8888 4
-#define FORMAT_CLUT_8    5
-#define FORMAT_CLUT_4    6
-#define FORMAT_CLUT_1    7
+#define FORMAT_RGB_565   (GLCDC_IN_FORMAT_16BITS_RGB565)
+#define FORMAT_RGB_888   (GLCDC_IN_FORMAT_32BITS_RGB888)
+#define FORMAT_ARGB_1555 (GLCDC_IN_FORMAT_16BITS_ARGB1555)
+#define FORMAT_ARGB_4444 (GLCDC_IN_FORMAT_16BITS_ARGB4444)
+#define FORMAT_ARGB_8888 (GLCDC_IN_FORMAT_32BITS_ARGB8888)
+#define FORMAT_CLUT_8    (GLCDC_IN_FORMAT_CLUT8)
+#define FORMAT_CLUT_4    (GLCDC_IN_FORMAT_CLUT4)
+#define FORMAT_CLUT_1    (GLCDC_IN_FORMAT_CLUT1)
 
 //
 // Color conversion, display driver and multiple buffers
@@ -98,16 +100,23 @@ SDRAM unavailable:
 #if   (BITS_PER_PIXEL == 32)
   #define COLOR_CONVERSION GUICC_M8888I
   #define DISPLAY_DRIVER   GUIDRV_LIN_32
+  //#define DISPLAY_DRIVER   GUIDRV_LIN_OSX_32
+  //#define DISPLAY_DRIVER   GUIDRV_LIN_OSY_32
+  //#define DISPLAY_DRIVER   GUIDRV_LIN_OXY_32
   #define COLOR_FORMAT     FORMAT_RGB_888
   #define NUM_BUFFERS      1
 #elif (BITS_PER_PIXEL == 16)
   #define COLOR_CONVERSION GUICC_M565
-  #define DISPLAY_DRIVER   GUIDRV_LIN_16
+  #define DISPLAY_DRIVER   GUIDRV_LIN_16      // Default
+  //#define DISPLAY_DRIVER   GUIDRV_LIN_OSX_16  // CW
+  //#define DISPLAY_DRIVER   GUIDRV_LIN_OSY_16  // CCW
+  //#define DISPLAY_DRIVER   GUIDRV_LIN_OXY_16  // 180
   #define COLOR_FORMAT     FORMAT_RGB_565
-  #define NUM_BUFFERS      1
+  #define NUM_BUFFERS      2
 #elif (BITS_PER_PIXEL == 8)
   #define COLOR_CONVERSION GUICC_8666
   #define DISPLAY_DRIVER   GUIDRV_LIN_8
+  //#define DISPLAY_DRIVER   GUIDRV_LIN_OXY_8
   #define COLOR_FORMAT     FORMAT_CLUT_8
   #define NUM_BUFFERS      2
 #elif (BITS_PER_PIXEL == 4)
@@ -154,7 +163,23 @@ SDRAM unavailable:
 *
 **********************************************************************
 */
+static const U32 _aBufferPTR[] = {
+  0x00000100,  // Begin of On-Chip RAM
+  0x00800000   // Begin of Expansion RAM
+};
+
 static volatile int _PendingBuffer = -1;
+
+static unsigned _WriteBufferIndex;
+
+static glcdc_runtime_cfg_t runtime_cfg;
+
+static unsigned _DaveActive;
+//
+// Dave2D
+//
+static d2_device       * d2_handle;
+static d2_renderbuffer * renderbuffer;
 
 /*********************************************************************
 *
@@ -169,9 +194,10 @@ static volatile int _PendingBuffer = -1;
 static void _VSYNC_ISR(void * p) {
 #if (NUM_BUFFERS == 3)
   U32 Addr;
+  glcdc_err_t ret;
 #endif
 
-  GLCDC.STCLR.BIT.VPOSCLR = 1;                  // Clears the STMON.VPOS flag
+ 											    // Clears the STMON.VPOS flag (GLCDC FIT module clears STMON.VPOS flag)
 #if (NUM_BUFFERS == 3)
   //
   // Makes the pending buffer visible
@@ -179,8 +205,11 @@ static void _VSYNC_ISR(void * p) {
   if (_PendingBuffer >= 0) {
     Addr = FRAMEBUFFER_START
          + BYTES_PER_BUFFER * _PendingBuffer;   // Calculate address of buffer to be used  as visible frame buffer
-    GLCDC.GR2FLM2              = Addr;          // Specify the start address of the frame buffer
-    GLCDC.GR2VEN.BIT.VEN       = 1;             // Graphic 2 Register Value Reflection Enable
+    runtime_cfg.input.p_base = (uint32_t *)Addr; // Specify the start address of the frame buffer
+    ret = R_GLCDC_LayerChange(GLCDC_FRAME_LAYER_2, &runtime_cfg);	// Graphic 2 Register Value Reflection Enable
+    if (ret != GLCDC_SUCCESS) {
+    	while(1);
+    }
     GUI_MULTIBUF_ConfirmEx(0, _PendingBuffer);  // Tell emWin that buffer is used
     _PendingBuffer = -1;                        // Clear pending buffer flag
   }
@@ -200,14 +229,16 @@ static void _VSYNC_ISR(void * p) {
 
 static void _SwitchBuffersOnVSYNC(int Index) {
   U32 Addr;
+  glcdc_err_t ret;
 
-  for (_PendingBuffer = 1; _PendingBuffer; );
-  Addr = FRAMEBUFFER_START
-       + BYTES_PER_BUFFER * Index;   // Calculate address of buffer to be used  as visible frame buffer
-  GLCDC.GR2FLM2              = Addr; // Specify the start address of the frame buffer
-  GLCDC.GR2VEN.BIT.VEN       = 1;    // Graphic 2 Register Value Reflection Enable
+  for (_PendingBuffer = 1; _PendingBuffer; );  // Wait until _PendingBuffer is cleared by ISR
+  Addr = _aBufferPTR[Index];
+  runtime_cfg.input.p_base = (uint32_t *)Addr; // Specify the start address of the frame buffer
+  ret = R_GLCDC_LayerChange(GLCDC_FRAME_LAYER_2, &runtime_cfg);	// Graphic 2 Register Value Reflection Enable
+  if (ret != GLCDC_SUCCESS) {
+	  while(1);
+  }
   GUI_MULTIBUF_ConfirmEx(0, Index);  // Tell emWin that buffer is used
-
 }
 #endif
 
@@ -219,47 +250,16 @@ static void _SwitchBuffersOnVSYNC(int Index) {
 *   Should initialize the display controller
 */
 static void _InitController(void) {
+  glcdc_cfg_t glcdc_cfg;
+  glcdc_err_t ret;
   //
   // Release stop state of GLCDC
   //
-  SYSTEM.PRCR.WORD = 0xA50Bu;      // Protect off
-  SYSTEM.MSTPCRC.BIT.MSTPC29 = 0;  // GLCDC, Release from the module-stop state
-  SYSTEM.PRCR.WORD = 0xA500u;      // Protect on
+  // R_GLCDC_Open function release stop state of GLCDC.
   //
   // Function select of multiplex pins (Display B)
   //
-  MPC.PWPR.BIT.B0WI   = 0;     // Enable function select access
-  MPC.PWPR.BIT.PFSWE  = 1;
-  MPC.PE5PFS.BIT.PSEL = 0x25;  // Pin8  - R3
-  MPC.PE4PFS.BIT.PSEL = 0x25;  // Pin9  - R4
-  MPC.PE3PFS.BIT.PSEL = 0x25;  // Pin10 - R5 (R0)
-  MPC.PE2PFS.BIT.PSEL = 0x25;  // Pin11 - R6 (R1)
-  MPC.PE1PFS.BIT.PSEL = 0x25;  // Pin12 - R7 (R2)
-  MPC.PA3PFS.BIT.PSEL = 0x25;  // Pin15 - G2
-  MPC.PA2PFS.BIT.PSEL = 0x25;  // Pin16 - G3
-  MPC.PA1PFS.BIT.PSEL = 0x25;  // Pin17 - G4
-  MPC.PA0PFS.BIT.PSEL = 0x25;  // Pin18 - G5
-  MPC.PE7PFS.BIT.PSEL = 0x25;  // Pin19 - G6 (G0)
-  MPC.PE6PFS.BIT.PSEL = 0x25;  // Pin20 - G7 (G1)
-  MPC.PB0PFS.BIT.PSEL = 0x25;  // Pin24 - B3
-  MPC.PA7PFS.BIT.PSEL = 0x25;  // Pin25 - B4
-  MPC.PA6PFS.BIT.PSEL = 0x25;  // Pin26 - B5 (B0)
-  MPC.PA5PFS.BIT.PSEL = 0x25;  // Pin27 - B6 (B1)
-  MPC.PA4PFS.BIT.PSEL = 0x25;  // Pin28 - B7 (B2)
-  MPC.PB5PFS.BIT.PSEL = 0x25;  // Pin30 - CLK
-  MPC.PB2PFS.BIT.PSEL = 0x25;  // Pin32 - HSYNC (TCON2)
-  MPC.PB4PFS.BIT.PSEL = 0x25;  // Pin33 - VSYNC (TCON0)
-  MPC.PB1PFS.BIT.PSEL = 0x25;  // Pin34 - DEN   (TCON3)
-  MPC.PWPR.BIT.B0WI   = 0;     // Disable function select access
-  MPC.PWPR.BIT.PFSWE  = 0;
-  //
-  // Select IO function (Port Mode Register)
-  //
-  SYSTEM.PRCR.WORD = 0xA50Bu;  // Protect off
-  PORTB.PMR.BYTE   = 0x37;     // Pins 0, 1, 2, 4 and 5 of PORTB
-  PORTA.PMR.BYTE   = 0xFF;     // Pins 0 - 7 of PORTA
-  PORTE.PMR.BYTE   = 0xFE;     // Pins 1 - 7 of PORTE
-  SYSTEM.PRCR.WORD = 0xA500u;  // Protect on
+  R_GLCDC_PinSet();
   //
   // Set DISP signal on P97 (Pin31)
   //
@@ -273,103 +273,154 @@ static void _InitController(void) {
   //
   // Set the BGEN.SWRST bit to 1 to release the GLCDC from a software reset
   //
-  GLCDC.BGEN.BIT.SWRST = 1;
+  // R_GLCDC_Open function release the GLCDC from a software reset.
   //
   // Set the frequency of the LCD_CLK and PXCLK to suit the format and set the PANELCLK.CLKEN bit to 1
   //
-  GLCDC.PANELCLK.BIT.CLKSEL = 1;   // Select PLL clock
-  GLCDC.PANELCLK.BIT.DCDR   = 24;  // 240 / 24 = 10 MHz
-  GLCDC.PANELCLK.BIT.PIXSEL = 0;   // No frequency division
-  GLCDC.PANELCLK.BIT.CLKEN  = 1;   // Enable LCD_CLK output
+  glcdc_cfg.output.clksrc = GLCDC_CLK_SRC_INTERNAL;   			  // Select PLL clock
+  glcdc_cfg.output.clock_div_ratio = GLCDC_PANEL_CLK_DIVISOR_24;  // 240 / 24 = 10 MHz
+  																  // No frequency division
+  	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  	  // Enable LCD_CLK output
   //
   // Definition of Background Screen
   //
-  GLCDC.BGPERI.BIT.FH  = XSIZE_PHYS + 45;  // Horizontal cycle (whole control screen)
-  GLCDC.BGPERI.BIT.FV  = YSIZE_PHYS + 14;  // Vertical cycle (whole control screen)
-  GLCDC.BGSYNC.BIT.HP  = BGSYNC_HP;        // Horizontal Synchronization Signal Assertion Position
-  GLCDC.BGSYNC.BIT.VP  = BGSYNC_VP;        // Vertical Synchronization Assertion Position
-  GLCDC.BGHSIZE.BIT.HP = BGHSIZE_HP;       // Horizontal Active Pixel Start Position (min. 6 pixels)
-  GLCDC.BGHSIZE.BIT.HW = XSIZE_PHYS;       // Horizontal Active Pixel Width
-  GLCDC.BGVSIZE.BIT.VP = BGVSIZE_VP;       // Vertical Active Display Start Position (min. 3 lines)
-  GLCDC.BGVSIZE.BIT.VW = YSIZE_PHYS;       // Vertical Active Display Width
+  										   	   	   	   	   	   	  // Horizontal cycle (whole control screen)
+  	  	  	  	  	  	  	  	  	  	   	   	   	   	   	   	  // Vertical cycle (whole control screen)
+  glcdc_cfg.output.htiming.front_porch = 5;         			  // Horizontal Synchronization Signal Assertion Position
+  glcdc_cfg.output.vtiming.front_porch = 8;         			  // Vertical Synchronization Assertion Position
+  glcdc_cfg.output.htiming.back_porch = 40;                        // Horizontal Active Pixel Start Position (min. 6 pixels)
+  glcdc_cfg.output.vtiming.back_porch = 8;
+  glcdc_cfg.output.htiming.display_cyc = XSIZE_PHYS;              // Horizontal Active Pixel Width
+  glcdc_cfg.output.vtiming.display_cyc = YSIZE_PHYS;              // Vertical Active Display Width
+  glcdc_cfg.output.htiming.sync_width = 1;        				  // Vertical Active Display Start Position (min. 3 lines)
+  glcdc_cfg.output.vtiming.sync_width = 1;
+
+  //
+  // Graphic 1 configuration
+  //
+  glcdc_cfg.input[GLCDC_FRAME_LAYER_1].p_base = NULL;			  // Disable Graphics 1
+
   //
   // Graphic 2 configuration
   //
-  GLCDC.GR2FLMRD.BIT.RENB    = 1;                     // Enable reading of the frame buffer
-  GLCDC.GR2FLM2              = FRAMEBUFFER_START;     // Specify the start address of the frame buffer
-  GLCDC.GR2FLM3.BIT.LNOFF    = LINE_OFFSET;           // Offset value from the end address of the line to the start address of the next line
-  GLCDC.GR2FLM5.BIT.DATANUM  = LINE_OFFSET / 64 - 1;  // Single Line Data Transfer Count
-  GLCDC.GR2FLM5.BIT.LNNUM    = YSIZE_PHYS - 1;        // Single Frame Line Count
-  GLCDC.GR2FLM6.BIT.FORMAT   = COLOR_FORMAT;          // Frame Buffer Color Format RGB565
-  GLCDC.GR2AB1.BIT.DISPSEL   = 2;                     // Display Screen Control (current graphics)
-  GLCDC.GR2AB1.BIT.ARCDISPON = 0;                     // Rectangular Alpha Blending Area Frame Display Control
-  GLCDC.GR2AB1.BIT.GRCDISPON = 0;                     // Graphics Area Frame Display Control
-  GLCDC.GR2AB1.BIT.ARCON     = 0;                     // Alpha Blending Control (Per-pixel alpha blending)
-  GLCDC.GR2AB2.BIT.GRCVS     = GRC_VS;                // Graphics Area Vertical Start Position
-  GLCDC.GR2AB2.BIT.GRCVW     = YSIZE_PHYS;            // Graphics Area Vertical Width
-  GLCDC.GR2AB3.BIT.GRCHS     = GRC_HS;                // Graphics Area Horizontal Start Position
-  GLCDC.GR2AB3.BIT.GRCHW     = XSIZE_PHYS;            // Graphics Area Horizontal Width
-  GLCDC.GR2AB4.BIT.ARCVS     = GRC_VS;                // Rectangular Alpha Blending Area Vertical Start Position
-  GLCDC.GR2AB4.BIT.ARCVW     = YSIZE_PHYS;            // Rectangular Alpha Blending Area Vertical Width
-  GLCDC.GR2AB5.BIT.ARCHS     = GRC_HS;                // Rectangular Alpha Blending Area Horizontal Start Position
-  GLCDC.GR2AB5.BIT.ARCHW     = XSIZE_PHYS;            // Rectangular Alpha Blending Area Horizontal Width
-  GLCDC.GR2VEN.BIT.VEN       = 1;                     // Graphic 2 Register Value Reflection Enable
+  													  	  	  	  // Enable reading of the frame buffer
+  glcdc_cfg.input[GLCDC_FRAME_LAYER_2].p_base = (uint32_t *)_aBufferPTR[0];   // Specify the start address of the frame buffer
+  glcdc_cfg.input[GLCDC_FRAME_LAYER_2].offset = LINE_OFFSET;      // Offset value from the end address of the line to the start address of the next line
+  																  // Single Line Data Transfer Count
+  																  // Single Frame Line Count
+  glcdc_cfg.input[GLCDC_FRAME_LAYER_2].format = COLOR_FORMAT;     // Frame Buffer Color Format RGB565
+  glcdc_cfg.blend[GLCDC_FRAME_LAYER_2].visible = true;
+  glcdc_cfg.blend[GLCDC_FRAME_LAYER_2].blend_control = GLCDC_BLEND_CONTROL_NONE;	// Display Screen Control (current graphics)
+  glcdc_cfg.blend[GLCDC_FRAME_LAYER_2].frame_edge = false;        // Rectangular Alpha Blending Area Frame Display Control
+  glcdc_cfg.input[GLCDC_FRAME_LAYER_2].frame_edge = false;        // Graphics Area Frame Display Control
+  																  // Alpha Blending Control (Per-pixel alpha blending)
+  glcdc_cfg.input[GLCDC_FRAME_LAYER_2].coordinate.y = 0;          // Graphics Area Vertical Start Position
+  glcdc_cfg.input[GLCDC_FRAME_LAYER_2].vsize = YSIZE_PHYS;        // Graphics Area Vertical Width
+  glcdc_cfg.input[GLCDC_FRAME_LAYER_2].coordinate.x = 0;          // Graphics Area Horizontal Start Position
+  glcdc_cfg.input[GLCDC_FRAME_LAYER_2].hsize = XSIZE_PHYS;        // Graphics Area Horizontal Width
+  glcdc_cfg.blend[GLCDC_FRAME_LAYER_2].start_coordinate.x = 0;    // Rectangular Alpha Blending Area Vertical Start Position
+  glcdc_cfg.blend[GLCDC_FRAME_LAYER_2].end_coordinate.x= YSIZE_PHYS; // Rectangular Alpha Blending Area Vertical Width
+  glcdc_cfg.blend[GLCDC_FRAME_LAYER_2].start_coordinate.y = 0;    // Rectangular Alpha Blending Area Horizontal Start Position
+  glcdc_cfg.blend[GLCDC_FRAME_LAYER_2].end_coordinate.y= XSIZE_PHYS; // Rectangular Alpha Blending Area Horizontal Width
+  																  // Graphic 2 Register Value Reflection Enable
   //
   // Timing configuration
   //
-  GLCDC.TCONTIM.BIT.OFFSET  = 3;           // Horizontal Synchronization Signal Reference Timing Offset
-  GLCDC.TCONSTHB2.BIT.HSSEL = 1;           // Signal Reference Timing Select
-  GLCDC.TCONSTVB1.BIT.VS    = 1;           // STVB Signal Assertion Timing
-  GLCDC.TCONSTVB1.BIT.VW    = YSIZE_PHYS;  // STVB Signal Pulse Width
-  GLCDC.TCONSTHB1.BIT.HW    = XSIZE_PHYS;  // STHB Signal Pulse Width
-  GLCDC.TCONSTVA2.BIT.SEL   = 0;           // TCON0 Output Signal Select STVA (VSYNC)
-  GLCDC.TCONSTHA2.BIT.SEL   = 2;           // TCON2 Output Signal Select STHA (HSYNC)
-  GLCDC.TCONSTHB2.BIT.SEL   = 7;           // TCON3 Output Signal Select DE (DEN)
+  //   Horizontal Synchronization Signal Reference Timing Offset (not support)
+  //   Signal Reference Timing Select (not support)
+  //   STVB Signal Assertion Timing
+  //   STVB Signal Pulse Width
+  //   STHB Signal Pulse Width
+  glcdc_cfg.output.tcon_vsync = GLCDC_TCON_PIN_0;           // TCON0 Output Signal Select STVA (VSYNC)
+  glcdc_cfg.output.tcon_hsync = GLCDC_TCON_PIN_2;           // TCON2 Output Signal Select STHA (HSYNC)
+  glcdc_cfg.output.tcon_de    = GLCDC_TCON_PIN_3;           // TCON3 Output Signal Select DE (DEN)
+  glcdc_cfg.output.data_enable_polarity = GLCDC_SIGNAL_POLARITY_HIACTIVE;
+  glcdc_cfg.output.hsync_polarity = GLCDC_SIGNAL_POLARITY_LOACTIVE;
+  glcdc_cfg.output.vsync_polarity = GLCDC_SIGNAL_POLARITY_LOACTIVE;
+  glcdc_cfg.output.sync_edge = GLCDC_SIGNAL_SYNC_EDGE_RISING;
   //
   // Output interface
   //
-  GLCDC.OUTSET.BIT.PHASE    = 0;  // Serial RGB Data Output Delay Control (0 cycles)
-  GLCDC.OUTSET.BIT.DIRSEL   = 0;  // Serial RGB Scan Direction Select (forward)
-  GLCDC.OUTSET.BIT.FRQSEL   = 0;  // Pixel Clock Division Control (no division)
-  GLCDC.OUTSET.BIT.FORMAT   = 2;  // Output Data Format Select (RGB565)
-  GLCDC.OUTSET.BIT.SWAPON   = 0;  // Pixel Order Control (B-G-R)
-  GLCDC.OUTSET.BIT.ENDIANON = 0;  // Bit Endian Control (Little endian)
+  //   Serial RGB Data Output Delay Control (0 cycles) (not support)
+  //   Serial RGB Scan Direction Select (forward) (not support)
+  //   Pixel Clock Division Control (no division)
+  glcdc_cfg.output.format = GLCDC_OUT_FORMAT_16BITS_RGB565; // Output Data Format Select (RGB565)
+  glcdc_cfg.output.color_order = GLCDC_COLOR_ORDER_RGB; ///**/GLCDC_COLOR_ORDER_BGR;  	// Pixel Order Control (B-G-R)
+  glcdc_cfg.output.endian = GLCDC_ENDIAN_LITTLE;  			// Bit Endian Control (Little endian)
   //
   // Brightness Adjustment
   //
-  GLCDC.BRIGHT2.BIT.BRTB = _BRIGHTNESS;  // B
-  GLCDC.BRIGHT1.BIT.BRTG = _BRIGHTNESS;  // G
-  GLCDC.BRIGHT2.BIT.BRTR = _BRIGHTNESS;  // R
+  glcdc_cfg.output.brightness.b = _BRIGHTNESS;  // B
+  glcdc_cfg.output.brightness.g = _BRIGHTNESS;  // G
+  glcdc_cfg.output.brightness.r = _BRIGHTNESS;  // R
   //
   // Contrast Adjustment Value
   //
-  GLCDC.CONTRAST.BIT.CONTB = _CONTRAST;  // B
-  GLCDC.CONTRAST.BIT.CONTG = _CONTRAST;  // G
-  GLCDC.CONTRAST.BIT.CONTR = _CONTRAST;  // R
+  glcdc_cfg.output.contrast.b = _CONTRAST;  // B
+  glcdc_cfg.output.contrast.g = _CONTRAST;  // G
+  glcdc_cfg.output.contrast.r = _CONTRAST;  // R
+  //
+  // Disable Gamma
+  //
+  glcdc_cfg.output.gamma.enable = false;
+  //
+  // Disable Chromakey
+  //
+  glcdc_cfg.chromakey[GLCDC_FRAME_LAYER_2].enable = false;
+  //
+  // Disable Dithering
+  //
+  glcdc_cfg.output.dithering.dithering_on = false;
+  //
+  // CLUT Adjustment Value
+  //
+  glcdc_cfg.clut[GLCDC_FRAME_LAYER_2].enable = false;
   //
   // Enable VPOS ISR
   //
-  GLCDC.GR2CLUTINT.BIT.LINE               = YSIZE_PHYS;  // Detecting Scanline Setting
-  GLCDC.DTCTEN.BIT.VPOSDTC                = 1;           // Enable detection of specified line notification in graphic 2
-  GLCDC.INTEN.BIT.VPOSINTEN               = 1;           // Enable VPOS interrupt request
-  ICU.IPR[VECT_ICU_GROUPAL1].BIT.IPR      = 1;           // Interrupt Priority Level
-  ICU.IER[VECT_ICU_GROUPAL1 / 8].BIT.IEN1 = 1;           // Interrupt Request Enable
-  GLCDC.STCLR.BIT.VPOSCLR                 = 1;           // Clears the STMON.VPOS flag
-  ICU.GENAL1.BIT.EN8                      = 1;           // VPOS (line detection)
+  //   Detecting Scanline Setting
+  glcdc_cfg.detection.vpos_detect = true;		         	// Enable detection of specified line notification in graphic 2
+  glcdc_cfg.interrupt.vpos_enable = true;		           	// Enable VPOS interrupt request
+  //   Interrupt Priority Level (r_glcdc_rx_config.h)
+  //   Interrupt Request Enable
+  //   Clears the STMON.VPOS flag
+  //   VPOS (line detection)
+  glcdc_cfg.detection.gr1uf_detect = false;
+  glcdc_cfg.detection.gr2uf_detect = false;
+  glcdc_cfg.interrupt.gr1uf_enable = false;
+  glcdc_cfg.interrupt.gr2uf_enable = false;
   //
   // Set function to be called on VSYNC
   //
-  R_BSP_InterruptWrite(BSP_INT_SRC_AL1_GLCDC_VPOS, _VSYNC_ISR);
+  glcdc_cfg.p_callback = (void (*)(glcdc_callback_args_t *))_VSYNC_ISR;
+
+  runtime_cfg.blend = glcdc_cfg.blend[GLCDC_FRAME_LAYER_2];
+  runtime_cfg.input = glcdc_cfg.input[GLCDC_FRAME_LAYER_2];
+  runtime_cfg.chromakey = glcdc_cfg.chromakey[GLCDC_FRAME_LAYER_2];
+  //
+  // Register Dave2D interrupt
+  //
+  R_BSP_InterruptWrite(BSP_INT_SRC_AL1_DRW2D_DRW_IRQ, (bsp_int_cb_t)drw_int_isr);
   //
   // Register Reflection
   //
-  GLCDC.OUTVEN.BIT.VEN = 0x00000001;  // Output Control Block Register Value Reflection
-  GLCDC.BGEN.LONG      = 0x00010101;  // Enable background generation block
+  ret = R_GLCDC_Open(&glcdc_cfg);
+  if (ret != GLCDC_SUCCESS) {
+	  while(1);
+  }
+  //
+  // Init DMA
+  //
+  R_DMACA_Init();
+  //
+  // Extended Bus Master Priority Control Register
+  //
+  BSC.EBMAPCR.BIT.PR1SEL = 3;
+  BSC.EBMAPCR.BIT.PR2SEL = 1;
+  BSC.EBMAPCR.BIT.PR3SEL = 2;
+  BSC.EBMAPCR.BIT.PR4SEL = 0;
+  BSC.EBMAPCR.BIT.PR5SEL = 4;
 }
-
-//int aaanl;
-//LCD_COLOR cll[256];
-//U8 pos[256];
 
 /*********************************************************************
 *
@@ -379,12 +430,14 @@ static void _InitController(void) {
 *   Should set the desired LUT entry
 */
 static void _SetLUTEntry(LCD_COLOR Color, U8 Pos) {
-  GLCDC.GR2CLUT0[Pos].BIT.R = (Color & 0xFF0000) >> 16;
-  GLCDC.GR2CLUT0[Pos].BIT.G = (Color & 0x00FF00) >> 8;
-  GLCDC.GR2CLUT0[Pos].BIT.B = (Color & 0x0000FF);
-//  cll[aaanl] = Color;
-//  pos[aaanl] = Pos;
-//  aaanl++;
+  glcdc_clut_cfg_t p_clut_cfg;
+
+  p_clut_cfg.enable = true;
+  p_clut_cfg.p_base = &Color;
+  p_clut_cfg.size = 1;
+  p_clut_cfg.start = Pos;
+
+  R_GLCDC_ClutUpdate(GLCDC_FRAME_LAYER_2, &p_clut_cfg);
 }
 
 /*********************************************************************
@@ -393,12 +446,344 @@ static void _SetLUTEntry(LCD_COLOR Color, U8 Pos) {
 */
 static void _DisplayOnOff(int OnOff) {
   if (OnOff) {
-    GLCDC.BGEN.LONG   = 0x00010101;  // Enable background generation block
+    R_GLCDC_Control(GLCDC_CMD_START_DISPLAY, FIT_NO_FUNC);  // Enable background generation block
     PORT6.PODR.BIT.B6 = 1;
   } else {
-    GLCDC.BGEN.LONG   = 0x00010100;  // Disable background generation block
+	R_GLCDC_Control(GLCDC_CMD_STOP_DISPLAY, FIT_NO_FUNC);  	// Disable background generation block
     PORT6.PODR.BIT.B6 = 0;
   }
+}
+
+/*********************************************************************
+*
+*       _GetD2Mode
+*/
+static U32 _GetD2Mode(void) {
+  U32 r;
+#if   (BITS_PER_PIXEL == 32)
+  r = d2_mode_argb8888;
+#elif (BITS_PER_PIXEL == 16)
+  r = d2_mode_rgb565;
+#elif (BITS_PER_PIXEL == 8)
+  r = d2_mode_i8;
+#elif (BITS_PER_PIXEL == 4)
+  r = d2_mode_i4;
+#elif (BITS_PER_PIXEL == 1)
+  r = d2_mode_i1;
+#endif
+  return r;
+}
+
+/*********************************************************************
+*
+*       _DrawMemdevAlpha
+*/
+static void _DrawMemdevAlpha(void * pDst, const void * pSrc, int xSize, int ySize, int BytesPerLineDst, int BytesPerLineSrc) {
+  U32 PitchSrc, PitchDst, Mode;
+
+  PitchDst = BytesPerLineDst / 4;
+  PitchSrc = BytesPerLineSrc / 4;
+  Mode = _GetD2Mode();
+  //
+  // Set address of destination memory device as frame buffer to be used
+  //
+  d2_framebuffer(d2_handle, pDst, PitchDst, PitchDst, ySize, d2_mode_argb8888);
+  //
+  // Generate render operations
+  //
+  d2_selectrenderbuffer(d2_handle, renderbuffer);
+  d2_setblitsrc(d2_handle, (void *)pSrc, PitchSrc, xSize, ySize, d2_mode_argb8888);
+  d2_blitcopy(d2_handle, xSize, ySize, 0, 0, xSize * 16, ySize * 16, 0, 0, d2_bf_usealpha);
+  //
+  // Execute render operations
+  //
+  d2_executerenderbuffer(d2_handle, renderbuffer, 0);
+  d2_flushframe(d2_handle);
+  //
+  // Restore frame buffer
+  //
+  d2_framebuffer(d2_handle, (void *)_aBufferPTR[_WriteBufferIndex], XSIZE_PHYS, XSIZE_PHYS, YSIZE_PHYS, Mode);
+}
+
+/*********************************************************************
+*
+*       _DrawBitmapAlpha
+*/
+static void _DrawBitmapAlpha(int LayerIndex, int x, int y, const void * p, int xSize, int ySize, int BytesPerLine) {
+  U32 Pitch, Mode;
+
+  Pitch = BytesPerLine / 4;
+  Mode = _GetD2Mode();
+  //
+  // Generate render operations
+  //
+  d2_framebuffer(d2_handle, (void *)_aBufferPTR[_WriteBufferIndex], XSIZE_PHYS, XSIZE_PHYS, YSIZE_PHYS, Mode);
+  d2_selectrenderbuffer(d2_handle, renderbuffer);
+  d2_setblitsrc(d2_handle, (void *)p, Pitch, xSize, ySize, d2_mode_argb8888);
+  d2_blitcopy(d2_handle, xSize, ySize, 0, 0, xSize * 16, ySize * 16, x * 16, y * 16, d2_bf_usealpha);
+  //
+  // Execute render operations
+  //
+  d2_executerenderbuffer(d2_handle, renderbuffer, 0);
+  d2_flushframe(d2_handle);
+}
+
+/*********************************************************************
+*
+*       _CircleAA
+*/
+static int _CircleAA(int x0, int y0, int r, int w) {
+  U32 Mode;
+  int ret;
+
+  Mode = _GetD2Mode();
+  //
+  // Generate render operations
+  //
+  d2_framebuffer(d2_handle, (void *)_aBufferPTR[_WriteBufferIndex], XSIZE_PHYS, XSIZE_PHYS, YSIZE_PHYS, Mode);
+  d2_selectrenderbuffer(d2_handle, renderbuffer);
+  d2_setcolor(d2_handle, 0, GUI_pContext->Color);
+  d2_cliprect(d2_handle, GUI_pContext->ClipRect.x0,
+                         GUI_pContext->ClipRect.y0,
+                         GUI_pContext->ClipRect.x1,
+                         GUI_pContext->ClipRect.y1);
+  ret = d2_rendercircle(d2_handle, x0 * 16, y0 * 16, r * 16, w * 16);
+  //
+  // Execute render operations
+  //
+  d2_executerenderbuffer(d2_handle, renderbuffer, 0);
+  d2_flushframe(d2_handle);
+  return ret;
+}
+
+/*********************************************************************
+*
+*       _FillCircleAA
+*/
+static int _FillCircleAA(int x0, int y0, int r) {
+  return _CircleAA(x0, y0, r, 0);
+}
+
+/*********************************************************************
+*
+*       _DrawCircleAA
+*/
+static int _DrawCircleAA(int x0, int y0, int r) {
+  return _CircleAA(x0, y0, r, GUI_pContext->PenSize);
+}
+
+/*********************************************************************
+*
+*       _FillPolygonAA
+*/
+static int _FillPolygonAA(const GUI_POINT * pPoints, int NumPoints, int x0, int y0) {
+  U32 Mode;
+  d2_point * pData;
+  d2_point * pDataI;
+  int i, ret;
+
+  Mode = _GetD2Mode();
+  pData = malloc(sizeof(d2_point) * NumPoints * 2);
+  ret = 1;
+  if (pData) {
+    pDataI = pData;
+    for (i = 0; i < NumPoints; i++) {
+      *pDataI++ = (d2_point)(pPoints->x + x0) * 16;
+      *pDataI++ = (d2_point)(pPoints->y + y0) * 16;
+      pPoints++;
+    }
+    //
+    // Generate render operations
+    //
+    d2_framebuffer(d2_handle, (void *)_aBufferPTR[_WriteBufferIndex], XSIZE_PHYS, XSIZE_PHYS, YSIZE_PHYS, Mode);
+    d2_selectrenderbuffer(d2_handle, renderbuffer);
+    d2_setcolor(d2_handle, 0, GUI_pContext->Color);
+    d2_cliprect(d2_handle, GUI_pContext->ClipRect.x0,
+                           GUI_pContext->ClipRect.y0,
+                           GUI_pContext->ClipRect.x1,
+                           GUI_pContext->ClipRect.y1);
+    ret = d2_renderpolygon(d2_handle, pData, NumPoints, d2_le_closed);
+    //
+    // Execute render operations
+    //
+    d2_executerenderbuffer(d2_handle, renderbuffer, 0);
+    d2_flushframe(d2_handle);
+    free(pData);
+  }
+  return ret;
+}
+
+/*********************************************************************
+*
+*       _DrawPolyOutlineAA
+*/
+static int _DrawPolyOutlineAA(const GUI_POINT * pPoints, int NumPoints, int Thickness, int x, int y) {
+  U32 Mode;
+  d2_point * pData;
+  d2_point * pDataI;
+  int i, ret;
+
+  Mode = _GetD2Mode();
+  pData = malloc(sizeof(d2_point) * NumPoints * 2);
+  ret = 1;
+  if (pData) {
+    pDataI = pData;
+    for (i = 0; i < NumPoints; i++) {
+      *pDataI++ = (d2_point)(pPoints->x + x) * 16;
+      *pDataI++ = (d2_point)(pPoints->y + y) * 16;
+      pPoints++;
+    }
+    //
+    // Generate render operations
+    //
+    d2_framebuffer(d2_handle, (void *)_aBufferPTR[_WriteBufferIndex], XSIZE_PHYS, XSIZE_PHYS, YSIZE_PHYS, Mode);
+    d2_selectrenderbuffer(d2_handle, renderbuffer);
+    d2_setcolor(d2_handle, 0, GUI_pContext->Color);
+    d2_cliprect(d2_handle, GUI_pContext->ClipRect.x0,
+                           GUI_pContext->ClipRect.y0,
+                           GUI_pContext->ClipRect.x1,
+                           GUI_pContext->ClipRect.y1);
+    d2_selectrendermode(d2_handle, d2_rm_outline);
+    ret = d2_renderpolyline(d2_handle, pData, NumPoints, Thickness * 16, d2_le_closed);
+    d2_selectrendermode(d2_handle, d2_rm_solid);
+    //
+    // Execute render operations
+    //
+    d2_executerenderbuffer(d2_handle, renderbuffer, 0);
+    d2_flushframe(d2_handle);
+    free(pData);
+  }
+  return ret;
+}
+
+/*********************************************************************
+*
+*       _DrawLineAA
+*/
+static int _DrawLineAA(int x0, int y0, int x1, int y1) {
+  U32 Mode;
+  int ret;
+
+  Mode = _GetD2Mode();
+  //
+  // Generate render operations
+  //
+  d2_framebuffer(d2_handle, (void *)_aBufferPTR[_WriteBufferIndex], XSIZE_PHYS, XSIZE_PHYS, YSIZE_PHYS, Mode);
+  d2_selectrenderbuffer(d2_handle, renderbuffer);
+  d2_setcolor(d2_handle, 0, GUI_pContext->Color);
+  d2_cliprect(d2_handle, GUI_pContext->ClipRect.x0,
+                         GUI_pContext->ClipRect.y0,
+                         GUI_pContext->ClipRect.x1,
+                         GUI_pContext->ClipRect.y1);
+  ret = d2_renderline(d2_handle, x0 * 16, y0 * 16, x1 * 16, y1 * 16, GUI_pContext->PenSize * 16, d2_le_exclude_none);
+  //
+  // Execute render operations
+  //
+  d2_executerenderbuffer(d2_handle, renderbuffer, 0);
+  d2_flushframe(d2_handle);
+  return ret;
+}
+
+/*********************************************************************
+*
+*       _DrawArcAA
+*/
+int _DrawArcAA(int x0, int y0, int rx, int ry, int a0, int a1) {
+  U32 Mode;
+  int ret;
+  I32 nx0, ny0, nx1, ny1;
+
+  GUI_USE_PARA(ry);
+  Mode = _GetD2Mode();
+  while (a1 < a0) {
+    a1 += 360;
+  }
+  a0 *= 1000;
+  a1 *= 1000;
+  nx0  = GUI__SinHQ(a0);
+  ny0  = GUI__CosHQ(a0);
+  nx1  = GUI__SinHQ(a1);
+  ny1  = GUI__CosHQ(a1);
+  if ((a1 - a0) <= 180000) {
+    nx0 *= -1;
+    ny0 *= -1;
+  }
+  //
+  // Generate render operations
+  //
+  d2_framebuffer(d2_handle, (void *)_aBufferPTR[_WriteBufferIndex], XSIZE_PHYS, XSIZE_PHYS, YSIZE_PHYS, Mode);
+  d2_selectrenderbuffer(d2_handle, renderbuffer);
+  d2_setcolor(d2_handle, 0, GUI_pContext->Color);
+  d2_cliprect(d2_handle, GUI_pContext->ClipRect.x0,
+                         GUI_pContext->ClipRect.y0,
+                         GUI_pContext->ClipRect.x1,
+                         GUI_pContext->ClipRect.y1);
+  d2_renderwedge(d2_handle, x0 * 16, y0 * 16, rx * 16, GUI_pContext->PenSize * 16, nx0, ny0, nx1, ny1, 0);
+  //
+  // Execute render operations
+  //
+  d2_executerenderbuffer(d2_handle, renderbuffer, 0);
+  d2_flushframe(d2_handle);
+  return ret;
+}
+
+/*********************************************************************
+*
+*       _CopyBuffer
+*/
+static void _CopyBuffer(int LayerIndex, int IndexSrc, int IndexDst) {
+  int ret;
+  dmaca_transfer_data_cfg_t td_cfg;
+  dmaca_stat_t dmac_status;
+
+  GUI_USE_PARA(LayerIndex);
+  ret = R_DMACA_Open(DMACA_CH0);
+  if (ret != DMACA_SUCCESS) {
+    while (1);  // Error
+  }
+  td_cfg.transfer_mode        = DMACA_TRANSFER_MODE_BLOCK;
+  td_cfg.repeat_block_side    = DMACA_REPEAT_BLOCK_DISABLE;
+  td_cfg.data_size            = DMACA_DATA_SIZE_LWORD;
+  td_cfg.act_source           = (dmaca_activation_source_t)0;
+  td_cfg.request_source       = DMACA_TRANSFER_REQUEST_SOFTWARE;
+  td_cfg.dtie_request         = DMACA_TRANSFER_END_INTERRUPT_DISABLE;
+  td_cfg.esie_request         = DMACA_TRANSFER_ESCAPE_END_INTERRUPT_DISABLE;
+  td_cfg.rptie_request        = DMACA_REPEAT_SIZE_END_INTERRUPT_DISABLE;
+  td_cfg.sarie_request        = DMACA_SRC_ADDR_EXT_REP_AREA_OVER_INTERRUPT_DISABLE;
+  td_cfg.darie_request        = DMACA_DES_ADDR_EXT_REP_AREA_OVER_INTERRUPT_DISABLE;
+  td_cfg.src_addr_mode        = DMACA_SRC_ADDR_INCR;
+  td_cfg.src_addr_repeat_area = DMACA_SRC_ADDR_EXT_REP_AREA_NONE;
+  td_cfg.des_addr_mode        = DMACA_DES_ADDR_INCR;
+  td_cfg.des_addr_repeat_area = DMACA_DES_ADDR_EXT_REP_AREA_NONE;
+  td_cfg.offset_value         = BYTES_PER_LINE;
+  td_cfg.interrupt_sel        = DMACA_CLEAR_INTERRUPT_FLAG_BEGINNING_TRANSFER;
+  td_cfg.p_src_addr           = (void *)_aBufferPTR[IndexSrc];
+  td_cfg.p_des_addr           = (void *)_aBufferPTR[IndexDst];
+  td_cfg.transfer_count       = YSIZE_PHYS;
+  td_cfg.block_size           = BYTES_PER_LINE >> 2;
+  ret = R_DMACA_Create(DMACA_CH0, &td_cfg);
+  if (ret != DMACA_SUCCESS) {
+    while (1);  // Error
+  }
+  ret = R_DMACA_Control(DMACA_CH0, DMACA_CMD_ENABLE, &dmac_status);
+  if (ret != DMACA_SUCCESS) {
+    while (1);  // Error
+  }
+  ret = R_DMACA_Control(DMACA_CH0, DMACA_CMD_SOFT_REQ_NOT_CLR_REQ, &dmac_status);
+  if (ret != DMACA_SUCCESS) {
+    while (1);  // Error
+  }
+  do {
+    ret = R_DMACA_Control(DMACA_CH0, DMACA_CMD_STATUS_GET, &dmac_status);
+    if (ret != DMACA_SUCCESS) {
+      while (1);  // Error
+    }
+  } while((dmac_status.dtif_stat) == 0);
+  ret = R_DMACA_Close(DMACA_CH0);
+  if (ret != DMACA_SUCCESS) {
+    while (1);  // Error
+  }
+  _WriteBufferIndex = IndexDst;
 }
 
 /*********************************************************************
@@ -407,6 +792,60 @@ static void _DisplayOnOff(int OnOff) {
 *
 **********************************************************************
 */
+/*********************************************************************
+*
+*       LCDCONF_GetBufferAddr
+*/
+void * LCDCONF_GetBufferAddr(void) {
+  return _aBufferPTR[_WriteBufferIndex];
+}
+
+/*********************************************************************
+*
+*       LCDCONF_GetD2
+*/
+d2_device * LCDCONF_GetD2(void) {
+  return d2_handle;
+}
+
+/*********************************************************************
+*
+*       LCDCONF_EnableDave2D
+*/
+void LCDCONF_EnableDave2D(void) {
+  GUI_SetFuncDrawAlpha         (_DrawMemdevAlpha, _DrawBitmapAlpha);
+  GUI_AA_SetFuncFillCircle     (_FillCircleAA);
+  GUI_AA_SetFuncFillPolygon    (_FillPolygonAA);
+  GUI_AA_SetFuncDrawCircle     (_DrawCircleAA);
+  GUI_AA_SetFuncDrawLine       (_DrawLineAA);
+  GUI_AA_SetFuncDrawPolyOutline(_DrawPolyOutlineAA);
+  GUI_AA_SetFuncDrawArc        (_DrawArcAA);
+  _DaveActive = 1;
+}
+
+/*********************************************************************
+*
+*       LCDCONF_DisableDave2D
+*/
+void LCDCONF_DisableDave2D(void) {
+  GUI_SetFuncDrawAlpha         (NULL, NULL);
+  GUI_AA_SetFuncFillCircle     (NULL);
+  GUI_AA_SetFuncFillPolygon    (NULL);
+  GUI_AA_SetFuncDrawCircle     (NULL);
+  GUI_AA_SetFuncDrawLine       (NULL);
+  GUI_AA_SetFuncDrawPolyOutline(NULL);
+  GUI_AA_SetFuncDrawArc        (NULL);
+  _DaveActive = 0;
+}
+
+/*********************************************************************
+*
+*       LCDCONF_DisableDave2D
+*/
+unsigned LCDCONF_GetDaveActive(void) {
+  return _DaveActive;
+}
+
 /*********************************************************************
 *
 *       LCD_X_Config
@@ -427,9 +866,24 @@ void LCD_X_Config(void) {
   //
   // Display driver configuration
   //
-  LCD_SetSizeEx (0, XSIZE_PHYS, YSIZE_PHYS);
-  LCD_SetVSizeEx(0, VXSIZE_PHYS, YSIZE_PHYS);
-  LCD_SetVRAMAddrEx(0, (void *)FRAMEBUFFER_START);
+  if (LCD_GetSwapXYEx(0)) {
+    LCD_SetSizeEx (0, YSIZE_PHYS, XSIZE_PHYS);
+    LCD_SetVSizeEx(0, YSIZE_PHYS, XSIZE_PHYS);
+  } else {
+    LCD_SetSizeEx (0, XSIZE_PHYS, YSIZE_PHYS);
+    LCD_SetVSizeEx(0, XSIZE_PHYS, YSIZE_PHYS);
+  }
+  LCD_SetBufferPtrEx(0, _aBufferPTR);
+  //
+  // Initialize Dave2D
+  //
+  d2_handle = d2_opendevice(0);
+  d2_inithw(d2_handle, 0);
+  renderbuffer = d2_newrenderbuffer(d2_handle, 20, 20);
+  //
+  // Set function pointers
+  //
+  LCD_SetDevFunc(0, LCD_DEVFUNC_COPYBUFFER, (void(*)(void))_CopyBuffer);
 }
 
 /*********************************************************************
@@ -454,8 +908,6 @@ void LCD_X_Config(void) {
 *      0 - Ok
 */
 int LCD_X_DisplayDriver(unsigned LayerIndex, unsigned Cmd, void * pData) {
-
-	static int	flicker = 0;	/* Prevention of flicker 3 */
   int r;
 
   GUI_USE_PARA(LayerIndex);
@@ -501,13 +953,7 @@ int LCD_X_DisplayDriver(unsigned LayerIndex, unsigned Cmd, void * pData) {
     //
     // Required if the display controller should support switching on and off
     //
-		/* Prevention of flicker 4 */
-//	_DisplayOnOff(1);
-	if(flicker != 0)
-	{
-		_DisplayOnOff(1);
-	}
-	flicker = 1;
+    _DisplayOnOff(1);
     break;
   }
   case LCD_X_OFF: {
@@ -522,6 +968,5 @@ int LCD_X_DisplayDriver(unsigned LayerIndex, unsigned Cmd, void * pData) {
   }
   return r;
 }
-
 
 /*************************** End of file ****************************/

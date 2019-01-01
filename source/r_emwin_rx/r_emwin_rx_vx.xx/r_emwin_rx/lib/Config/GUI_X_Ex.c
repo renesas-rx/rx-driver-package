@@ -85,7 +85,10 @@ void GUI_X_Init(void) {
 *  Called if WM is in idle state
 */
 
-void GUI_X_ExecIdle(void) {}
+void GUI_X_ExecIdle(void) {
+  volatile int temp;
+  temp=0;
+}
 
 /*********************************************************************
 *

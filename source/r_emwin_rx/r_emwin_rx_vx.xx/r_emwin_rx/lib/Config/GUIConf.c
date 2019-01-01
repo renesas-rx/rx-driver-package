@@ -21,7 +21,7 @@ Purpose     : GUI runtime configuration
 ---------------------------END-OF-HEADER------------------------------
 */
 
-#include "GUI.h"
+#include "GUI_Private.h"
 #include "PIDConf.h"
 
 /*********************************************************************
@@ -33,8 +33,8 @@ Purpose     : GUI runtime configuration
 //
 // Define the available number of bytes available for the GUI
 //
-//#define GUI_NUMBYTES  (1024 * 110)
-#define GUI_NUMBYTES  (1024 * 160)
+#define GUI_NUMBYTES  (1024 * 49)
+//#define GUI_NUMBYTES  (1024 * 1024)
 
 /*********************************************************************
 *
@@ -50,16 +50,11 @@ Purpose     : GUI runtime configuration
 *   Called during the initialization process in order to set up the
 *   available memory for the GUI.
 */
-
-#pragma section _GUI_WORK
-U32 aMemory[GUI_NUMBYTES / 4];
-#pragma section
-
 void GUI_X_Config(void) {
   //
   // 32 bit aligned memory area
   //
-//  static U32 aMemory[GUI_NUMBYTES / 4];
+  static U32 aMemory[GUI_NUMBYTES / 4];
   //
   // Assign memory to emWin
   //
@@ -75,4 +70,3 @@ void GUI_X_Config(void) {
 }
 
 /*************************** End of file ****************************/
-

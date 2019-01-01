@@ -26,6 +26,17 @@ Purpose     : Touch panel configuration
 #include "platform.h"
 #include "r_sci_iic_rx_if.h"
 #include "r_cmt_rx_if.h"
+#include "r_gpio_rx_if.h"
+
+/*********************************************************************
+*
+*       Config
+*
+**********************************************************************
+*/
+#ifndef USE_MULTITOUCH
+  #define USE_MULTITOUCH  0
+#endif
 
 /*********************************************************************
 *
@@ -34,6 +45,9 @@ Purpose     : Touch panel configuration
 **********************************************************************
 */
 #define SLAVE_ADDRESS        0x38
+#define MAX_NUM_TOUCHPOINTS  10
+#define MAX_NUM_IDS          10
+#define NUM_CALIB_POINTS     5
 
 /*********************************************************************
 *
@@ -94,10 +108,21 @@ static sci_iic_info_t _Info;
 static U8 _aBuffer[63] = {0};
 static U8 _Busy;
 
+#if (USE_MULTITOUCH == 1)
+  static U8  _aActiveIds[MAX_NUM_TOUCHPOINTS];
+#endif
+
+/*********************************************************************
+*
+*       Local code
+*
+**********************************************************************
+*/
 /*********************************************************************
 *
 *       _cb_SCI_IIC_ch6
 */
+#if (USE_MULTITOUCH == 0)
 static void _cb_SCI_IIC_ch6(void) {
   sci_iic_mcu_status_t      iic_status;
   volatile sci_iic_return_t ret;
@@ -155,6 +180,241 @@ static void _cb_SCI_IIC_ch6(void) {
     _Busy = 0;
   }
 }
+
+#else
+
+/*********************************************************************
+*
+*       _ActiveIdFound
+*
+* Purpose:
+*   Checks if the given Id is part of the currently active Ids
+*/
+static int _ActiveIdFound(U8 Id) {
+  int i;
+  U8 * pId;
+
+  pId = _aActiveIds;
+  i   = GUI_COUNTOF(_aActiveIds);
+  do {
+    if (*pId++ == Id) {
+      return 1;
+    }
+  } while (--i);
+  return 0;
+}
+
+/*********************************************************************
+*
+*       _StoreId
+*
+* Purpose:
+*   Finds a free 'slot' for the given Id and puts it to the active Ids
+*/
+static int _StoreId(U8 Id) {
+  int i;
+  U8 * pId;
+
+  pId = _aActiveIds;
+  i   = GUI_COUNTOF(_aActiveIds);
+  do {
+    if (*pId == 0) {
+      *pId = Id;
+      return 0;
+    }
+    pId++;
+  } while (--i);
+  return 1;
+}
+
+/*********************************************************************
+*
+*       _CurrentIdFound
+*
+* Purpose:
+*   Checks if the given Id is part of the given POINT_DATA array
+*/
+static int _CurrentIdFound(U8 Id, POINT_DATA * pPointData, int NumPoints) {
+  POINT_DATA * pi;
+  int i;
+
+  for (pi = pPointData, i = 0; i < NumPoints; i++, pi++) {
+    if (pi->Id == Id) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/*********************************************************************
+*
+*       _CreateInput
+*
+* Purpose:
+*   Fills the given GUI_MTOUCH_INPUT structure with the given coordinates
+*   of the POINT_DATA data structure. In case of UP events there is no
+*   data and only the given Id is used.
+*/
+static void _CreateInput(U16 Flags, U8 Id, POINT_DATA * pPointData, GUI_MTOUCH_INPUT * pInput) {
+  if (pPointData) {
+    pInput->x  = pPointData->xPos;
+    pInput->y  = pPointData->yPos;
+    pInput->Id = pPointData->Id;
+  } else {
+    pInput->Id = Id;
+  }
+  pInput->Flags = Flags;
+}
+
+/*********************************************************************
+*
+*       _CreateUpInputs
+*
+* Purpose:
+*   Checks if the already existing active touch points exist in current
+*   data. For each non existing active Id in the current data an UP event
+*   is created.
+*/
+static void _CreateUpInputs(POINT_DATA * pPointData, int NumPoints, GUI_MTOUCH_INPUT ** ppInput, int * pNumInputs) {
+  GUI_MTOUCH_INPUT * pInput;
+  int i;
+  U8 * pId;
+  U8 Id;
+
+  pInput = *ppInput;
+  pId = _aActiveIds;
+  i   = GUI_COUNTOF(_aActiveIds);
+  do {
+    Id = *pId;
+    if (Id) {
+      if (_CurrentIdFound(Id, pPointData, NumPoints) == 0) {
+        _CreateInput(GUI_MTOUCH_FLAG_UP, Id, NULL, pInput);
+        (*pNumInputs)++;
+        pInput++;
+        *pId = 0;
+      }
+    }
+    pId++;
+  } while (--i);
+  *ppInput = pInput;
+}
+
+/*********************************************************************
+*
+*       _CreateMoveAndDownInputs
+*
+* Purpose:
+*   Fills the given array of GUI_MTOUCH_INPUT structures with data of current
+*   POINT_DATA array. If an item already exist a MOVE event is created,
+*   otherwise a DOWM event.
+*/
+static void _CreateMoveAndDownInputs(POINT_DATA * pPointData, int NumPoints, GUI_MTOUCH_INPUT * pInput) {
+  int i, Found;
+
+  for (i = 0; i < NumPoints; i++, pPointData++, pInput++) {
+    Found = _ActiveIdFound(pPointData->Id);
+    pInput->x     = pPointData->xPos;
+    pInput->y     = pPointData->yPos;
+    pInput->Id    = pPointData->Id;
+    if (Found) {
+      pInput->Flags = GUI_MTOUCH_FLAG_MOVE;
+    } else {
+      pInput->Flags = GUI_MTOUCH_FLAG_DOWN;
+      _StoreId(pPointData->Id);
+    }
+  }
+}
+
+/*********************************************************************
+*
+*       _cb_SCI_IIC_ch6
+*/
+static void _cb_SCI_IIC_ch6(void) {
+  sci_iic_mcu_status_t      iic_status;
+  volatile sci_iic_return_t ret;
+  GUI_MTOUCH_INPUT * pInput;
+  GUI_MTOUCH_EVENT   Event;
+  GUI_MTOUCH_INPUT   aInput[MAX_NUM_TOUCHPOINTS];
+  POINT_DATA         aPointData[MAX_NUM_TOUCHPOINTS];
+  REPORT_DATA        Report;
+  TOUCH_DATA         TouchPoint;
+  int                NumInputs;
+  int                i;
+  U8                 NumPoints;
+  int                xCoord;
+  int                yCoord;
+  U8               * pBuffer;
+
+  ret = R_SCI_IIC_GetStatus(&_Info, &iic_status);
+  if ((ret == SCI_IIC_SUCCESS) && (iic_status.BIT.NACK == 1)) {
+    pBuffer           =  _aBuffer;
+    Report.DeviceMode = *pBuffer++;           // Get device mode, 000b - Work Mode, 001b - Factory Mode
+    Report. GestureID = *pBuffer++;           // GestureID:  0x10 Move UP
+                                            //             0x14 Move Left
+                                            //             0x18 Move Down
+                                            //             0x1C Move Right
+                                            //             0x48 Zoom In
+                                            //             0x49 Zoom Out
+                                            //             0x00 No Gesture
+    Report.NumPoints  = *pBuffer++;           // Number of points
+    NumPoints         =  Report.NumPoints;
+    //
+    // Reading point data is only required if there is a touch point
+    //
+    if (NumPoints) {
+      //
+      // Get coordinates and Ids from buffer
+      //
+      for (i = 0; i < NumPoints; i++) {
+        TouchPoint.xHigh  = (*pBuffer++) & 0x0F;  // Get the upper 4 bits of the x position
+        TouchPoint.xLow   =  *pBuffer++;          // and the lower 8 bits
+        TouchPoint.ID     = (*pBuffer)   & 0xF0;  // Extract the touch point ID
+        TouchPoint.yHigh  = (*pBuffer++) & 0x0F;  // Get the upper 4 bits of the y position
+        TouchPoint.yLow   =  *pBuffer++;          // and the lower 8 bits
+        //
+        // Increment buffer twice since we have two dummy bytes
+        //
+        pBuffer++;
+        pBuffer++;
+        //
+        // Calculate coordinate values
+        //
+        xCoord = ((TouchPoint.xHigh & 0x0F) << 8 | TouchPoint.xLow);
+        yCoord = ((TouchPoint.yHigh & 0x0F) << 8 | TouchPoint.yLow);
+        //
+        // Add 1 to ID because TC counts from 0 and emWin can't handle an ID with 0
+        //
+        aPointData[i].Id   = TouchPoint.ID + 1;
+        aPointData[i].xPos = xCoord;
+        aPointData[i].yPos = yCoord;
+      }
+    }
+    // Independent of NumPoints check if UP-inputs need to be generated
+    //
+    //
+    pInput    = aInput;
+    NumInputs = 0;
+    _CreateUpInputs(aPointData, NumPoints, &pInput, &NumInputs);
+    //
+    // Create MOVE- and DOWN-inputs only for current points
+    //
+    if (NumPoints) {
+      _CreateMoveAndDownInputs(aPointData, NumPoints, pInput);
+      NumInputs += NumPoints;
+    }
+    //
+    // If any input exists, store an event into emWin buffer
+    //
+    if (NumInputs) {
+      Event.LayerIndex = _LayerIndex;
+      Event.NumPoints  = NumInputs;
+      GUI_MTOUCH_StoreEvent(&Event, aInput);
+    }
+    _Busy = 0;
+  }
+}
+
+#endif
 
 /*********************************************************************
 *
@@ -220,6 +480,14 @@ void PID_X_Init(void) {
   U32 Channel;
 
   //
+  // Reset touch ic
+  //
+  R_GPIO_PinDirectionSet(GPIO_PORT_0_PIN_7, GPIO_DIRECTION_OUTPUT);
+  R_GPIO_PinWrite(GPIO_PORT_0_PIN_7, GPIO_LEVEL_LOW);
+  R_BSP_SoftwareDelay(10, BSP_DELAY_MILLISECS);
+  R_GPIO_PinWrite(GPIO_PORT_0_PIN_7, GPIO_LEVEL_HIGH);
+  R_BSP_SoftwareDelay(300, BSP_DELAY_MILLISECS);
+  //
   // Sets IIC Information (Ch6)
   //
   _Info.ch_no        = 6;
@@ -233,6 +501,9 @@ void PID_X_Init(void) {
   // Create timer for executing touch
   //
   R_CMT_CreatePeriodic(50, _cbTimer, &Channel);
+#if (USE_MULTITOUCH == 1)
+  GUI_MTOUCH_Enable(1);
+#endif
 }
 
 /*********************************************************************
