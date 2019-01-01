@@ -26,8 +26,20 @@
             <version>3.21</version>
         </dependency>
         <dependency>
+            <module>r_dmaca_rx</module>
+            <version>1.05</version>
+        </dependency>
+        <dependency>
+            <module>r_drw2d_rx</module>
+            <version>1.02</version>
+        </dependency>
+        <dependency>
             <module>r_glcdc_rx</module>
             <version>1.00</version>
+        </dependency>
+        <dependency>
+            <module>r_gpio_rx</module>
+            <version>2.31</version>
         </dependency>
         <dependency>
             <module>r_sci_iic_rx</module>
@@ -44,10 +56,6 @@
             <libdir endian="big" path="rel">r_emwin_rx/lib/emWinLib.lib</libdir>
             <libdir endian="little" path="rel">r_emwin_rx/lib/emWinLib.lib</libdir>
         </library>
-        <section>
-            <address>0x00800000</address>
-            <name>B_GUI_WORK</name>
-        </section>
     </package>
 
 </refinfo>
