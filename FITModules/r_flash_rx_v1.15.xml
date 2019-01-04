@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<refinfo>
+
+	<!-- multiple versions permitted -->
+	<toolchain>
+		<brand>Renesas</brand>
+		<product>RXC</product>
+        <version>2.07.00</version>	
+	</toolchain>
+    
+
+	<!-- only one target entry allowed; multiple sub tags permitted -->
+	<target>
+		<family>RX</family>
+		<series>RX100</series>
+        <series>RX600</series>
+        <series>RX700</series>
+        <series>RX200</series>
+        <group>RX110</group>
+        <group>RX111</group>
+        <group>RX113</group>
+		<group>RX130</group>
+        <group>RX210</group>
+        <group>RX21A</group>
+        <group>RX220</group>
+        <group>RX230</group>
+        <group>RX231</group>
+		<group>RX23T</group>
+		<group>RX24T</group>
+        <group>RX24U</group>
+        <group>RX610</group>
+        <group>RX62G</group>
+        <group>RX62N</group>
+        <group>RX62T</group>
+        <group>RX630</group>
+        <group>RX631</group>
+        <group>RX63N</group>
+        <group>RX63T</group>            
+        <group>RX64M</group>
+        <group>RX651</group>
+        <group>RX65N</group>
+        <group>RX71M</group>
+        <board>RSKRX210</board>
+        <board>RSKRX210B</board>
+        <board>HSBRX21AP</board>
+        <board>RSKRX220</board>
+        <board>RSKRX231</board>
+		<board>RSKRX23T</board>
+		<board>RSKRX24T</board>
+        <board>RSKRX24U</board>
+        <board>RSKRX610</board>
+        <board>RSKRX62G</board>
+        <board>RDKRX62N</board>            
+        <board>RSKRX62N</board>
+        <board>RSKRX62T</board>
+        <board>RSKRX630</board>
+        <board>RDKRX63N</board>
+        <board>RSKRX63N</board>
+        <board>RSKRX63T_64PIN</board>
+        <board>RSKRX63T_144PIN</board> 		
+        <board>RSKRX64M</board>
+        <board>RSKRX71M</board>
+        <board>RSKRX110</board>
+        <board>RSKRX111</board>
+        <board>RSKRX113</board>		
+		<board>RSKRX130</board>	
+        <board>RSKRX65N</board>
+        <board>RSKRX65N-2MB</board>
+  	</target>
+
+
+	<!-- only one package entry allowed -->
+	<!-- multiple dependencies, functions, and incdirs permitted -->
+
+	<package>
+		<type>fitmodule</type>
+		<name>r_flash_rx</name>
+		<version>3.30</version>
+        <dependency>
+		        <module>r_bsp</module>
+		        <version>3.60</version>
+        </dependency>
+		<zipsource>r_flash_rx_v3.30.zip</zipsource>
+		<application>Non-Volatile Storage</application>
+        <function>Flash</function>
+        <function>Data Flash</function>
+		<desc>Flash API for RX100, RX200, RX600. and RX700.</desc>
+		<details>This module allows the user to program, erase, write and blankcheck the Code and/or Data flash.</details>
+		<incdir>r_config</incdir>
+		<incdir>r_flash_rx</incdir>
+        <incdir>r_flash_rx/src</incdir>
+        <incdir>r_flash_rx/src/flash_type_1</incdir>	
+		<incdir>r_flash_rx/src/flash_type_2</incdir>	
+        <incdir>r_flash_rx/src/flash_type_3</incdir>	
+        <incdir>r_flash_rx/src/flash_type_4</incdir>
+        <incdir>r_flash_rx/src/targets</incdir>
+	</package>
+</refinfo>

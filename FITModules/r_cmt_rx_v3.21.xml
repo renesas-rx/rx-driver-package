@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<refinfo>
+
+    <!-- multiple versions permitted -->
+    <toolchain>
+        <brand>Renesas</brand>
+        <product>RXC</product>
+        <version>2.02.00</version>
+        <version>2.03.00</version>
+        <version>2.04.00</version>
+        <version>2.04.01</version>
+        <version>2.05.00</version>
+        <version>2.06.00</version>
+        <version>2.07.00</version>
+    </toolchain>
+
+    <!-- only one target entry allowed; multiple sub tags permitted -->
+    <target>
+        <family>RX</family>
+        <series>RX100</series>
+        <series>RX200</series>
+        <series>RX600</series>
+        <series>RX700</series>
+        <group>RX110</group>
+        <group>RX111</group>
+        <group>RX113</group>
+        <group>RX130</group>
+        <group>RX210</group>
+        <group>RX230</group>
+        <group>RX231</group>
+        <group>RX23T</group>
+        <group>RX24T</group>
+        <group>RX24U</group>
+        <group>RX62N</group>
+        <group>RX62T</group>
+        <group>RX630</group>
+        <group>RX631</group>
+        <group>RX63N</group>
+        <group>RX64M</group>
+        <group>RX65N</group>
+        <group>RX71M</group>
+        <board>RDKRX62N</board>
+        <board>RDKRX631</board>
+        <board>RDKRX63N</board>
+        <board>RPBRX111</board>
+        <board>RSKRX110</board>
+        <board>RSKRX111</board>
+        <board>RSKRX113</board>
+        <board>RSKRX130</board>
+        <board>RSKRX130_512KB</board>
+        <board>RSKRX210</board>
+        <board>RSKRX230</board>
+        <board>RSKRX231</board>
+        <board>RSKRX23T</board>
+        <board>RSKRX24T</board>
+        <board>RSKRX24U</board>
+        <board>RSKRX62N</board>
+        <board>RSKRX62T</board>
+        <board>RSKRX630</board>
+        <board>RSKRX631</board>
+        <board>RSKRX63N</board>
+        <board>RSKRX64M</board>
+        <board>RSKRX65N</board>
+        <board>RSKRX65N_2MB</board>
+        <board>RSKRX71M</board>
+        <board>RSSKRX23T</board>
+    </target>
+
+    <!-- only one package entry allowed -->
+    <!-- multiple dependencies, applications, functions, and incdirs permitted -->
+    <package>
+        <type>fitmodule</type>
+        <name>r_cmt_rx</name>
+        <version>3.21</version>
+        <zipsource>r_cmt_rx_v3.21.zip</zipsource>
+        <dependency>
+            <module>r_bsp</module>
+            <version>2.90</version>
+            <version>3.00</version>
+            <version>3.01</version>
+            <version>3.10</version>
+            <version>3.20</version>
+            <version>3.30</version>
+            <version>3.40</version>
+            <version>3.50</version>
+            <version>3.60</version>
+        </dependency>
+        <application>Timer</application>
+        <desc>Simple CMT driver for creating timer tick.</desc>
+        <details>This module creates a timer tick using a CMT channel based on a frequency input by the user.</details>
+        <function>Timer</function>
+        <incdir>r_config</incdir>
+        <incdir>r_cmt_rx</incdir>
+        <incdir>r_cmt_rx/src</incdir>
+    </package>
+
+</refinfo>
