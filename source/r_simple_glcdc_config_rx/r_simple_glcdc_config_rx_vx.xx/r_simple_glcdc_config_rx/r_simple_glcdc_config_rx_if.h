@@ -72,8 +72,8 @@
 #define _BRIGHTNESS 0x200
 #define _CONTRAST   0x80
 
-void R_GLCDC_CONFIG_Open(void);
-void R_GLCDC_CONFIG_Close(void);
+void R_SIMPLE_GLCDC_CONFIG_Open(void);
+void R_SIMPLE_GLCDC_CONFIG_Close(void);
 uint8_t * lcd_get_frame_buffer_pointer(void);
 
 static void _VSYNC_ISR(void * p);

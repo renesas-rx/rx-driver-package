@@ -37,7 +37,7 @@
 uint8_t frame_buffer[XSIZE_PHYS * YSIZE_PHYS * BITS_PER_PIXEL / 8];
 #pragma section
 
-void R_GLCDC_CONFIG_Open(void)
+void R_SIMPLE_GLCDC_CONFIG_Open(void)
 {
 	  glcdc_cfg_t glcdc_cfg;
 	  glcdc_err_t ret;
@@ -188,7 +188,7 @@ void R_GLCDC_CONFIG_Open(void)
 	  _DisplayOnOff(1);
 }
 
-void R_GLCDC_CONFIG_Close(void)
+void R_SIMPLE_GLCDC_CONFIG_Close(void)
 {
 	_DisplayOnOff(0);
 }
