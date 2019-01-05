@@ -21,10 +21,12 @@
 * Description  : Configuration options for the r_t4_dns_client_rx module.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
-* History : DD.MM.YYYY Version Description
-*         : 09.05.2014 1.01    First Release
+* History : DD.MM.YYYY Version  Description
+*         : 04.04.2011 1.00    First Release
+*         : 09.05.2014 1.01    Corresponded to FIT Modules
 *         : 01.07.2014 1.02    Clean up source code
 *         : 01.04.2016 1.03    XML file update
+*         : 01.03.2017 1.04    Change API function name
 ***********************************************************************************************************************/
 #ifndef R_T4_DNS_CLIENT_RX_CONFIG_H
 #define R_T4_DNS_CLIENT_RX_CONFIG_H
@@ -32,13 +34,10 @@
 /***********************************************************************************************************************
 Configuration Options
 ***********************************************************************************************************************/
-#define DNS_IP_ADDR_1  172,30,11,5     /* DNS server IP address (primary) */
-#define DNS_IP_ADDR_2  10,29,72,33     /* DNS server IP address (secondary)  */
+#define DNS_CFG_TIMEOUT   5       /* DNS timeout 50msec(5 * 10ms) */
+#define DNS_CFG_NAME_SIZE   256       /* DNS limit of name */
 
-#define DNS_TIMEOUT   5       /* DNS timeout 50msec(5 * 10ms) */
-#define NAME_SIZE   256       /* DNS limit of name */
-
-#define DNS_UDP_CEP_ID  1       /* UDP communication end point ID for DNS in file config_tcpudp.c */
+#define DNS_CFG_UDP_CEP_ID  1       /* UDP communication end point ID for DNS in file config_tcpudp.c */
 #endif /* R_T4_DNS_CLIENT_RX_CONFIG_H */
 
 

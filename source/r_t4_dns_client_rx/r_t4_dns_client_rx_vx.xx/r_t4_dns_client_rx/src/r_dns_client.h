@@ -22,8 +22,12 @@
 * Description  :
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
-* History : DD.MM.YYYY Version Description
+* History : DD.MM.YYYY Version  Description
+*         : 04.04.2011 1.00    First Release
 *         : 09.05.2014 1.01    Corresponded to FIT Modules
+*         : 01.07.2014 1.02    Clean up source code
+*         : 01.04.2016 1.03    XML file update
+*         : 01.03.2017 1.04    Change API function name
 ***********************************************************************************************************************/
 #ifndef R_DNS_CLIENT_H
 #define R_DNS_CLIENT_H
@@ -31,12 +35,18 @@
 /***********************************************************************************************************************
 Macro definitions
 ***********************************************************************************************************************/
-#define QUERY_TYPE_A       0x01
-#define QUERY_TYPE_CNAME   0x05
-#define QUERY_TYPE_UNKNOWN 0xff
+#define DNS_QUERY_TYPE_A       (0x01)
+#define DNS_QUERY_TYPE_CNAME   (0x05)
+#define DNS_QUERY_TYPE_UNKNOWN (0xff)
 
-#define DNS_ERROR_COUNT  3
-#define DNS_BUFFER_COUNT 1
+#define DNS_ERROR_COUNT  (3)
+#define DNS_BUFFER_COUNT (1)
+#define DNS_CANCEL_TIMEOUT_MS (100)
+#ifdef _UNIT_TEST_DNS
+#define DNS_CLIENT_STATIC
+#else
+#define DNS_CLIENT_STATIC static
+#endif
 
 /***********************************************************************************************************************
 Typedef definitions
@@ -51,7 +61,7 @@ typedef struct DNS_HEADER_STRUCTURE
     uint16_t NSCOUNT;
     uint16_t ARCOUNT;
 
-}DNS_HEADER;
+}dns_header_t;
 
 typedef struct DNS_QUESTION_STRUCTURE
 {
@@ -60,7 +70,7 @@ typedef struct DNS_QUESTION_STRUCTURE
     uint16_t QTYPE;
     uint16_t QCLASS;
 
-}DNS_QUESTION;
+}dns_question_t;
 
 typedef struct DNS_RESOUCE_RECORD_STRUCTURE
 {
@@ -72,60 +82,72 @@ typedef struct DNS_RESOUCE_RECORD_STRUCTURE
     uint16_t RDLENGTH;
     char     *RDATA;
 
-}DNS_RESOUCE_RECORD;
+}dns_resouce_record_t;
 
 typedef struct DNS_REQUEST_PACKET_STRUCTURE
 {
 
-    DNS_HEADER         header;
-    DNS_QUESTION       question;
-    DNS_RESOUCE_RECORD resouce_record;
+    dns_header_t         header;
+    dns_question_t       question;
+    dns_resouce_record_t resouce_record;
 
-}DNS_PACKET;
+}dns_packet_t;
+
+typedef struct _dns_address_table
+{
+    uint32_t dnsaddr1;         /* DNS server IP address     */
+    uint32_t dnsaddr2;         /* DNS server IP address sub */
+}dns_address_t;
 
 typedef enum
 {
-    DNS_PROC_UNRECEIVED_REQUEST,        /* A.unreceived request                  */
-    DNS_PROC_INIT,                      /* B.initial                             */
+    DNS_PROC_REST = 0,                  /* A.resting DNS client                  */
+    DNS_PROC_UNRECEIVED_REQUEST,        /* B.unreceived request                  */
     DNS_PROC_START_SENDING,             /* C.start sending                       */
     DNS_PROC_SENDING_REQUEST_WAIT,      /* D.wait to complete sending request    */
-    DNS_PROC_RECEIVEING_REQUEST_WAIT,   /* E.wait to complete receiveing request */
+    DNS_PROC_RECEIVING_REQUEST_WAIT,    /* E.wait to complete receiving request  */
     DNS_PROC_FINISH,                    /* F.finish                              */
     DNS_PROC_CANCELLING,                /* G.cancelling                          */
     DNS_PROC_CANCELLING_WAIT,           /* H.wait to complete cancelling         */
     DNS_PROC_CANCELLED,                 /* I.cancelled                           */
-    DNS_PROC_NUM                        /* the number of proccess                */
-} DNS_PROC;
+    DNS_PROC_NUM                        /* the number of process                 */ 
+} dns_proc_t;
 
 typedef enum
 {
-    DNS_EVENT_RECEIVED_REQUEST,           /* 1.received request             */
-    DNS_EVENT_PERIODIC,                   /* 2.periodic                     */
-    DNS_EVENT_CALLBACK_SEND,              /* 3.complete sending callback    */
-    DNS_EVENT_CALLBACK_RECEIVE,           /* 4.complete receiving callback  */
-    DNS_EVENT_CALLBACK_CANCEL,            /* 5.complete canceling callback  */
-    DNS_EVENT_CALLBACK_SEND_ARP_TIMEOUT,  /* 6.send ARP timeout callback    */
+    DNS_EVENT_CALL_OPEN_FUNCTION,         /* 1.called open function         */
+    DNS_EVENT_RECEIVED_REQUEST,           /* 2.received request             */
+    DNS_EVENT_PERIODIC,                   /* 3.periodic                     */
+    DNS_EVENT_CALLBACK_SEND,              /* 4.complete sending callback    */
+    DNS_EVENT_CALLBACK_RECEIVE,           /* 5.complete receiving callback  */
+    DNS_EVENT_CALLBACK_CANCEL,            /* 6.complete canceling callback  */
+    DNS_EVENT_CALLBACK_SEND_ARP_TIMEOUT,  /* 7.send ARP timeout callback    */
+    DNS_EVENT_CALL_CLOSE_FUNCTION,        /* 8.called close function        */
     DNS_EVENT_NUM                         /* the number of event            */
-} DNS_EVENT;
+} dns_event_t;
 
 typedef enum
 {
     DNS_SELECT_PRIMARY,        /* select primary DNS server          */
     DNS_SELECT_SECONDARY,      /* select secondary DNS server        */
     DNS_SELECT_NUM             /* the number of selecting DNS server */
-} DNS_SELECT;
+} dns_select_t;
+
 
 typedef struct
 {
-    DNS_PROC     proc;              /* state of DNS process           */
-    DNS_SELECT   dns_select;        /* selected DNS server            */
-    DNS_CB_FUNC  cb_func;           /* callback function              */
-    char         name[NAME_SIZE];   /* domain name                    */
-    uint32_t     retry_cnt;         /* retry counter                  */
-    ID           cepid;             /* the communication endpoint ID  */
-} DNS_MNG;
+    dns_proc_t     proc;                      /* state of DNS process           */
+    dns_select_t   dns_select;                /* selected DNS server            */
+    dns_select_t   dns_select_sub;            /* selected DNS server            */
+    DNS_CB_FUNC    cb_func;                   /* callback function              */
+    char           name[DNS_CFG_NAME_SIZE];   /* domain name                    */
+    uint32_t       retry_cnt;                 /* retry counter                  */
+    ID             cepid;                     /* the communication endpoint ID  */
+    uint32_t       dns_timer;                 /* timer for detect timeout       */
+    uint32_t       dns_error_type;            /* error type                     */
+} dns_mng_t;
 
-typedef int32_t (*DNS_PROC_FUNC)(void);
+typedef dns_err_t (*DNS_PROC_FUNC)(void);
 
 /***********************************************************************************************************************
 Exported global variables
@@ -134,19 +156,17 @@ Exported global variables
 /***********************************************************************************************************************
 Exported global functions (to be accessed by other files)
 ***********************************************************************************************************************/
-static int32_t send_dns_request(char *mame, uint32_t dstaddr);
-static int32_t receive_dns_response(NAME_TABLE *table);
-static int32_t convert_name_to_dns_query(char *query, char *name);
-static int32_t check_query(char *query);
-static int32_t check_answer(char *answer, char *dns_response, NAME_TABLE *table, uint8_t *query_type);
-static int32_t get_name_till_stringend(const char *string, const char *dns_response, NAME_TABLE *table);
-static void clear_table(NAME_TABLE *table);
-
+DNS_CLIENT_STATIC int32_t send_dns_request(char *mame, uint32_t dstaddr);
+DNS_CLIENT_STATIC int32_t receive_dns_response(name_table_t *table);
+DNS_CLIENT_STATIC int32_t convert_name_to_dns_query(char *query, char *name);
+DNS_CLIENT_STATIC int32_t check_query(char *query);
+DNS_CLIENT_STATIC int32_t check_answer(char *answer, char *dns_response, name_table_t *table, uint8_t *query_type);
+DNS_CLIENT_STATIC int32_t get_name_till_stringend(const char *string, const char *dns_response, name_table_t *table);
+DNS_CLIENT_STATIC void clear_table(name_table_t *table);
+DNS_CLIENT_STATIC uint16_t htons(uint16_t data);
+DNS_CLIENT_STATIC uint32_t htonl(uint32_t data);
+DNS_CLIENT_STATIC void dns_reset_timer(void);
+DNS_CLIENT_STATIC void  dns_timeout_timer(void);
 static uint32_t convert_array_to_long(uint8_t *ipaddr);
-static uint16_t htons(uint16_t data);
-static uint32_t htonl(uint32_t data);
-
-void  reset_timer(void);
-uint16_t get_timer(void);
 
 #endif /* R_DNS_CLIENT_H */

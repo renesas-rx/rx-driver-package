@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_t4_dns_client_rx
-VERSION = 		v1.03
+VERSION = 		v1.04
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules

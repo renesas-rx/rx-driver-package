@@ -5,12 +5,12 @@ r_t4_dns_client_rx
 
 Document Number
 ---------------
-R20AN0103JJ0103-RX-T4
-R20AN0103EJ0103-RX-T4
+R20AN0103JJ0104-RX-T4
+R20AN0103EJ0104-RX-T4
 
 Version
 -------
-v1.03
+v1.04
 
 Overview
 --------
@@ -54,12 +54,12 @@ None
 How to add to your project
 --------------------------
 Please refer to the Adding Firmware Integration Technology Modules to Projects.
-"r01an1723ju0111_rx.pdf/r01an1826jj0102_rx.pdf(R20AN0103JJ0103-RX-T4)"
-"r01an1723eu0111_rx.pdf/r01an1826ej0102_rx.pdf(R20AN0103EJ0103-RX-T4)".
+"r01an1723ju0111_rx.pdf/r01an1826jj0102_rx.pdf(R20AN0103JJ0104-RX-T4)"
+"r01an1723eu0111_rx.pdf/r01an1826ej0102_rx.pdf(R20AN0103EJ0104-RX-T4)".
 
 Toolchain(s) Used
 -----------------
-* Renesas RXC Toolchain v2.04.01
+* Renesas RXC Toolchain v2.05.00
 
 File Structure
 --------------
@@ -70,9 +70,9 @@ r_t4_dns_client_rx
 +---doc
 |   |
 |   +---ja
-|   |        r20an0103jj0103-rx-t4.pdf
+|   |        r20an0103jj0104-rx-t4.pdf
 |   +---en
-|            r20an0103ej0103-rx-t4.pdf
+|            r20an0103ej0104-rx-t4.pdf
 |
 +---ref
 |       r_t4_dns_client_rx_config_reference.h
