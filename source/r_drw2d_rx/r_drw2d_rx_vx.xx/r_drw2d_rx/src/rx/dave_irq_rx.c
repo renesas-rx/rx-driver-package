@@ -294,7 +294,7 @@ void drw_int_isr(void)
         }
     }
 }
-
+#if 0
 #pragma interrupt excep_icu_groupal1_isr(vect=113)
 /***********************************************************************
  * Function Name: excep_icu_groupal1_isr
@@ -313,7 +313,7 @@ static void excep_icu_groupal1_isr(void)
         drw_int_isr();
     }
 } /* End of function excep_icu_groupal1_isr() */
-
+#endif
 /***********************************************************************
  * Function Name: d1_ir_set
  * Description  : Write the IR register.
