@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer 
  *
- * Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2013(2019) Renesas Electronics Corporation. All rights reserved.
  **********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_riic_private.h
@@ -61,6 +61,10 @@
  *                               Deleted interrupt functions of RIIC3.
  *                               Deleted macro definition RIIC_TMOE.
  *         : 31.08.2017 2.20     Fixed the macro definition conversion processing of pin.
+ *         : 30.10.2017 2.30     Added RX66T support. 
+ *         : 15.10.2018 2.40     Added RX72T support.
+ *         : 20.06.2019 2.42     Added RX23W support.
+ *         : 30.07.2019 2.43     Added RX72M support.
  **********************************************************************************************************************/
 /* Guards against multiple inclusion */
 #ifndef RIIC_PRIVATE_H
@@ -84,6 +88,8 @@
         #include "./targets/rx64m/r_riic_rx64m_private.h"
     #elif defined(BSP_MCU_RX65N)
         #include "./targets/rx65n/r_riic_rx65n_private.h"
+    #elif defined(BSP_MCU_RX66T)
+        #include "./targets/rx66t/r_riic_rx66t_private.h"
     #elif defined(BSP_MCU_RX71M)
         #include "./targets/rx71m/r_riic_rx71m_private.h"
     #elif defined(BSP_MCU_RX231)
@@ -98,6 +104,12 @@
         #include "./targets/rx24t/r_riic_rx24t_private.h"
     #elif defined(BSP_MCU_RX24U)
         #include "./targets/rx24u/r_riic_rx24u_private.h"
+    #elif defined(BSP_MCU_RX72T)
+        #include "./targets/rx72t/r_riic_rx72t_private.h"
+    #elif defined(BSP_MCU_RX23W)
+        #include "./targets/rx23w/r_riic_rx23w_private.h"
+    #elif defined(BSP_MCU_RX72M)
+        #include "./targets/rx72m/r_riic_rx72m_private.h"
     #else
         #error "This MCU is not supported by the current r_riic_rx module."
     #endif
@@ -157,7 +169,7 @@
         #define RIIC_CH0_SCL0_GP (R_RIIC_CFG_RIIC0_SCL0_PORT - 0x30)
     #elif ((('A') <= R_RIIC_CFG_RIIC0_SCL0_PORT) && (('H') >= R_RIIC_CFG_RIIC0_SCL0_PORT))
         #define RIIC_CH0_SCL0_GP (R_RIIC_CFG_RIIC0_SCL0_PORT - 0x37)
-    #elif (('J') == R_RIIC_CFG_RIIC0_SCL0_PORT)
+    #elif ((('J') <= R_RIIC_CFG_RIIC0_SCL0_PORT) && (('K') >= R_RIIC_CFG_RIIC0_SCL0_PORT))
 /* PORTI does not exist in the PORT group. PORTJ register is placed at the position of PORTI register. */
         #define RIIC_CH0_SCL0_GP (R_RIIC_CFG_RIIC0_SCL0_PORT - 0x38)
     #else
@@ -173,7 +185,7 @@
         #define RIIC_CH0_SDA0_GP (R_RIIC_CFG_RIIC0_SDA0_PORT - 0x30)
     #elif ((('A') <= R_RIIC_CFG_RIIC0_SDA0_PORT) && (('H') >= R_RIIC_CFG_RIIC0_SDA0_PORT))
         #define RIIC_CH0_SDA0_GP (R_RIIC_CFG_RIIC0_SDA0_PORT - 0x37)
-    #elif (('J') == R_RIIC_CFG_RIIC0_SDA0_PORT)
+    #elif ((('J') <= R_RIIC_CFG_RIIC0_SDA0_PORT) && (('K') >= R_RIIC_CFG_RIIC0_SDA0_PORT))
 /* PORTI does not exist in the PORT group. PORTJ register is placed at the position of PORTI register. */
         #define RIIC_CH0_SDA0_GP (R_RIIC_CFG_RIIC0_SDA0_PORT - 0x38)
     #else
@@ -190,7 +202,7 @@
         #define RIIC_CH1_SCL1_GP (R_RIIC_CFG_RIIC1_SCL1_PORT - 0x30)
     #elif ((('A') <= R_RIIC_CFG_RIIC1_SCL1_PORT) && (('H') >= R_RIIC_CFG_RIIC1_SCL1_PORT))
         #define RIIC_CH1_SCL1_GP (R_RIIC_CFG_RIIC1_SCL1_PORT - 0x37)
-    #elif (('J') == R_RIIC_CFG_RIIC1_SCL1_PORT)
+    #elif ((('J') <= R_RIIC_CFG_RIIC1_SCL1_PORT) && (('K') >= R_RIIC_CFG_RIIC1_SCL1_PORT))
 /* PORTI does not exist in the PORT group. PORTJ register is placed at the position of PORTI register. */
         #define RIIC_CH1_SCL1_GP (R_RIIC_CFG_RIIC1_SCL1_PORT - 0x38)
     #else
@@ -206,7 +218,7 @@
         #define RIIC_CH1_SDA1_GP (R_RIIC_CFG_RIIC1_SDA1_PORT - 0x30)
     #elif ((('A') <= R_RIIC_CFG_RIIC1_SDA1_PORT) && (('H') >= R_RIIC_CFG_RIIC1_SDA1_PORT))
         #define RIIC_CH1_SDA1_GP (R_RIIC_CFG_RIIC1_SDA1_PORT - 0x37)
-    #elif (('J') == R_RIIC_CFG_RIIC1_SDA1_PORT)
+    #elif ((('J') <= R_RIIC_CFG_RIIC1_SDA1_PORT) && (('K') >= R_RIIC_CFG_RIIC1_SDA1_PORT))
 /* PORTI does not exist in the PORT group. PORTJ register is placed at the position of PORTI register. */
         #define RIIC_CH1_SDA1_GP (R_RIIC_CFG_RIIC1_SDA1_PORT - 0x38)
     #else
@@ -223,7 +235,7 @@
         #define RIIC_CH2_SCL2_GP (R_RIIC_CFG_RIIC2_SCL2_PORT - 0x30)
     #elif ((('A') <= R_RIIC_CFG_RIIC2_SCL2_PORT) && (('H') >= R_RIIC_CFG_RIIC2_SCL2_PORT))
         #define RIIC_CH2_SCL2_GP (R_RIIC_CFG_RIIC2_SCL2_PORT - 0x37)
-    #elif (('J') == R_RIIC_CFG_RIIC2_SCL2_PORT)
+    #elif ((('J') <= R_RIIC_CFG_RIIC2_SCL2_PORT) && (('K') >= R_RIIC_CFG_RIIC2_SCL2_PORT))
 /* PORTI does not exist in the PORT group. PORTJ register is placed at the position of PORTI register. */
         #define RIIC_CH2_SCL2_GP (R_RIIC_CFG_RIIC2_SCL2_PORT - 0x38)
     #else
@@ -239,7 +251,7 @@
         #define RIIC_CH2_SDA2_GP (R_RIIC_CFG_RIIC2_SDA2_PORT - 0x30)
     #elif ((('A') <= R_RIIC_CFG_RIIC2_SDA2_PORT) && (('H') >= R_RIIC_CFG_RIIC2_SDA2_PORT))
         #define RIIC_CH2_SDA2_GP (R_RIIC_CFG_RIIC2_SDA2_PORT - 0x37)
-    #elif (('J') == R_RIIC_CFG_RIIC2_SDA2_PORT)
+    #elif ((('J') <= R_RIIC_CFG_RIIC2_SDA2_PORT) && (('K') >= R_RIIC_CFG_RIIC2_SDA2_PORT))
 /* PORTI does not exist in the PORT group. PORTJ register is placed at the position of PORTI register. */
         #define RIIC_CH2_SDA2_GP (R_RIIC_CFG_RIIC2_SDA2_PORT - 0x38)
     #else

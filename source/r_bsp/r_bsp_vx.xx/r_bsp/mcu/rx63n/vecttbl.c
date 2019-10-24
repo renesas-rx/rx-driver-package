@@ -36,8 +36,8 @@
 *         : 24.06.2013 1.70     Code now uses functions from mcu_interrupts.c for exception callbacks. All interrupts
 *                               that map to NMI vector are now supported. Fixed bug in FPU flag clearing.
 *         : 27.07.2018 1.71     Deleted the static analysis tool comment.
-*         : xx.xx.xxxx 2.00     Deleted exception functions.
-*                               (Exception functions moved to the common file (interrupts.c).)
+*         : 28.02.2019 2.00     Deleted exception functions.
+*                               (Exception functions moved to the common file (r_bsp_interrupts.c).)
 *                               Added support for GNUC and ICCRX.
 ***********************************************************************************************************************/
 
@@ -59,28 +59,6 @@ Exported global functions (to be accessed by other files)
 ***********************************************************************************************************************/
 R_BSP_POR_FUNCTION(R_BSP_POWER_ON_RESET_FUNCTION);
 R_BSP_UB_POR_FUNCTION(R_BSP_UB_POWER_ON_RESET_FUNCTION);
-
-#ifdef BSP_MCU_EXCEP_SUPERVISOR_INST_ISR
-R_BSP_PRAGMA_INTERRUPT_FUNCTION(excep_supervisor_inst_isr)
-#endif
-#ifdef BSP_MCU_EXCEP_ACCESS_ISR
-R_BSP_PRAGMA_INTERRUPT_FUNCTION(excep_access_isr)
-#endif
-#ifdef BSP_MCU_EXCEP_UNDEFINED_INST_ISR
-R_BSP_PRAGMA_INTERRUPT_FUNCTION(excep_undefined_inst_isr)
-#endif
-#ifdef BSP_MCU_EXCEP_FLOATING_POINT_ISR
-R_BSP_PRAGMA_INTERRUPT_FUNCTION(excep_floating_point_isr)
-#endif
-#ifdef BSP_MCU_NON_MASKABLE_ISR
-R_BSP_PRAGMA_INTERRUPT_FUNCTION(non_maskable_isr)
-#endif
-#ifdef BSP_MCU_UNDEFINED_INTERRUPT_SOURCE_ISR
-R_BSP_PRAGMA_INTERRUPT_DEFAULT(undefined_interrupt_source_isr)
-#endif
-#ifdef BSP_MCU_BUS_ERROR_ISR
-R_BSP_PRAGMA_INTERRUPT(bus_error_isr, VECT(BSC,BUSERR))
-#endif
 
 /***********************************************************************************************************************
 * The following array fills in the UB codes to get into User Boot Mode, the MDEB register, and the User Boot reset
@@ -146,42 +124,10 @@ R_BSP_ATTRIB_SECTION_CHANGE_FIXEDVECT void * const Fixed_Vectors[] =
 {
     /* The Endian select register S (MDES), Option function select register 1 (OFS1), and Option function select 
        register 0 (OFS0) are located in User ROM. */
-    
-    /* 0xFFFFFF80 - 0xFFFFFF83 : MDES register
-       0xFFFFFF84 - 0xFFFFFF87 : Reserved space (0xFF's)
-       0xFFFFFF88 - 0xFFFFFF8B : OFS1 register
-       0xFFFFFF8C - 0xFFFFFF8F : OFS0 register */
-
-    (void *)MDE_VALUE,      //Endian
-    (void *)0xFFFFFFFF,     //Reserved space
-    /* Configure whether voltage detection 0 circuit and HOCO are enabled after reset. 
-       OFS1 - Option Function Select Register 1 
-       b31:b9 Reserved (set to 1)
-       b8     HOCOEN - Enable/disable HOCO oscillation after a reset (0=enable, 1=disable)
-       b7:b3  Reserved (set to 1)
-       b2     LVDAS - Choose to enable/disable Voltage Detection 0 Circuit after a reset (0=enable, 1=disable)
-       b1:b0  Reserved (set to 1) */
-    (void *)BSP_CFG_OFS1_REG_VALUE,     //Defined in r_bsp_config.h
-    /* Configure WDT and IWDT settings. 
-       OFS0 - Option Function Select Register 0 
-       b31:b29 Reserved (set to 1)
-       b28     WDTRSTIRQS - WDT Reset Interrupt Request - What to do on underflow (0=take interrupt, 1=reset MCU)
-       b27:b26 WDTRPSS - WDT Window Start Position Select - (0=25%, 1=50%, 2=75%, 3=100%,don't use)
-       b25:b24 WDTRPES - WDT Window End Position Select - (0=75%, 1=50%, 2=25%, 3=0%,don't use)
-       b23:b20 WDTCKS - WDT Clock Frequency Division Ratio - (1=/4, 4=/64, 0xF=/128, 6=/512, 7=/2048, 8=/8192)
-       b19:b18 WDTTOPS - WDT Timeout Period Select - (0=1024 cycles, 1=4096, 2=8192, 3=16384)
-       b17     WDTSTRT - WDT Start Mode Select - (0=auto-start after reset, halt after reset)
-       b16:b15 Reserved (set to 1)
-       b14     IWDTSLCSTP - IWDT Sleep Mode Count Stop Control - (0=can't stop count, 1=stop w/some low power modes)
-       b13     Reserved (set to 1)
-       b12     IWDTRSTIRQS - IWDT Reset Interrupt Request - What to do on underflow (0=take interrupt, 1=reset MCU)
-       b11:b10 IWDTRPSS - IWDT Window Start Position Select - (0=25%, 1=50%, 2=75%, 3=100%,don't use)
-       b9:b8   IWDTRPES - IWDT Window End Position Select - (0=75%, 1=50%, 2=25%, 3=0%,don't use)
-       b7:b4   IWDTCKS - IWDT Clock Frequency Division Ratio - (0=none, 2=/16, 3 = /32, 4=/64, 0xF=/128, 5=/256)
-       b3:b2   IWDTTOPS - IWDT Timeout Period Select - (0=1024 cycles, 1=4096, 2=8192, 3=16384)
-       b1      IWDTSTRT - IWDT Start Mode Select - (0=auto-start after reset, halt after reset)
-       b0      Reserved (set to 1) */
-    (void *)BSP_CFG_OFS0_REG_VALUE,
+    (void *)MDE_VALUE,                /* 0xFFFFFF80 - MDES */
+    (void *)0xFFFFFFFF,               /* 0xFFFFFF84 - Reserved */
+    (void *)BSP_CFG_OFS1_REG_VALUE,   /* 0xFFFFFF88 - OFS1 */
+    (void *)BSP_CFG_OFS0_REG_VALUE,   /* 0xFFFFFF8C - OFS0 */
 
     /* 0xffffff90 through 0xffffff9f: Reserved area - must be all 0xFF */
     (void *)0xFFFFFFFF,   /* 0xffffff90 - Reserved */
@@ -199,7 +145,7 @@ R_BSP_ATTRIB_SECTION_CHANGE_FIXEDVECT void * const Fixed_Vectors[] =
        protection. Setting the four long words below to non-0xFF values will enable protection.  Do this only after 
        carefully review the HW manual */
    
-    /* 0xffffffA0 through 0xffffffaf: ID Code Protection. The ID code is specified using macros in r_bsp_config.h.  */
+    /* 0xffffffA0 through 0xffffffaf: ID Code Protection. The ID code is specified using macros in r_bsp_config.h. */
     (void *) BSP_CFG_ID_CODE_LONG_1,  /* 0xffffffA0 - Control code and ID code */
     (void *) BSP_CFG_ID_CODE_LONG_2,  /* 0xffffffA4 - ID code (cont.) */
     (void *) BSP_CFG_ID_CODE_LONG_3,  /* 0xffffffA8 - ID code (cont.) */

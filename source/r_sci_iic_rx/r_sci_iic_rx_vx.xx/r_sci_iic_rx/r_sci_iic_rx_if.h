@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer 
  *
- * Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2013(2019) Renesas Electronics Corporation. All rights reserved.
  **********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_sci_iic_rx_if.h
@@ -34,23 +34,26 @@
  *         : 04.03.2016 1.90     RX24T support added.Changed about the pin definisions.
  *         : 01.10.2016 2.00     Updated version to 2.00 for RX65N release
  *         : 31.08.2017 2.20     Changed minor version to '20' for RX24U, RX130-512KB, and RX65N-2MB support.
+ *         : 22.10.2017 2.30     Changed minor version to '30' for RX66T support.
+ *         : 03.12.2018 2.31     Changed minor version to '31' for update of xml file.
+ *         : 21.09.2018 2.40     Changed minor version to '40' for RX72T support.
+ *         : 20.05.2019 2.41     Added support for GNUC and ICCRX.
+ *                               Fixed coding style.
+ *         : 20.06.2019 2.42     Changed minor version to '42' for RX23W support.
+ *         : 30.07.2019 2.43     Changed minor version to '43' for RX72M support.
  **********************************************************************************************************************/
 /* Guards against multiple inclusion */
 #ifndef SCI_IIC_IF_H
     #define SCI_IIC_IF_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-    R_BSP_PRAGMA_UNPACK
+R_BSP_PRAGMA_UNPACK
 
 /***********************************************************************************************************************
  Macro definitions
  **********************************************************************************************************************/
 /* Version Number of API. */
     #define SCI_IIC_VERSION_MAJOR  (2)
-    #define SCI_IIC_VERSION_MINOR  (20)
+    #define SCI_IIC_VERSION_MINOR  (43)
 
 /*----------------------------------------------------------------------------*/
 /*   Define return values and values of channel state flag.                   */
@@ -98,19 +101,19 @@ typedef void (*sci_iic_callback) (void); /* Callback function type */
 
 /*----- Structure type. -----*/
 /* SCI_IIC Information structure. */
-typedef R_BSP_ATTRIB_STRUCT_BIT_ORDER_LEFT_10
-(
-    uint8_t                 rsv2, /* reserved */
-    uint8_t                 rsv1, /* reserved */
-    sci_iic_ch_dev_status_t dev_sts, /* Device status flag */
-    uint8_t                 ch_no, /* Channel No. */
-    sci_iic_callback        callbackfunc, /* Callback function */
-    uint32_t                cnt2nd, /* 2nd Data Counter */
-    uint32_t                cnt1st, /* 1st Data Counter */
-    uint8_t               * p_data2nd, /* Pointer for 2nd Data buffer */
-    uint8_t               * p_data1st, /* Pointer for 1st Data buffer */
-    uint8_t               * p_slv_adr  /* Pointer for Slave address buffer */
-) sci_iic_info_t;
+typedef struct
+{
+    uint8_t                 rsv2; /* reserved */
+    uint8_t                 rsv1; /* reserved */
+    sci_iic_ch_dev_status_t dev_sts; /* Device status flag */
+    uint8_t                 ch_no; /* Channel No. */
+    sci_iic_callback        callbackfunc; /* Callback function */
+    uint32_t                cnt2nd; /* 2nd Data Counter */
+    uint32_t                cnt1st; /* 1st Data Counter */
+    uint8_t               * p_data2nd; /* Pointer for 2nd Data buffer */
+    uint8_t               * p_data1st; /* Pointer for 1st Data buffer */
+    uint8_t               * p_slv_adr; /* Pointer for Slave address buffer */
+} sci_iic_info_t;
 
 /*----------------------------------------------------------------------------*/
 /*   Define sci_iic status structure type.                                    */
@@ -125,7 +128,7 @@ typedef union
         uint32_t SDAI :1, /* SSDA Pin Level */
         uint32_t NACK :1, /* NACK detection flag */
         uint32_t TRS :1, /* Send mode / Receive mode flag */
-        uint32_t BSY :1  /* Bus status flag */
+        uint32_t BSY :1 /* Bus status flag */
     ) BIT;
 } sci_iic_mcu_status_t;
 
@@ -146,11 +149,7 @@ sci_iic_return_t R_SCI_IIC_Control (sci_iic_info_t * p_sci_iic_info, sci_iic_ctr
 sci_iic_return_t R_SCI_IIC_Close (sci_iic_info_t * p_sci_iic_info);
 uint32_t R_SCI_IIC_GetVersion (void);
 
-    R_BSP_PRAGMA_PACKOPTION
-
-#ifdef __cplusplus
-}
-#endif
+R_BSP_PRAGMA_PACKOPTION
 
 #endif /* SCI_IIC_IF_H */
 

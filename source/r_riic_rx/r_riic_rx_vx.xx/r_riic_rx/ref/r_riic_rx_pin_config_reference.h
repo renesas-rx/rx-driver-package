@@ -24,6 +24,7 @@
  * History : DD.MM.YYYY Version  Description
  *         : 04.03.2016 1.90     First Release
  *         : 02.06.2017 2.10     Deleted RIIC port definitions of RIIC3.
+ *         : 30.10.2017 2.30     Port K is added.
  **********************************************************************************************************************/
 /* Guards against multiple inclusion */
 #ifndef RIIC_PIN_CONFIG_H
@@ -38,9 +39,9 @@
 /* If you want to include the port configuration process(RIIC_CFG_PORT_SET_PROCESSING is "1"),  */
 /* please choose which ports to use for the SCL/SDA of RIIC with the following setting.         */
 /* Select the port group and pin used by setting
- "R_RIIC_CFG_RIICx_SCLx_PORT (select from port group 0 to J)"
+ "R_RIIC_CFG_RIICx_SCLx_PORT (select from port group 0 to K)"
  and "R_RIIC_CFG_RIICx_SCLx_BIT (select from pin number 0 to 7)"
- and "R_RIIC_CFG_RIICx_SDAx_PORT (select from port group 0 to J)"
+ and "R_RIIC_CFG_RIICx_SDAx_PORT (select from port group 0 to K)"
  and "R_RIIC_CFG_RIICx_SDAx_BIT (select from pin number 0 to 7)",
  respectively. */
 

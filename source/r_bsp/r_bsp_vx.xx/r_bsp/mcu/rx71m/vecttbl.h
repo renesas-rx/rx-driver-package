@@ -12,13 +12,12 @@
 * Renesas reserves the right, without notice, to make changes to this software and to discontinue the availability of 
 * this software. By using this software, you agree to the additional terms and conditions found by accessing the 
 * following link:
-* http://www.renesas.com/disclaimer 
+* http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.    
+* Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * File Name    : vecttbl.h
-* Device(s)    : RX63x
 * Description  : Has function prototypes for exception callback functions.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
@@ -26,10 +25,8 @@
 *         : 16.07.2012 1.00     First Release.
 *         : 19.11.2012 1.10     Updated code to use 'BSP_' and 'BSP_CFG_' prefix for macros.
 *         : 21.06.2013 1.20     Removed prototypes for static callbacks since dynamic callbacks are now used.
+*         : 28.02.2019 1.21     Fixed coding style.
 ***********************************************************************************************************************/
-
-#ifndef VECTTBL_HEADER_INC
-#define VECTTBL_HEADER_INC
 
 /***********************************************************************************************************************
 Includes   <System Includes> , "Project Includes"
@@ -38,6 +35,9 @@ Includes   <System Includes> , "Project Includes"
 /***********************************************************************************************************************
 Macro definitions
 ***********************************************************************************************************************/
+/* Multiple inclusion prevention macro */
+#ifndef VECTTBL_HEADER_INC
+#define VECTTBL_HEADER_INC
 
 /***********************************************************************************************************************
 Typedef definitions
@@ -48,3 +48,4 @@ Exported global functions (to be accessed by other files)
 ***********************************************************************************************************************/
 
 #endif /* VECTTBL_HEADER_INC */
+

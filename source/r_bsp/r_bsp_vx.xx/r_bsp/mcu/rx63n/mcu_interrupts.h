@@ -23,10 +23,10 @@
 /**********************************************************************************************************************
 * History : DD.MM.YYYY Version  Description
 *         : 25.06.2013 1.00     First Release
-*         : xx.xx.xxxx 2.00     Added the following prototype declaration.
+*         : 28.02.2019 2.00     Added the following prototype declaration.
 *                                - bsp_interrupt_enable_disable
 *                               Deleted the following prototype declarations. 
-*                               (The following prototype declarations moved to the common file (interrupts.h).)
+*                               (The following prototype declarations moved to the common file (r_bsp_interrupts.h).)
 *                                - bsp_interrupt_open
 *                                - R_BSP_InterruptWrite
 *                                - R_BSP_InterruptRead

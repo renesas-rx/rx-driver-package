@@ -12,9 +12,9 @@
 * Renesas reserves the right, without notice, to make changes to this software and to discontinue the availability of 
 * this software. By using this software, you agree to the additional terms and conditions found by accessing the 
 * following link:
-* http://www.renesas.com/disclaimer 
+* http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.    
+* Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * File Name    : r_bsp.h
@@ -32,21 +32,19 @@
 *         : 17.01.2013 1.50     Added #include for lowsrc.h.
 *         : 07.05.2013 1.60     Added #include for r_bsp_common.h, cpu.h, and mcu_init.h.
 *         : 19.06.2013 1.70     Moved C99 includes (stdint.h, stdbool.h, stddef.h) to r_bsp_common.h.
-*         : xx.xx.xxxx 2.00     Added the following include path.
+*         : 28.02.2019 2.00     Added the following include path.
 *                                - r_rx_compiler.h
 *                                - r_rtos.h
-*                                - interrupts.h
-*                                - mcu_startup.h
+*                                - r_bsp_interrupts.h
+*                                - r_bsp_mcu_startup.h
 *                                - mcu_clocks.h
 *                                - r_rx_intrinsic_functions.h
 *                               Modified the following include path.
 *                                - lowsrc.h
 *                                - vecttbl.h
 *                               Added support for GNUC and ICCRX.
+*                               Fixed coding style.
 ***********************************************************************************************************************/
-
-#ifndef BSP_BOARD_RSKRX63N
-#define BSP_BOARD_RSKRX63N
 
 /* Make sure that no other platforms have already been defined. Do not touch this! */
 #ifdef  PLATFORM_DEFINED
@@ -67,8 +65,9 @@ INCLUDE APPROPRIATE MCU AND BOARD FILES
 
 #include    "r_bsp_config.h"
 
+#include    "mcu/all/lowlvl.h"
 #include    "mcu/all/lowsrc.h"
-#include    "mcu/all/mcu_startup.h"
+#include    "mcu/all/r_bsp_mcu_startup.h"
 
 #if defined(__CCRX__)
 #include    "mcu/rx63n/register_access/ccrx/iodefine.h"
@@ -77,8 +76,8 @@ INCLUDE APPROPRIATE MCU AND BOARD FILES
 #elif defined(__ICCRX__)
 #include    "mcu/rx63n/register_access/iccrx/iodefine.h"
 #endif /* defined(__CCRX__), defined(__GNUC__), defined(__ICCRX__) */
-#include    "mcu/rx63n/cpu.h"
-#include    "mcu/rx63n/locking.h"
+#include    "mcu/rx63n/r_bsp_cpu.h"
+#include    "mcu/rx63n/r_bsp_locking.h"
 #include    "mcu/rx63n/mcu_clocks.h"
 #include    "mcu/rx63n/mcu_info.h"
 #include    "mcu/rx63n/mcu_init.h"
@@ -89,13 +88,16 @@ INCLUDE APPROPRIATE MCU AND BOARD FILES
 #include    "board/rskrx63n/hwsetup.h"
 #include    "board/rskrx63n/rskrx63n.h"
 
-#include    "mcu/all/interrupts.h"
+#include    "mcu/all/r_bsp_interrupts.h"
 #include    "mcu/all/r_rx_intrinsic_functions.h"
 #include    "mcu/all/r_rtos.h"
 
 #ifdef __cplusplus
 }
 #endif
+
+#ifndef BSP_BOARD_RSKRX63N
+#define BSP_BOARD_RSKRX63N
 
 #endif /* BSP_BOARD_RSKRX63N */
 

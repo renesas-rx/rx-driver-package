@@ -24,11 +24,11 @@ r_cmt_rx
 +---doc
 |   |
 |   +---en
-|   |   r01an1856ej{VERSION_NUMBER}-rx.pdf
+|   |   r01an1856ej{VERSION_NUMBER}-rx-timer.pdf
 |   |
 |   |
 |   +---ja
-|       r01an1856jj{VERSION_NUMBER}-rx.pdf
+|       r01an1856jj{VERSION_NUMBER}-rx-timer.pdf
 |
 +---ref
 |       r_cmt_rx_config_reference.h

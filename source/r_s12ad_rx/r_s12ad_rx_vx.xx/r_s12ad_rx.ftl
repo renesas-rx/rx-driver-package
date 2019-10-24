@@ -45,10 +45,60 @@ void ${Function_Name}()
         <#if pin.portNum != "4" && pin.portNum != "9" && pin.portNum != "H" && pin.portNum != "J" >
     PORT${pin.portNum}.PCR.BIT.B${pin.pinBitNum} = 0U;
         </#if>
+    <#elseif headerInfo.device?contains("R5F566T")>
+        <#if pin.portNum == "4">
+        <#if pin.pinBitNum != "0" && pin.pinBitNum != "1" && pin.pinBitNum != "2" && pin.pinBitNum != "4"  && pin.pinBitNum != "5"  && pin.pinBitNum != "6">
+    PORT${pin.portNum}.PCR.BIT.B${pin.pinBitNum} = 0U;
+            </#if>
+        <#elseif pin.portNum == "H">
+        <#if pin.pinBitNum != "0" && pin.pinBitNum != "4">
+    PORT${pin.portNum}.PCR.BIT.B${pin.pinBitNum} = 0U;
+                </#if>
+        <#else>
+    PORT${pin.portNum}.PCR.BIT.B${pin.pinBitNum} = 0U;
+        </#if>
+    <#elseif headerInfo.device?contains("R5F572T")>
+        <#if pin.portNum == "4">
+        <#if pin.pinBitNum != "0" && pin.pinBitNum != "1" && pin.pinBitNum != "2" && pin.pinBitNum != "4"  && pin.pinBitNum != "5"  && pin.pinBitNum != "6">
+    PORT${pin.portNum}.PCR.BIT.B${pin.pinBitNum} = 0U;
+            </#if>
+        <#elseif pin.portNum == "H">
+        <#if pin.pinBitNum != "0" && pin.pinBitNum != "4">
+    PORT${pin.portNum}.PCR.BIT.B${pin.pinBitNum} = 0U;
+                </#if>
+        <#else>
+    PORT${pin.portNum}.PCR.BIT.B${pin.pinBitNum} = 0U;
+        </#if>
     <#else>
     PORT${pin.portNum}.PCR.BIT.B${pin.pinBitNum} = 0U;
     </#if>
+    <#if headerInfo.device?contains("R5F566T")>
+        <#if pin.portNum == "4">
+        <#if pin.pinBitNum != "0" && pin.pinBitNum != "1" && pin.pinBitNum != "2" && pin.pinBitNum != "4"  && pin.pinBitNum != "5"  && pin.pinBitNum != "6">
     PORT${pin.portNum}.PDR.BIT.B${pin.pinBitNum} = 0U;
+            </#if>
+        <#elseif pin.portNum == "H">
+        <#if pin.pinBitNum != "0" && pin.pinBitNum != "4">
+    PORT${pin.portNum}.PDR.BIT.B${pin.pinBitNum} = 0U;
+                </#if>
+        <#else>
+    PORT${pin.portNum}.PDR.BIT.B${pin.pinBitNum} = 0U;
+        </#if>
+    <#elseif headerInfo.device?contains("R5F572T")>
+        <#if pin.portNum == "4">
+        <#if pin.pinBitNum != "0" && pin.pinBitNum != "1" && pin.pinBitNum != "2" && pin.pinBitNum != "4"  && pin.pinBitNum != "5"  && pin.pinBitNum != "6">
+    PORT${pin.portNum}.PDR.BIT.B${pin.pinBitNum} = 0U;
+            </#if>
+        <#elseif pin.portNum == "H">
+        <#if pin.pinBitNum != "0" && pin.pinBitNum != "4">
+    PORT${pin.portNum}.PDR.BIT.B${pin.pinBitNum} = 0U;
+                </#if>
+        <#else>
+    PORT${pin.portNum}.PDR.BIT.B${pin.pinBitNum} = 0U;
+        </#if>
+    <#else>
+    PORT${pin.portNum}.PDR.BIT.B${pin.pinBitNum} = 0U;
+    </#if>
     PORT${pin.portNum}.PMR.BIT.B${pin.pinBitNum} = 0U;
     MPC.${pin.assignedPinName}PFS.BYTE = 0x${pin.pinMPC}U;
     </#if>

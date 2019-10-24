@@ -12,9 +12,9 @@
 * Renesas reserves the right, without notice, to make changes to this software and to discontinue the availability of 
 * this software. By using this software, you agree to the additional terms and conditions found by accessing the 
 * following link:
-* http://www.renesas.com/disclaimer 
+* http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2014-2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) 2014 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /**********************************************************************************************************************
 * File Name    : r_s12ad_rx71m_if.h
@@ -25,6 +25,8 @@
 *           01.10.2016 2.20    Define name commoditize for the same meaning but different name define.
 *                              Delete parameter check by the enum value.
 *                              Comparison parameter change.(adjust the parameter structure to RX65N)
+*           03.09.2018 3.00    Added structures and enumerations related to temperature sensor.
+*           05.04.2019 4.00    Modified comment.
 ***********************************************************************************************************************/
 
 #ifndef S12AD_RX71M_IF_H
@@ -92,8 +94,8 @@ typedef enum e_adc_clear
 
 typedef enum e_adc_trig           // trigger sources (set to TRSA bit or TRSB bit)
 {
-    ADC_TRIG_ASYNC_ADTRG                 = 0,   // ext asynchronous trigger; not for Group modes
-                                                //  nor double trigger modes
+    ADC_TRIG_ASYNC_ADTRG                 = 0,   /* ext asynchronous trigger; not for Group modes
+                                                   nor double trigger modes */
     ADC_TRIG_SYNC_TRG0AN                 = 1,   // MTU0 TRGA
     ADC_TRIG_SYNC_TRG1AN                 = 2,   // MTU1 TRGA
     ADC_TRIG_SYNC_TRG2AN                 = 3,   // MTU2 TRGA
@@ -127,22 +129,37 @@ typedef enum e_adc_trig           // trigger sources (set to TRSA bit or TRSB bi
     ADC_TRIG_SYNC_TPUTRGAN               = 31,  // TPUx TRGA
     ADC_TRIG_SYNC_TPUTRG0AN              = 32,  // TPU0 TRGA
     ADC_TRIG_SYNC_ELC                    = 48,  // ELC
-    ADC_TRIG_SOFTWARE                    = 64,  // software trigger; not for Group modes
-                                                //  nor double trigger modes
+    ADC_TRIG_SOFTWARE                    = 64,  /* software trigger; not for Group modes
+                                                   nor double trigger modes */
     ADC_TRIG_NONE                        = 0x3F
 } adc_trig_t;
 
+typedef enum e_adc_temp
+{
+    ADC_TEMP_SENSOR_NOT_AD_CONVERTED = 0,   // Temperature sensor output is not A/D-converted.
+    ADC_TEMP_SENSOR_AD_CONVERTED,           /* Temperature sensor output is A/D-converted.
+                                               (Group A temperature sensor output is A/D-converted.) */
+    ADC_TEMP_SENSOR_AD_CONVERTED_GROUPB,    // Group B temperature sensor output is A/D-converted.
+} adc_temp_t;
+
+typedef enum e_adc_add_temp
+{
+    ADC_TEMP_SENSOR_ADD_OFF = 0,   // addition/average is turned off for temperature sensors
+    ADC_TEMP_SENSOR_ADD_ON         // addition/average is turned on for temperature sensors
+} adc_add_temp_t;
 
 typedef struct st_adc_cfg
 {
-    adc_res_t       resolution;     // 8, 10, or 12-bit
-    adc_align_t     alignment;      // ignored if addition used
-    adc_add_t       add_cnt;        // add or average samples
-    adc_clear_t     clearing;       // clear after read
-    adc_trig_t      trigger;        // default and Group A trigger source
-    adc_trig_t      trigger_groupb; // valid only for group modes
-    uint8_t         priority;       // for S12ADIO int; 1=lo 15=hi 0=off/polled
+    adc_res_t       resolution;      // 8, 10, or 12-bit
+    adc_align_t     alignment;       // ignored if addition used
+    adc_add_t       add_cnt;         // add or average samples
+    adc_clear_t     clearing;        // clear after read
+    adc_trig_t      trigger;         // default and Group A trigger source
+    adc_trig_t      trigger_groupb;  // valid only for group modes
+    uint8_t         priority;        // for S12ADIO int; 1=lo 15=hi 0=off/polled
     uint8_t         priority_groupb; // S12GBADI interrupt priority; 0-15
+    adc_temp_t      temp_sensor;     // temperature sensor output A/D conversion select
+    adc_add_temp_t  add_temp_sensor; // temperature sensor output A/D converted value addition/average mode select
 } adc_cfg_t;
 
 
@@ -151,26 +168,26 @@ typedef struct st_adc_cfg
 
 typedef enum e_adc_cmd
 {
-    // Commands for special hardware configurations
+    /* Commands for special hardware configurations */
     ADC_CMD_SET_DDA_STATE_CNT,      // for Disconnect Detection Assist
     ADC_CMD_SET_SAMPLE_STATE_CNT,
 
-    // Command to configure channels, sensors, and comparator
+    /* Command to configure channels, sensors, and comparator */
     ADC_CMD_ENABLE_CHANS,           // configure channels and sensors to scan
     ADC_CMD_EN_COMPARATOR_LEVEL,    // enable comparator for threshold compare
     ADC_CMD_EN_COMPARATOR_WINDOW,   // enable comparator for range compare
 
-    // Commands to enable hardware triggers or cause software trigger
+    /* Commands to enable hardware triggers or cause software trigger */
     ADC_CMD_ENABLE_TRIG,            // ADCSR.TRGE=1 for sync/async triggers
     ADC_CMD_SCAN_NOW,               // software trigger start scan
 
-    // Commands to poll for scan completion and comparator results
+    /* Commands to poll for scan completion and comparator results */
     ADC_CMD_CHECK_SCAN_DONE,        // for Normal or GroupA scan
     ADC_CMD_CHECK_SCAN_DONE_GROUPA,
     ADC_CMD_CHECK_SCAN_DONE_GROUPB,
     ADC_CMD_CHECK_CONDITION_MET,    // comparator condition
 
-    // Advanced control commands
+    /* Advanced control commands */
     ADC_CMD_DISABLE_TRIG,           // ADCSR.TRGE=0 for sync/async trigs
     ADC_CMD_DISABLE_INT,            // interrupt disable; ADCSR.ADIE=0
     ADC_CMD_ENABLE_INT,             // interrupt enable;  ADCSR.ADIE=1
@@ -229,8 +246,8 @@ typedef struct st_adc_time
 
 /* for ADC_CMD_ENABLE_CHANS */
 
-// Bitwise OR these masks together for desired channels and sensors
-// Used for all commands containing a "mask" or "flags" field
+/* Bitwise OR these masks together for desired channels and sensors
+   Used for all commands containing a "mask" or "flags" field */
 #define ADC_MASK_CH0    (1<<0)
 #define ADC_MASK_CH1    (1<<1)
 #define ADC_MASK_CH2    (1<<2)
@@ -252,8 +269,8 @@ typedef struct st_adc_time
 #define ADC_MASK_CH18   (1<<18)
 #define ADC_MASK_CH19   (1<<19)
 #define ADC_MASK_CH20   (1<<20)
-#define ADC_MASK_TEMP   (1<<21)     // temperature sensor
-#define ADC_MASK_VOLT   (1<<22)     // internal reference voltage sensor
+#define ADC_MASK_TEMP   (1<<21)     /* temperature sensor */
+#define ADC_MASK_VOLT   (1<<22)     /* internal reference voltage sensor */
 
 #define ADC_MASK_SENSORS            (ADC_MASK_TEMP | ADC_MASK_VOLT)
 #define ADC_MASK_GROUPB_OFF         (0)
@@ -277,9 +294,9 @@ typedef enum e_adc_diag                 // Self-Diagnosis Channel
     ADC_DIAG_ROTATE_VOLTS = 0x4
 } adc_diag_t;
 
-#define ADC_SST_SH_CNT_MIN      (4)     // minimum sample&hold states
-#define ADC_SST_SH_CNT_MAX      (255)   // maximum sample&hold states
-#define ADC_SST_SH_CNT_DEFAULT  (24)    // default sample&hold states
+#define ADC_SST_SH_CNT_MIN      (4)     /* minimum sample&hold states */
+#define ADC_SST_SH_CNT_MAX      (255)   /* maximum sample&hold states */
+#define ADC_SST_SH_CNT_DEFAULT  (24)    /* default sample&hold states */
 
 typedef struct st_adc_ch_cfg            // bit 0 is ch0; bit 15 is ch15
 {
@@ -296,15 +313,15 @@ typedef struct st_adc_ch_cfg            // bit 0 is ch0; bit 15 is ch15
 
 /* for ADC_CMD_EN_COMPARATOR_LEVEL and ADC_CMD_EN_COMPARATOR_WINDOW */
 
-typedef struct st_adc_cmpwin_cfg        // bit-OR ADC_MASK_xxx to
-{                                       //   indicate channels/sensors
+typedef struct st_adc_cmpwin_cfg        // bit-OR ADC_MASK_xxx to indicate channels/sensors
+{
     uint32_t        compare_mask;       // channels/sensors to compare
-    uint32_t        inside_window_mask; // condition met when within range
-                                        // default=0 met when outside range
+    uint32_t        inside_window_mask; /* condition met when within range
+                                           default=0 met when outside range */
     uint16_t        level_lo;
     uint16_t        level_hi;
-    uint8_t         int_priority;       // S12CMPI priority level
-                                        // 1=low 15=hi 0=polled
+    uint8_t         int_priority;       /* S12CMPI priority level
+                                           1=low 15=hi 0=polled */
 } adc_cmpwin_t;
 
 
@@ -338,7 +355,8 @@ typedef enum e_adc_reg
     ADC_REG_CH20 = 20,
     ADC_REG_TEMP,
     ADC_REG_VOLT,
-    // both units
+
+    /* both units */
     ADC_REG_DBLTRIG,
     ADC_REG_DBLTRIGA,   // loaded when first multi-source trigger was A
     ADC_REG_DBLTRIGB,   // loaded when first multi-source trigger was B
@@ -383,3 +401,4 @@ Public Functions
 ******************************************************************************/
 
 #endif /* S12AD_RX71M_IF_H */
+

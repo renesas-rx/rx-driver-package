@@ -14,7 +14,7 @@
 * following link:
 * http://www.renesas.com/disclaimer 
 *
-* Copyright (C) 2016-2017 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) 2016-2019 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /**********************************************************************************************************************
 * File Name    : r_sci_rx.c
@@ -37,7 +37,15 @@
 *                              Fixed a bug that callback function work many times at receive interrupt
 *                               when FIFO(async) enabled.
 *                              Fixed a bug that the interrupt priority level can be changed only in async mode.
-*           xx.xx.xxxx x.xx    Added support for GNUC and ICCRX.
+*          28.09.2018  2.10    Added support RX66T
+*                              Add WAIT_LOOP comments.
+*                              Fixed a bug that leaking memory in R_SCI_Open() when FIFO(async) enabled.
+*                              Fix GSCE Code Checker errors.
+*          01.02.2019  2.20    Added support RX72T, RX65N-64pin.
+*                              Fix GSCE Code Checker errors.
+*          20.05.2019  3.00    Added support for GNUC and ICCRX.
+*          28.06.2019  3.10    Added support for RX23W
+*          15.08.2019  3.20    Added support for RX72M
 ***********************************************************************************************************************/
 
 /*****************************************************************************
@@ -125,6 +133,10 @@ static void sci_fifo_receive_sync(sci_hdl_t const hdl);
 
 static void sci_fifo_receive(sci_hdl_t const hdl);
 
+#endif
+
+#if SCI_CFG_DATA_MATCH_INCLUDED
+static void sci_receive_data_match(sci_hdl_t const hdl);
 #endif
 
 static void sci_error(sci_hdl_t const hdl);
@@ -247,8 +259,8 @@ sci_err_t R_SCI_Open(uint8_t const      chan,
                      void               (* const p_callback)(void *p_args),
                      sci_hdl_t * const  p_hdl)
 {
-    sci_err_t   err=SCI_SUCCESS;
-    uint8_t     priority=1;
+    sci_err_t   err = SCI_SUCCESS;
+    uint8_t     priority = 1;
 
     /* CHECK ARGUMENTS */
 #if SCI_CFG_PARAM_CHECKING_ENABLE
@@ -257,6 +269,8 @@ sci_err_t R_SCI_Open(uint8_t const      chan,
     {
         return err;
     }
+
+    /* Check argument g_handles */
     if ((NULL == g_handles[chan]) || (FIT_NO_PTR == g_handles[chan]))
     {
         return SCI_ERR_OMITTED_CHAN;
@@ -269,6 +283,8 @@ sci_err_t R_SCI_Open(uint8_t const      chan,
     {
         return SCI_ERR_BAD_MODE;
     }
+
+    /* Check argument p_cfg, p_hdl */
     if (((NULL == p_cfg) || (NULL == p_hdl)) || ((FIT_NO_PTR == p_cfg) || (FIT_NO_PTR == p_hdl)))
     {
         return SCI_ERR_NULL_PTR;
@@ -286,12 +302,14 @@ sci_err_t R_SCI_Open(uint8_t const      chan,
     if (SCI_MODE_ASYNC == mode)
     {
 #if (SCI_CFG_ASYNC_INCLUDED)
+        /* Casting sci_cfg_t type to sci_uart_t type is valid */
         err = sci_init_async(g_handles[chan], (sci_uart_t *)p_cfg, &priority);
 #endif
     }
     else
     {
 #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
+        /* Casting sci_cfg_t type to sci_sync_sspi_t type is valid */
         err = sci_init_sync(g_handles[chan], (sci_sync_sspi_t *)p_cfg, &priority);
 #endif
     }
@@ -323,6 +341,14 @@ sci_err_t R_SCI_Open(uint8_t const      chan,
         err = sci_init_fifo(g_handles[chan]);
         if (SCI_SUCCESS != err)
         {
+#if (SCI_CFG_ASYNC_INCLUDED)
+            /* DE-INITIALIZE TX AND RX QUEUES */
+            if (SCI_MODE_ASYNC == mode)
+            {
+                R_BYTEQ_Close(g_handles[chan]->u_tx_data.que);
+                R_BYTEQ_Close(g_handles[chan]->u_rx_data.que);
+            }
+#endif
             g_handles[chan]->mode = SCI_MODE_OFF;
             return err;
         }
@@ -387,94 +413,122 @@ static void power_off(sci_hdl_t const hdl)
 ******************************************************************************/
 static sci_err_t sci_init_queues(uint8_t const chan)
 {
-    byteq_err_t q_err1=BYTEQ_ERR_INVALID_ARG;
-    byteq_err_t q_err2=BYTEQ_ERR_INVALID_ARG;
-    sci_err_t   err=SCI_SUCCESS;
+    byteq_err_t q_err1 = BYTEQ_ERR_INVALID_ARG;
+    byteq_err_t q_err2 = BYTEQ_ERR_INVALID_ARG;
+    sci_err_t   err = SCI_SUCCESS;
 
     /* channel number verified as legal prior to calling this function */
     switch (chan)
     {
 #if SCI_CFG_CH0_INCLUDED
-    case (SCI_CH0):
-        q_err1 = R_BYTEQ_Open(ch0_tx_buf, SCI_CFG_CH0_TX_BUFSIZ, &g_handles[SCI_CH0]->u_tx_data.que);
-        q_err2 = R_BYTEQ_Open(ch0_rx_buf, SCI_CFG_CH0_RX_BUFSIZ, &g_handles[SCI_CH0]->u_rx_data.que);
+        case (SCI_CH0):
+        {
+            q_err1 = R_BYTEQ_Open(ch0_tx_buf, SCI_CFG_CH0_TX_BUFSIZ, &g_handles[SCI_CH0]->u_tx_data.que);
+            q_err2 = R_BYTEQ_Open(ch0_rx_buf, SCI_CFG_CH0_RX_BUFSIZ, &g_handles[SCI_CH0]->u_rx_data.que);
         break;
+        }
 #endif
 #if SCI_CFG_CH1_INCLUDED
-    case (SCI_CH1):
-        q_err1 = R_BYTEQ_Open(ch1_tx_buf, SCI_CFG_CH1_TX_BUFSIZ, &g_handles[SCI_CH1]->u_tx_data.que);
-        q_err2 = R_BYTEQ_Open(ch1_rx_buf, SCI_CFG_CH1_RX_BUFSIZ, &g_handles[SCI_CH1]->u_rx_data.que);
+        case (SCI_CH1):
+        {
+            q_err1 = R_BYTEQ_Open(ch1_tx_buf, SCI_CFG_CH1_TX_BUFSIZ, &g_handles[SCI_CH1]->u_tx_data.que);
+            q_err2 = R_BYTEQ_Open(ch1_rx_buf, SCI_CFG_CH1_RX_BUFSIZ, &g_handles[SCI_CH1]->u_rx_data.que);
         break;
+        }
 #endif
 #if SCI_CFG_CH2_INCLUDED
-    case (SCI_CH2):
-        q_err1 = R_BYTEQ_Open(ch2_tx_buf, SCI_CFG_CH2_TX_BUFSIZ, &g_handles[SCI_CH2]->u_tx_data.que);
-        q_err2 = R_BYTEQ_Open(ch2_rx_buf, SCI_CFG_CH2_RX_BUFSIZ, &g_handles[SCI_CH2]->u_rx_data.que);
+        case (SCI_CH2):
+        {
+            q_err1 = R_BYTEQ_Open(ch2_tx_buf, SCI_CFG_CH2_TX_BUFSIZ, &g_handles[SCI_CH2]->u_tx_data.que);
+            q_err2 = R_BYTEQ_Open(ch2_rx_buf, SCI_CFG_CH2_RX_BUFSIZ, &g_handles[SCI_CH2]->u_rx_data.que);
         break;
+        }
 #endif
 #if SCI_CFG_CH3_INCLUDED
-    case (SCI_CH3):
-        q_err1 = R_BYTEQ_Open(ch3_tx_buf, SCI_CFG_CH3_TX_BUFSIZ, &g_handles[SCI_CH3]->u_tx_data.que);
-        q_err2 = R_BYTEQ_Open(ch3_rx_buf, SCI_CFG_CH3_RX_BUFSIZ, &g_handles[SCI_CH3]->u_rx_data.que);
+        case (SCI_CH3):
+        {
+            q_err1 = R_BYTEQ_Open(ch3_tx_buf, SCI_CFG_CH3_TX_BUFSIZ, &g_handles[SCI_CH3]->u_tx_data.que);
+            q_err2 = R_BYTEQ_Open(ch3_rx_buf, SCI_CFG_CH3_RX_BUFSIZ, &g_handles[SCI_CH3]->u_rx_data.que);
         break;
+        }
 #endif
 #if SCI_CFG_CH4_INCLUDED
-    case (SCI_CH4):
-        q_err1 = R_BYTEQ_Open(ch4_tx_buf, SCI_CFG_CH4_TX_BUFSIZ, &g_handles[SCI_CH4]->u_tx_data.que);
-        q_err2 = R_BYTEQ_Open(ch4_rx_buf, SCI_CFG_CH4_RX_BUFSIZ, &g_handles[SCI_CH4]->u_rx_data.que);
-    break;
+        case (SCI_CH4):
+        {
+            q_err1 = R_BYTEQ_Open(ch4_tx_buf, SCI_CFG_CH4_TX_BUFSIZ, &g_handles[SCI_CH4]->u_tx_data.que);
+            q_err2 = R_BYTEQ_Open(ch4_rx_buf, SCI_CFG_CH4_RX_BUFSIZ, &g_handles[SCI_CH4]->u_rx_data.que);
+        break;
+        }
 #endif
 #if SCI_CFG_CH5_INCLUDED
-    case (SCI_CH5):
-        q_err1 = R_BYTEQ_Open(ch5_tx_buf, SCI_CFG_CH5_TX_BUFSIZ, &g_handles[SCI_CH5]->u_tx_data.que);
-        q_err2 = R_BYTEQ_Open(ch5_rx_buf, SCI_CFG_CH5_RX_BUFSIZ, &g_handles[SCI_CH5]->u_rx_data.que);
+        case (SCI_CH5):
+        {
+            q_err1 = R_BYTEQ_Open(ch5_tx_buf, SCI_CFG_CH5_TX_BUFSIZ, &g_handles[SCI_CH5]->u_tx_data.que);
+            q_err2 = R_BYTEQ_Open(ch5_rx_buf, SCI_CFG_CH5_RX_BUFSIZ, &g_handles[SCI_CH5]->u_rx_data.que);
         break;
+        }
 #endif
 #if SCI_CFG_CH6_INCLUDED
-    case (SCI_CH6):
-        q_err1 = R_BYTEQ_Open(ch6_tx_buf, SCI_CFG_CH6_TX_BUFSIZ, &g_handles[SCI_CH6]->u_tx_data.que);
-        q_err2 = R_BYTEQ_Open(ch6_rx_buf, SCI_CFG_CH6_RX_BUFSIZ, &g_handles[SCI_CH6]->u_rx_data.que);
+        case (SCI_CH6):
+        {
+            q_err1 = R_BYTEQ_Open(ch6_tx_buf, SCI_CFG_CH6_TX_BUFSIZ, &g_handles[SCI_CH6]->u_tx_data.que);
+            q_err2 = R_BYTEQ_Open(ch6_rx_buf, SCI_CFG_CH6_RX_BUFSIZ, &g_handles[SCI_CH6]->u_rx_data.que);
         break;
+        }
 #endif
 #if SCI_CFG_CH7_INCLUDED
-    case (SCI_CH7):
-        q_err1 = R_BYTEQ_Open(ch7_tx_buf, SCI_CFG_CH7_TX_BUFSIZ, &g_handles[SCI_CH7]->u_tx_data.que);
-        q_err2 = R_BYTEQ_Open(ch7_rx_buf, SCI_CFG_CH7_RX_BUFSIZ, &g_handles[SCI_CH7]->u_rx_data.que);
+        case (SCI_CH7):
+        {
+            q_err1 = R_BYTEQ_Open(ch7_tx_buf, SCI_CFG_CH7_TX_BUFSIZ, &g_handles[SCI_CH7]->u_tx_data.que);
+            q_err2 = R_BYTEQ_Open(ch7_rx_buf, SCI_CFG_CH7_RX_BUFSIZ, &g_handles[SCI_CH7]->u_rx_data.que);
         break;
+        }
 #endif
 #if SCI_CFG_CH8_INCLUDED
-    case (SCI_CH8):
-        q_err1 = R_BYTEQ_Open(ch8_tx_buf, SCI_CFG_CH8_TX_BUFSIZ, &g_handles[SCI_CH8]->u_tx_data.que);
-        q_err2 = R_BYTEQ_Open(ch8_rx_buf, SCI_CFG_CH8_RX_BUFSIZ, &g_handles[SCI_CH8]->u_rx_data.que);
+        case (SCI_CH8):
+        {
+            q_err1 = R_BYTEQ_Open(ch8_tx_buf, SCI_CFG_CH8_TX_BUFSIZ, &g_handles[SCI_CH8]->u_tx_data.que);
+            q_err2 = R_BYTEQ_Open(ch8_rx_buf, SCI_CFG_CH8_RX_BUFSIZ, &g_handles[SCI_CH8]->u_rx_data.que);
         break;
+        }
 #endif
 #if SCI_CFG_CH9_INCLUDED
-    case (SCI_CH9):
-        q_err1 = R_BYTEQ_Open(ch9_tx_buf, SCI_CFG_CH9_TX_BUFSIZ, &g_handles[SCI_CH9]->u_tx_data.que);
-        q_err2 = R_BYTEQ_Open(ch9_rx_buf, SCI_CFG_CH9_RX_BUFSIZ, &g_handles[SCI_CH9]->u_rx_data.que);
+        case (SCI_CH9):
+        {
+            q_err1 = R_BYTEQ_Open(ch9_tx_buf, SCI_CFG_CH9_TX_BUFSIZ, &g_handles[SCI_CH9]->u_tx_data.que);
+            q_err2 = R_BYTEQ_Open(ch9_rx_buf, SCI_CFG_CH9_RX_BUFSIZ, &g_handles[SCI_CH9]->u_rx_data.que);
         break;
+        }
 #endif
 #if SCI_CFG_CH10_INCLUDED
-    case (SCI_CH10):
-        q_err1 = R_BYTEQ_Open(ch10_tx_buf, SCI_CFG_CH10_TX_BUFSIZ, &g_handles[SCI_CH10]->u_tx_data.que);
-        q_err2 = R_BYTEQ_Open(ch10_rx_buf, SCI_CFG_CH10_RX_BUFSIZ, &g_handles[SCI_CH10]->u_rx_data.que);
+        case (SCI_CH10):
+        {
+            q_err1 = R_BYTEQ_Open(ch10_tx_buf, SCI_CFG_CH10_TX_BUFSIZ, &g_handles[SCI_CH10]->u_tx_data.que);
+            q_err2 = R_BYTEQ_Open(ch10_rx_buf, SCI_CFG_CH10_RX_BUFSIZ, &g_handles[SCI_CH10]->u_rx_data.que);
         break;
+        }
 #endif
 #if SCI_CFG_CH11_INCLUDED
-    case (SCI_CH11):
-        q_err1 = R_BYTEQ_Open(ch11_tx_buf, SCI_CFG_CH11_TX_BUFSIZ, &g_handles[SCI_CH11]->u_tx_data.que);
-        q_err2 = R_BYTEQ_Open(ch11_rx_buf, SCI_CFG_CH11_RX_BUFSIZ, &g_handles[SCI_CH11]->u_rx_data.que);
+        case (SCI_CH11):
+        {
+            q_err1 = R_BYTEQ_Open(ch11_tx_buf, SCI_CFG_CH11_TX_BUFSIZ, &g_handles[SCI_CH11]->u_tx_data.que);
+            q_err2 = R_BYTEQ_Open(ch11_rx_buf, SCI_CFG_CH11_RX_BUFSIZ, &g_handles[SCI_CH11]->u_rx_data.que);
         break;
+        }
 #endif
 #if SCI_CFG_CH12_INCLUDED
-    case (SCI_CH12):
-        q_err1 = R_BYTEQ_Open(ch12_tx_buf, SCI_CFG_CH12_TX_BUFSIZ, &g_handles[SCI_CH12]->u_tx_data.que);
-        q_err2 = R_BYTEQ_Open(ch12_rx_buf, SCI_CFG_CH12_RX_BUFSIZ, &g_handles[SCI_CH12]->u_rx_data.que);
+        case (SCI_CH12):
+        {
+            q_err1 = R_BYTEQ_Open(ch12_tx_buf, SCI_CFG_CH12_TX_BUFSIZ, &g_handles[SCI_CH12]->u_tx_data.que);
+            q_err2 = R_BYTEQ_Open(ch12_rx_buf, SCI_CFG_CH12_RX_BUFSIZ, &g_handles[SCI_CH12]->u_rx_data.que);
         break;
+        }
 #endif
-    default:
-        err = SCI_ERR_QUEUE_UNAVAILABLE;
+        default:
+        {
+            err = SCI_ERR_QUEUE_UNAVAILABLE;
         break;
+        }
     }
 
     if ((BYTEQ_SUCCESS != q_err1) || (BYTEQ_SUCCESS != q_err2))
@@ -483,7 +537,7 @@ static sci_err_t sci_init_queues(uint8_t const chan)
     }
     return err;
 }  /* End of function sci_init_queues() */
-#endif
+#endif /* End of SCI_CFG_ASYNC_INCLUDED */
 
 #if SCI_CFG_FIFO_INCLUDED
 /*****************************************************************************
@@ -530,7 +584,7 @@ static sci_err_t sci_init_fifo(sci_hdl_t const hdl)
 
     return SCI_SUCCESS;
 }  /* End of function sci_init_fifo() */
-#endif
+#endif /* End of SCI_CFG_FIFO_INCLUDED */
 
 #if (SCI_CFG_ASYNC_INCLUDED)
 /*****************************************************************************
@@ -599,7 +653,7 @@ static sci_err_t sci_init_async(sci_hdl_t const      hdl,
     {
         /* Do Nothing */
     }
-#endif
+#endif /* End of SCI_CFG_PARAM_CHECKING_ENABLE */
 
 
     /* Initialize channel control block flags */
@@ -611,9 +665,10 @@ static sci_err_t sci_init_async(sci_hdl_t const      hdl,
     {
         p_cfg->parity_type = 0;         // ensure random value is not ORed into SMR
     }
-    hdl->rom->regs->SMR.BYTE =
-            (uint8_t)((p_cfg->data_size | p_cfg->stop_bits) | (p_cfg->parity_en | p_cfg->parity_type));
-    
+
+    /* Configure SMR */
+    hdl->rom->regs->SMR.BYTE = (uint8_t)((p_cfg->data_size | p_cfg->stop_bits) | (p_cfg->parity_en | p_cfg->parity_type));
+
     /* SETUP CLOCK FOR BAUD RATE */
 
     if (SCI_CLK_INT == p_cfg->clk_src)
@@ -631,15 +686,15 @@ static sci_err_t sci_init_async(sci_hdl_t const      hdl,
     }
     else
     {
-        /* Use external clock for baud rate (The cast to uint8_t is for GNURX's -Wconversion) */
+        /* Use external clock for baud rate */
         hdl->rom->regs->SCR.BIT.CKE = 0x02;
-        hdl->rom->regs->SEMR.BIT.ABCS = (uint8_t)((SCI_CLK_EXT8X == p_cfg->clk_src) ? 1 : 0);
+        hdl->rom->regs->SEMR.BIT.ABCS = (SCI_CLK_EXT8X == p_cfg->clk_src) ? 1 : 0;
     }
 
     *p_priority = p_cfg->int_priority;
     return err;
 }  /* End of function sci_init_async() */
-#endif
+#endif /* End of SCI_CFG_ASYNC_INCLUDED */
 
 #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
 /*****************************************************************************
@@ -665,7 +720,7 @@ static sci_err_t sci_init_sync(sci_hdl_t const         hdl,
                                sci_sync_sspi_t * const p_cfg,
                                uint8_t * const         p_priority)
 {
-    sci_err_t   err=SCI_SUCCESS;
+    sci_err_t   err = SCI_SUCCESS;
     int32_t     bit_err;
 
 
@@ -682,6 +737,10 @@ static sci_err_t sci_init_sync(sci_hdl_t const         hdl,
     {
         return SCI_ERR_INVALID_ARG;
     }
+    else
+    {
+        /* Do Nothing */
+    }
 
     if (0 == p_cfg->bit_rate)
     {
@@ -693,7 +752,6 @@ static sci_err_t sci_init_sync(sci_hdl_t const         hdl,
         return SCI_ERR_INVALID_ARG;
     }
 #endif
-
 
     /* Initialize channel control block flags */
     hdl->tx_idle = true;
@@ -714,9 +772,11 @@ static sci_err_t sci_init_sync(sci_hdl_t const         hdl,
         hdl->rom->regs->SPMR.BYTE = 0;
     }
 
-    /* Configure bit order and data inversion */
-    hdl->rom->regs->SCMR.BIT.SINV = (uint8_t)((p_cfg->invert_data == true) ? 1 : 0);
-    hdl->rom->regs->SCMR.BIT.SDIR = (uint8_t)((p_cfg->msb_first == true) ? 1 : 0);
+    /* Configure data inversion */
+    hdl->rom->regs->SCMR.BIT.SINV = (uint8_t)((true == p_cfg->invert_data) ? 1 : 0);
+
+    /* Configure bit order */
+    hdl->rom->regs->SCMR.BIT.SDIR = (uint8_t)((true == p_cfg->msb_first) ? 1 : 0);
 
 
     /* SETUP CLOCK FOR BIT RATE */
@@ -731,7 +791,7 @@ static sci_err_t sci_init_sync(sci_hdl_t const         hdl,
     *p_priority = p_cfg->int_priority;
     return err;
 } /* End of function sci_init_sync() */
-#endif
+#endif /* End of SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED */
 
 /*****************************************************************************
 * Function Name: R_SCI_Send
@@ -769,8 +829,8 @@ sci_err_t R_SCI_Send(sci_hdl_t const    hdl,
     /* Check arguments */
 
 #if SCI_CFG_PARAM_CHECKING_ENABLE
-    if (((NULL == hdl)   || (FIT_NO_PTR == hdl))
-     || ((NULL == p_src) || (FIT_NO_PTR == p_src)))
+    /* Check argument hdl, p_src */
+    if (((NULL == hdl)   || (FIT_NO_PTR == hdl)) || ((NULL == p_src) || (FIT_NO_PTR == p_src)))
     {
         return SCI_ERR_NULL_PTR;
     }
@@ -791,7 +851,8 @@ sci_err_t R_SCI_Send(sci_hdl_t const    hdl,
 #endif
     }
     else
-    {   /* SSPI or SYNC */
+    {
+        /* SSPI or SYNC */
 #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
         err = sci_send_sync_data(hdl, p_src, NULL, length, false);
 #endif
@@ -824,11 +885,11 @@ static sci_err_t sci_send_async_data(sci_hdl_t const hdl,
                                      uint8_t         *p_src,
                                      uint16_t const  length)
 {
-    sci_err_t   err=SCI_SUCCESS;
+    sci_err_t   err = SCI_SUCCESS;
     uint16_t    cnt;
-    byteq_err_t byteq_err=BYTEQ_ERR_QUEUE_FULL;
+    byteq_err_t byteq_err = BYTEQ_ERR_QUEUE_FULL;
 
-    if (hdl->tx_idle != true)
+    if (true != hdl->tx_idle  )
     {
         return SCI_ERR_XCVR_BUSY;
     }
@@ -857,7 +918,8 @@ static sci_err_t sci_send_async_data(sci_hdl_t const hdl,
     }
 
     /* Else load bytes into tx queue for transmission */
-    for (cnt=0; cnt < length; cnt++)
+    /* WAIT_LOOP */
+    for (cnt = 0; cnt < length; cnt++)
     {
         byteq_err = sci_put_byte(hdl, *p_src++);
         if (BYTEQ_SUCCESS != byteq_err)
@@ -901,7 +963,7 @@ static byteq_err_t sci_put_byte(sci_hdl_t const   hdl,
 
     return err;
 } /* End of function sci_put_byte() */
-#endif
+#endif /* SCI_CFG_ASYNC_INCLUDED */
 
 
 #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
@@ -956,10 +1018,11 @@ static sci_err_t sci_send_sync_data(sci_hdl_t const hdl,
         {
             /* reset TX FIFO */
             hdl->rom->regs->FCR.BIT.TFRST = 0x01;
+
             /* reset RX FIFO */
             hdl->rom->regs->FCR.BIT.RFRST = 0x01;
 
-            /* If length is higher than SCI_CFG_CHXX_RX_FIFO_THRESH, FCR.BIT.RTRG register is set to length */
+            /* If length is lower than SCI_CFG_CHXX_RX_FIFO_THRESH, FCR.BIT.RTRG register is set to length */
             if (length < hdl->rx_curr_thresh)
             {
                 hdl->rom->regs->FCR.BIT.RTRG = length;
@@ -970,7 +1033,8 @@ static sci_err_t sci_send_sync_data(sci_hdl_t const hdl,
             hdl->tx_cnt -= thresh_cnt;
 
             /* Repeated FIFO RX threshold count */
-            for (cnt=0; cnt<thresh_cnt; cnt++)
+            /* WAIT_LOOP */
+            for (cnt = 0; cnt < thresh_cnt; cnt++)
             {
                 SCI_TDR(*hdl->u_tx_data.buf++);    /* start transmit */
             }
@@ -987,7 +1051,7 @@ static sci_err_t sci_send_sync_data(sci_hdl_t const hdl,
 
     return SCI_ERR_XCVR_BUSY;
 } /* End of function sci_send_sync_data() */
-#endif
+#endif /* SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED */
 
 
 #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
@@ -1021,22 +1085,22 @@ sci_err_t R_SCI_SendReceive(sci_hdl_t const hdl,
                             uint8_t         *p_dst,
                             uint16_t const  length)
 {
-sci_err_t   err;
-
-
-    /* Check arguments */
+    sci_err_t   err;
 
 #if SCI_CFG_PARAM_CHECKING_ENABLE
-    if ((((NULL == hdl)   || (FIT_NO_PTR == hdl))
-     ||  ((NULL == p_src) || (FIT_NO_PTR == p_src)))
-     ||  ((NULL == p_dst) || (FIT_NO_PTR == p_dst)))
+    /* Check arguments */
+    if ((((NULL == hdl)   || (FIT_NO_PTR == hdl))    /* Check if hdl is available or not   */
+     ||  ((NULL == p_src) || (FIT_NO_PTR == p_src))) /* Check if p_src is available or not */
+     ||  ((NULL == p_dst) || (FIT_NO_PTR == p_dst))) /* Check if p_dst is available or not */
     {
         return SCI_ERR_NULL_PTR;
     }
-    if ((hdl->mode != SCI_MODE_SSPI) && (hdl->mode != SCI_MODE_SYNC))
+
+    if ((SCI_MODE_SSPI != hdl->mode) && (SCI_MODE_SYNC != hdl->mode))
     {
         return SCI_ERR_BAD_MODE;
     }
+
     if (0 == length)
     {
         return SCI_ERR_INVALID_ARG;
@@ -1047,7 +1111,7 @@ sci_err_t   err;
 
     return err;
 } /* End of function R_SCI_SendReceive() */
-#endif
+#endif /* End of SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED */
 
 #if (SCI_CFG_ASYNC_INCLUDED)
 /*****************************************************************************
@@ -1099,6 +1163,7 @@ static void sci_fifo_transfer(sci_hdl_t const hdl)
     /* Repeated empty FIFO buffer count */
     fifo_num = SCI_FIFO_FRAME_SIZE - hdl->rom->regs->FDR.BIT.T;
 
+    /* WAIT_LOOP */
     for (cnt = 0; cnt < fifo_num; cnt++)
     {
         /* SCI Transfer */
@@ -1114,10 +1179,11 @@ static void sci_fifo_transfer(sci_hdl_t const hdl)
     /* When the settings of transmit data are completed, set the SSRFIFO.TDFE flag to 0. */
     if (1 == hdl->rom->regs->SSRFIFO.BIT.TDFE)
     {
+        /* Casting register 8 bits to unsigned char type is valid */
         hdl->rom->regs->SSRFIFO.BYTE = (unsigned char)~SCI_SSRFIFO_TDFE_MASK;
     }
 } /* End of function sci_fifo_transfer() */
-#endif
+#endif /*End of SCI_CFG_FIFO_INCLUDED */
 
 /*****************************************************************************
 * Function Name: txi_handler
@@ -1141,7 +1207,7 @@ void txi_handler(sci_hdl_t const hdl)
         sci_transfer(hdl);
     }
 } /* End of function txi_handler() */
-#endif
+#endif /* SCI_CFG_ASYNC_INCLUDED */
 
 
 #if SCI_CFG_TEI_INCLUDED
@@ -1160,10 +1226,13 @@ void tei_handler(sci_hdl_t const hdl)
     DISABLE_TEI_INT;
     hdl->rom->regs->SCR.BIT.TEIE = 0;
 
+    /* Activate callback function if available */
     if ((NULL != hdl->callback) && (FIT_NO_FUNC != hdl->callback))
     {
         args.hdl = hdl;
         args.event = SCI_EVT_TEI;
+
+        /* Activate callback function */
         hdl->callback((void *)&args);
     }
 } /* End of function tei_handler() */
@@ -1201,14 +1270,14 @@ sci_err_t R_SCI_Receive(sci_hdl_t const hdl,
                         uint8_t         *p_dst,
                         uint16_t const  length)
 {
-sci_err_t   err=SCI_SUCCESS;
+sci_err_t   err = SCI_SUCCESS;
 
 
     /* Check arguments */
 
 #if SCI_CFG_PARAM_CHECKING_ENABLE
-    if (((NULL == hdl)   || (FIT_NO_PTR == hdl))
-     || ((NULL == p_dst) || (FIT_NO_PTR == p_dst)))
+    /* Check argument hdl, p_dst */
+    if (((NULL == hdl)   || (FIT_NO_PTR == hdl))|| ((NULL == p_dst) || (FIT_NO_PTR == p_dst)))
     {
         return SCI_ERR_NULL_PTR;
     }
@@ -1230,7 +1299,8 @@ sci_err_t   err=SCI_SUCCESS;
     }
 
     else
-    {    /* mode is SSPI/SYNC */
+    {
+        /* mode is SSPI/SYNC */
 #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
         err = sci_receive_sync_data(hdl, p_dst, length);
 #endif
@@ -1260,9 +1330,9 @@ static sci_err_t sci_receive_async_data(sci_hdl_t const hdl,
                                         uint8_t         *p_dst,
                                         uint16_t const  length)
 {
-    sci_err_t   err=SCI_SUCCESS;
+    sci_err_t   err = SCI_SUCCESS;
     uint16_t    cnt;
-    byteq_err_t byteq_err=BYTEQ_SUCCESS;
+    byteq_err_t byteq_err = BYTEQ_SUCCESS;
 
     /* CHECK FOR SUFFICIENT DATA IN QUEUE, AND FETCH IF AVAILABLE */
     R_BYTEQ_Used(hdl->u_rx_data.que, &cnt);
@@ -1273,8 +1343,10 @@ static sci_err_t sci_receive_async_data(sci_hdl_t const hdl,
     }
 
     /* Get bytes from rx queue */
-    for (cnt=0; cnt < length; cnt++)
+    /* WAIT_LOOP */
+    for (cnt = 0; cnt < length; cnt++)
     {
+        /* Disable RXI Interrupt */
         DISABLE_RXI_INT;
         byteq_err = R_BYTEQ_Get(hdl->u_rx_data.que, p_dst++);
         ENABLE_RXI_INT;
@@ -1287,7 +1359,7 @@ static sci_err_t sci_receive_async_data(sci_hdl_t const hdl,
 
     return err;
 } /* End of function sci_receive_async_data() */
-#endif
+#endif /* SCI_CFG_ASYNC_INCLUDED */
 
 #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
 /*****************************************************************************
@@ -1329,6 +1401,7 @@ static sci_err_t sci_receive_sync_data(sci_hdl_t const hdl,
         {
             /* reset TX FIFO */
             hdl->rom->regs->FCR.BIT.TFRST = 0x01;
+
             /* reset RX FIFO */
             hdl->rom->regs->FCR.BIT.RFRST = 0x01;
 
@@ -1338,7 +1411,7 @@ static sci_err_t sci_receive_sync_data(sci_hdl_t const hdl,
             }
             else
             {
-                /* If length is higher than SCI_CFG_CHXX_RX_FIFO_THRESH, FCR.BIT.RTRG register is set to length */
+                /* If length is lower than SCI_CFG_CHXX_RX_FIFO_THRESH, FCR.BIT.RTRG register is set to length */
                 if (length < hdl->rx_curr_thresh)
                 {
                     hdl->rom->regs->FCR.BIT.RTRG = length;
@@ -1348,13 +1421,14 @@ static sci_err_t sci_receive_sync_data(sci_hdl_t const hdl,
 
             hdl->tx_cnt -= thresh_cnt;
 
-            for (cnt=0; cnt<thresh_cnt; cnt++)
+            /* WAIT_LOOP */
+            for (cnt = 0; cnt < thresh_cnt; cnt++)
             {
                 SCI_TDR(SCI_CFG_DUMMY_TX_BYTE);    /* start transmit */
             }
         }
         else
-#endif
+#endif /* End of SCI_CFG_FIFO_INCLUDED */
         {
             hdl->tx_cnt--;
             SCI_TDR(SCI_CFG_DUMMY_TX_BYTE);    /* start transfer */
@@ -1365,7 +1439,7 @@ static sci_err_t sci_receive_sync_data(sci_hdl_t const hdl,
 
     return SCI_ERR_XCVR_BUSY;
 } /* End of function sci_receive_sync_data() */
-#endif
+#endif /* End of SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED */
 
 /*****************************************************************************
 * Function Name: sci_receive
@@ -1386,7 +1460,7 @@ static void sci_receive(sci_hdl_t const hdl)
 #if (SCI_CFG_ASYNC_INCLUDED)
 
         /* Place byte in queue */
-        if (BYTEQ_SUCCESS == R_BYTEQ_Put(hdl->u_rx_data.que, byte))
+        if (R_BYTEQ_Put(hdl->u_rx_data.que, byte) == BYTEQ_SUCCESS)
         {
             args.event = SCI_EVT_RX_CHAR;
         }
@@ -1400,6 +1474,8 @@ static void sci_receive(sci_hdl_t const hdl)
         {
             args.hdl = hdl;
             args.byte = byte;
+
+           /* Casting to void type is valid */
             hdl->callback((void *)&args);
         }
 #endif
@@ -1436,15 +1512,18 @@ static void sci_receive(sci_hdl_t const hdl)
         else
         {
             hdl->tx_idle = true;
+
             /* Do callback if available */
             if ((NULL != hdl->callback) && (FIT_NO_FUNC != hdl->callback))
             {
                 args.hdl = hdl;
                 args.event = SCI_EVT_XFER_DONE;
+
+                /* Casting to void type is valid */
                 hdl->callback((void *)&args);
             }
         }
-#endif
+#endif /* End of SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED */
     }
 } /* End of function sci_receive() */
 
@@ -1467,7 +1546,8 @@ static void sci_fifo_receive_sync(sci_hdl_t const hdl)
 
     fifo_num_rx = hdl->rom->regs->FDR.BIT.R;
 
-    for (cnt=0; cnt<fifo_num_rx; cnt++)
+    /* WAIT_LOOP */
+    for (cnt = 0; cnt < fifo_num_rx; cnt++)
     {
         SCI_RDR(byte_rx[cnt]);
     }
@@ -1477,7 +1557,8 @@ static void sci_fifo_receive_sync(sci_hdl_t const hdl)
     /* Place byte in buffer if Receive() or SendReceive() */
     if (true == hdl->save_rx_data)
     {
-        for (cnt=0; cnt<fifo_num_rx; cnt++)
+        /* WAIT_LOOP */
+        for (cnt = 0; cnt < fifo_num_rx; cnt++)
         {
             /* SCI Receive */
             *hdl->u_rx_data.buf++ = byte_rx[cnt];
@@ -1508,14 +1589,16 @@ static void sci_fifo_receive_sync(sci_hdl_t const hdl)
             /* send another byte */
             if (true == hdl->tx_dummy)
             {
-                for (cnt=0; cnt<fifo_num_tx; cnt++)
+                /* WAIT_LOOP */
+                for (cnt = 0; cnt < fifo_num_tx; cnt++)
                 {
                     SCI_TDR(SCI_CFG_DUMMY_TX_BYTE);
                 }
             }
             else
             {
-                for (cnt=0; cnt<fifo_num_tx; cnt++)
+                /* WAIT_LOOP */
+                for (cnt = 0; cnt < fifo_num_tx; cnt++)
                 {
                     SCI_TDR(*hdl->u_tx_data.buf++);
                 }
@@ -1526,17 +1609,20 @@ static void sci_fifo_receive_sync(sci_hdl_t const hdl)
     {
         hdl->rom->regs->FCR.BIT.RTRG = hdl->rx_curr_thresh;
         hdl->tx_idle = true;
+
         /* Do callback if available */
         if ((NULL != hdl->callback) && (FIT_NO_FUNC != hdl->callback))
         {
             args.hdl = hdl;
             args.event = SCI_EVT_XFER_DONE;
+
+            /* Casting pointer to void* type is valid */
             hdl->callback((void *)&args);
         }
     }
 } /* End of function sci_fifo_receive_sync() */
-#endif
-#endif
+#endif /* End of SCI_CFG_FIFO_INCLUDED */
+#endif /* End of SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED */
 
 #if SCI_CFG_FIFO_INCLUDED
 /*****************************************************************************
@@ -1558,9 +1644,11 @@ static void sci_fifo_receive(sci_hdl_t const hdl)
     if (SCI_MODE_ASYNC == hdl->mode)
     {
 #if (SCI_CFG_ASYNC_INCLUDED)
+        /* Casting unsigned char type to uint16_t type is valid */
         fifo_num = (uint16_t)hdl->rom->regs->FDR.BIT.R;
 
         /* RX FIFO flush */
+        /* WAIT_LOOP */
         for (cnt = 0; cnt < fifo_num; cnt++)
         {
             /* Read byte */
@@ -1581,9 +1669,10 @@ static void sci_fifo_receive(sci_hdl_t const hdl)
             args.event = SCI_EVT_RXBUF_OVFL;
         }
 
-        /* store bytes to rx queue for R_SCI_Receive */
+        /* WAIT_LOOP */
         for (cnt = 0; cnt < fifo_num; cnt++)
         {
+            /* store bytes to rx queue for R_SCI_Receive */
             (void)R_BYTEQ_Put(hdl->u_rx_data.que, byte_rx[cnt]);
         }
 
@@ -1591,10 +1680,14 @@ static void sci_fifo_receive(sci_hdl_t const hdl)
         if ((NULL != hdl->callback) && (FIT_NO_FUNC != hdl->callback))
         {
             args.hdl = hdl;
-            args.num = (uint8_t)fifo_num;   /* Number of bytes were stored to queue */
+
+            /* Number of bytes were stored to queue */
+            args.num = (uint8_t)fifo_num;
+
+            /* Casting pointer to void* type is valid */
             hdl->callback((void *)&args);
         }
-#endif
+#endif /* End of SCI_CFG_ASYNC_INCLUDED*/
     }
     else
     {
@@ -1607,6 +1700,7 @@ static void sci_fifo_receive(sci_hdl_t const hdl)
     /* When the readings of receive data are completed, set the SSRFIFO.RDF flag to 0. */
     if (1 == hdl->rom->regs->SSRFIFO.BIT.RDF)
     {
+        /* Casting 8 bits to unsigned char type is valid */
         hdl->rom->regs->SSRFIFO.BYTE = (unsigned char)~SCI_SSRFIFO_RDF_MASK;
     }
 
@@ -1614,11 +1708,63 @@ static void sci_fifo_receive(sci_hdl_t const hdl)
     {
         if (1 == hdl->rom->regs->SSRFIFO.BIT.DR)
         {
+            /* Casting 8 bits to unsigned char type is valid */
             hdl->rom->regs->SSRFIFO.BYTE = (unsigned char)~SCI_SSRFIFO_DR_MASK;
         }
     }
 } /* End of function sci_fifo_receive() */
-#endif
+#endif /* End of SCI_CFG_FIFO_INCLUDED */
+
+#if SCI_CFG_DATA_MATCH_INCLUDED
+/*****************************************************************************
+* Function Name: sci_receive_data_match
+* Description  : SCI receive data match
+* Arguments    : hdl -
+*                    handle for channel (ptr to chan control block)
+* Return Value : none
+******************************************************************************/
+static void sci_receive_data_match(sci_hdl_t const hdl)
+{
+    sci_cb_args_t   args;
+    uint8_t         byte;
+
+    if (SCI_MODE_ASYNC == hdl->mode)
+    {
+#if (SCI_CFG_ASYNC_INCLUDED)
+        if (0 == hdl->rom->regs->DCCR.BIT.DCME) /* DCME automatically set 0 when data matched */
+        {
+            hdl->rom->regs->DCCR.BIT.DCMF = 0; /* Clear Data Match Flag */
+
+            if ((0 == hdl->rom->regs->DCCR.BIT.DFER )  &&  (0 == hdl->rom->regs->DCCR.BIT.DPER )) /* Check framing error and parity error */
+            {
+                /* Casting unsigned char type to unin8_t type is valid */
+                byte = (uint8_t)(hdl->rom->regs->CDR.BYTE.L); /* Read data from comparison data register */
+
+                /* Place byte in queue */
+                if (R_BYTEQ_Put(hdl->u_rx_data.que, byte) == BYTEQ_SUCCESS)
+                {
+                    args.event = SCI_EVT_RX_CHAR_MATCH;
+                }
+                else
+                {
+                    args.event = SCI_EVT_RXBUF_OVFL;
+                }
+
+                /* Do callback if available */
+                if ((NULL != hdl->callback) && (FIT_NO_FUNC != hdl->callback))
+                {
+                    args.hdl = hdl;
+                    args.byte = byte;
+
+                    /* Casting to void* type is valid  */
+                    hdl->callback((void *)&args);
+                }
+            }
+        }
+#endif /* End of SCI_CFG_ASYNC_INCLUDED */
+    }
+} /* End of function sci_receive_data_match() */
+#endif /* End of SCI_CFG_DATA_MATCH_INCLUDED */
 
 /*****************************************************************************
 * Function Name: rxi_handler
@@ -1629,6 +1775,13 @@ static void sci_fifo_receive(sci_hdl_t const hdl)
 ******************************************************************************/
 void rxi_handler(sci_hdl_t const hdl)
 {
+#if SCI_CFG_DATA_MATCH_INCLUDED
+    if (1 == hdl->rom->regs->DCCR.BIT.DCMF) /* Check Data match flag */
+    {
+        sci_receive_data_match(hdl);
+    }
+    else
+#endif
 #if SCI_CFG_FIFO_INCLUDED
     if (true == hdl->fifo_ctrl)
     {
@@ -1683,13 +1836,14 @@ static void sci_error(sci_hdl_t const hdl)
         SCI_RDR(byte);
 
         /* Clear error condition */
+        /* WAIT_LOOP */
         while (0 != (SCI_SSR & SCI_RCVR_ERR_MASK))
         {
             SCI_RDR(byte);
 
             reg      = SCI_SSR;
-            reg     &= (uint8_t) (~SCI_RCVR_ERR_MASK);
-            reg     |= (uint8_t) SCI_SSR_CLR_MASK;
+            reg     &= (~SCI_RCVR_ERR_MASK);
+            reg     |= SCI_SSR_CLR_MASK;
             SCI_SSR  = reg;
 
             if (0 != (SCI_SSR & SCI_RCVR_ERR_MASK))
@@ -1703,6 +1857,8 @@ static void sci_error(sci_hdl_t const hdl)
         {
             args.hdl = hdl;
             args.byte = byte;
+
+            /* Casting to void* type is valid */
             hdl->callback((void *)&args);
         }
     }
@@ -1751,6 +1907,8 @@ static void sci_fifo_error(sci_hdl_t const hdl)
         {
             args.hdl = hdl;
             args.byte = 0;
+
+            /* Casting pointer to void* type is valid */
             hdl->callback((void *)&args);
         }
 
@@ -1759,19 +1917,21 @@ static void sci_fifo_error(sci_hdl_t const hdl)
         if (0 != (reg & SCI_RCVR_ERR_MASK))
         {
             /* Flush register */
+            /* WAIT_LOOP */
             while (0 != hdl->rom->regs->FDR.BIT.R)
             {
                 dummy = hdl->rom->regs->FRDR.WORD;              /* FRDR dummy read */
             }
 
             /* Clear error condition */
+            /* WAIT_LOOP */
             while (0x00 != (SCI_SSRFIFO & SCI_RCVR_ERR_MASK))   /* Check PER, FER, ORER flags */
             {
                 ssrfifo_data = SCI_SSRFIFO;                     /* SSRFIFO dummy read */
                 SCI_SSRFIFO = (uint8_t)~SCI_RCVR_ERR_MASK;      /* PER, FER, ORER clear */
                 if (0x00 != (SCI_SSRFIFO & SCI_RCVR_ERR_MASK))
                 {
-                    R_BSP_NOP();                                      /* read and Compare */
+                    R_BSP_NOP();                                /* read and Compare */
                 }
             }
         }
@@ -1779,7 +1939,7 @@ static void sci_fifo_error(sci_hdl_t const hdl)
 
     return;
 } /* End of function sci_fifo_error() */
-#endif
+#endif /* End of SCI_CFG_FIFO_INCLUDED */
 
 /*****************************************************************************
 * Function Name: eri_handler
@@ -1834,16 +1994,19 @@ sci_err_t R_SCI_Control(sci_hdl_t const     hdl,
                         sci_cmd_t const     cmd,
                         void                *p_args)
 {
-    sci_err_t   err=SCI_SUCCESS;
+    sci_err_t   err = SCI_SUCCESS;
     sci_baud_t  *baud;
     int32_t     bit_err;
 
 
 #if SCI_CFG_PARAM_CHECKING_ENABLE
+    /* Check argument hdl */
     if ((NULL == hdl) || (FIT_NO_PTR == hdl))
     {
         return SCI_ERR_NULL_PTR;
     }
+
+    /* Check argument p_args*/
     if ((NULL == p_args) || (FIT_NO_PTR == p_args))
     {
         if (SCI_CMD_CHANGE_BAUD == cmd)
@@ -1856,7 +2019,7 @@ sci_err_t R_SCI_Control(sci_hdl_t const     hdl,
             return SCI_ERR_NULL_PTR;
         }
 #endif
-#if defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N)
+#if defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX66T) || defined(BSP_MCU_RX72T) || defined(BSP_MCU_RX72M)
         if ((SCI_CMD_SET_TXI_PRIORITY == cmd) || (SCI_CMD_SET_RXI_PRIORITY == cmd))
         {
             return SCI_ERR_NULL_PTR;
@@ -1870,6 +2033,7 @@ sci_err_t R_SCI_Control(sci_hdl_t const     hdl,
 #if SCI_CFG_FIFO_INCLUDED
     if (SCI_CMD_CHANGE_TX_FIFO_THRESH == cmd)
     {
+        /* Casting void* type is valid */
         if (15 < (*(uint8_t *)p_args))
         {
             return SCI_ERR_INVALID_ARG;
@@ -1877,33 +2041,37 @@ sci_err_t R_SCI_Control(sci_hdl_t const     hdl,
     }
     if (SCI_CMD_CHANGE_RX_FIFO_THRESH == cmd)
     {
+        /* Casting void* type is valid */
         if ((1 > (*(uint8_t *)p_args)) || (15 < (*(uint8_t *)p_args)))
         {
             return SCI_ERR_INVALID_ARG;
         }
     }
 #endif
-#if defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N)
+#if defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX66T) || defined(BSP_MCU_RX72T) || defined(BSP_MCU_RX72M)
     if ((SCI_CMD_SET_TXI_PRIORITY == cmd) || (SCI_CMD_SET_RXI_PRIORITY == cmd))
     {
+        /* Casting void* type is valid */
         if ((1 > (*(uint8_t *)p_args)) || (BSP_MCU_IPL_MAX < (*(uint8_t *)p_args)))
         {
             return SCI_ERR_INVALID_ARG;
         }
     }
 #endif
-#endif
+#endif /* End of SCI_CFG_PARAM_CHECKING_ENABLE */
     
     /* COMMANDS COMMON TO ALL MODES */
 
     switch (cmd)
     {
     case (SCI_CMD_CHANGE_BAUD):
+    {
+        /* Casting void* type is valid */
         baud = (sci_baud_t *)p_args;
 #if (SCI_CFG_ASYNC_INCLUDED)
         hdl->pclk_speed = baud->pclk;           // save for break generation
 #endif
-        hdl->rom->regs->SCR.BYTE &= (uint8_t) (~SCI_EN_XCVR_MASK);
+        hdl->rom->regs->SCR.BYTE &= (~SCI_EN_XCVR_MASK);
         SCI_SCR_DUMMY_READ;
         bit_err = sci_init_bit_rate(hdl, baud->pclk, baud->rate);
         SCI_IR_TXI_CLEAR;
@@ -1917,12 +2085,14 @@ sci_err_t R_SCI_Control(sci_hdl_t const     hdl,
             hdl->baud_rate = baud->rate;    // save for break generation
         }
     break;
+    }
 
     case (SCI_CMD_EN_CTS_IN):
-        if (hdl->mode != SCI_MODE_SSPI)
+    {
+        if (SCI_MODE_SSPI != hdl->mode)
         {
             /* PFS & port pins must be configured for CTS prior to calling this */
-            hdl->rom->regs->SCR.BYTE &= (uint8_t) (~SCI_EN_XCVR_MASK);
+            hdl->rom->regs->SCR.BYTE &= (~SCI_EN_XCVR_MASK);
             SCI_SCR_DUMMY_READ;
             hdl->rom->regs->SPMR.BIT.CTSE = 1;      // enable CTS input
             SCI_IR_TXI_CLEAR;
@@ -1934,17 +2104,21 @@ sci_err_t R_SCI_Control(sci_hdl_t const     hdl,
             err = SCI_ERR_INVALID_ARG;
         }
     break;
+    }
 
 #if SCI_CFG_FIFO_INCLUDED
     case (SCI_CMD_CHANGE_TX_FIFO_THRESH):
+    {
         if (true == hdl->fifo_ctrl)
         {
             /* save current TX FIFO threshold */
             hdl->tx_curr_thresh = *((uint8_t *)p_args);
 
             /* change TX FIFO threshold */
-            hdl->rom->regs->SCR.BYTE &= ~SCI_EN_XCVR_MASK;
+            hdl->rom->regs->SCR.BYTE &= (~SCI_EN_XCVR_MASK);
             SCI_SCR_DUMMY_READ;
+
+            /* Casting void* type is valid */
             hdl->rom->regs->FCR.BIT.TTRG = *((uint8_t *)p_args);
             SCI_IR_TXI_CLEAR;
             hdl->rom->regs->SCR.BYTE |= SCI_EN_XCVR_MASK;
@@ -1954,16 +2128,20 @@ sci_err_t R_SCI_Control(sci_hdl_t const     hdl,
             err = SCI_ERR_INVALID_ARG;
         }
     break;
+    }
 
     case (SCI_CMD_CHANGE_RX_FIFO_THRESH):
+    {
         if (true == hdl->fifo_ctrl)
         {
             /* save current RX FIFO threshold */
             hdl->rx_curr_thresh = *((uint8_t *)p_args);
 
             /* change RX FIFO threshold */
-            hdl->rom->regs->SCR.BYTE &= ~SCI_EN_XCVR_MASK;
+            hdl->rom->regs->SCR.BYTE &= (~SCI_EN_XCVR_MASK);
             SCI_SCR_DUMMY_READ;
+
+            /* Casting void* type is valid */
             hdl->rom->regs->FCR.BIT.RTRG = *((uint8_t *)p_args);
             SCI_IR_TXI_CLEAR;
             hdl->rom->regs->SCR.BYTE |= SCI_EN_XCVR_MASK;
@@ -1973,19 +2151,27 @@ sci_err_t R_SCI_Control(sci_hdl_t const     hdl,
             err = SCI_ERR_INVALID_ARG;
         }
     break;
-#endif
+    }
+#endif /* End of SCI_CFG_FIFO_INCLUDED */
 
-#if defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N)
+#if defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX66T) || defined(BSP_MCU_RX72T) || defined(BSP_MCU_RX72M)
     case (SCI_CMD_SET_TXI_PRIORITY):
+    {
+        /* Casting void type to uint8_t type is valid */
         *hdl->rom->ipr_txi = *((uint8_t *)p_args);
     break;
+    }
 
     case (SCI_CMD_SET_RXI_PRIORITY):
+    {
+        /* Casting void type to uint8_t type is valid */
         *hdl->rom->ipr_rxi = *((uint8_t *)p_args);
     break;
+    }
 #endif
 
     default:
+    {
         /* ASYNC-SPECIFIC COMMANDS */
         if (SCI_MODE_ASYNC == hdl->mode)
         {
@@ -2002,6 +2188,7 @@ sci_err_t R_SCI_Control(sci_hdl_t const     hdl,
 #endif
         }
     break;
+    }
     }
 
     return err;
@@ -2025,6 +2212,7 @@ sci_err_t R_SCI_Close(sci_hdl_t const hdl)
 {
 
 #if SCI_CFG_PARAM_CHECKING_ENABLE
+    /* Check argument hdl */
     if ((NULL == hdl) || (FIT_NO_PTR == hdl))
     {
         return SCI_ERR_NULL_PTR;
@@ -2067,10 +2255,9 @@ sci_err_t R_SCI_Close(sci_hdl_t const hdl)
 * Arguments    : none
 * Return Value : version number
 ******************************************************************************/
-R_BSP_PRAGMA_INLINE(R_SCI_GetVersion)
 uint32_t  R_SCI_GetVersion(void)
 {
-uint32_t const version = (SCI_VERSION_MAJOR << 16) | SCI_VERSION_MINOR;
+    uint32_t const version = (SCI_VERSION_MAJOR << 16) | SCI_VERSION_MINOR;
 
     return version;
 } /* End of function R_SCI_GetVersion() */

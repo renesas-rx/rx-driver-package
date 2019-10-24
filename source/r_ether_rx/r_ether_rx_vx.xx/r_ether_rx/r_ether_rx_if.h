@@ -18,7 +18,7 @@
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_ether_rx_if.h
- * Version      : 1.08
+ * Version      : 1.17
  * Description  : Ethernet module device driver
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
@@ -33,15 +33,15 @@
  *         : 01.10.2017 1.06     Added changes for RX65N-2MB.
  *         : 08.01.2018 1.07     Changed minor version to '14'.
  *         : 07.05.2018 1.08     Changed minor version to '15'.
+ *         : 20.05.2019 1.16     Added support for GNUC and ICCRX.
+ *                               Fixed coding style.
+ *         : 30.07.2019 1.17     Changed minor version to '17'.
+ *         :                     Added changes for RX72M.
  ***********************************************************************************************************************/
 
 /* Guards against multiple inclusion */
 #ifndef R_ETHER_RX_IF_H
     #define R_ETHER_RX_IF_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /***********************************************************************************************************************
  Includes   <System Includes> , "Project Includes"
@@ -58,7 +58,7 @@ extern "C" {
  ***********************************************************************************************************************/
 /* Version Number of API. */
     #define ETHER_RX_VERSION_MAJOR  (1)
-    #define ETHER_RX_VERSION_MINOR  (15)
+    #define ETHER_RX_VERSION_MINOR  (17)
 
 /* When using the Read functions, ETHER_NO_DATA is the return value that indicates that no received data. */
     #define ETHER_NO_DATA           (0)
@@ -75,7 +75,7 @@ extern "C" {
 
     #if (defined(BSP_MCU_RX63N) || defined(BSP_MCU_RX65N))
         #define ETHER_CHANNEL_MAX       (1)
-    #elif (defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M))
+    #elif (defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX72M))
         #define ETHER_CHANNEL_MAX       (2)
     #endif
 
@@ -202,9 +202,5 @@ ether_return_t R_ETHER_WakeOnLAN (uint32_t channel);
 ether_return_t R_ETHER_CheckWrite (uint32_t channel);
 ether_return_t R_ETHER_Control (ether_cmd_t const cmd, ether_param_t const control);
 uint32_t R_ETHER_GetVersion (void);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif  /* R_ETHER_RX_IF_H*/

@@ -22,7 +22,8 @@
 ***********************************************************************************************************************/
 /**********************************************************************************************************************
 * History : DD.MM.YYYY Version  Description
-*         : 07.08.2013 0.01     First Release
+*         : 07.08.2013 1.00     First Release
+*         : 28.02.2019 1.01     Fixed coding style.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -78,7 +79,7 @@ Macro definitions
     #define BSP_PRV_PORTF_NE_PIN_MASK     (0x1F)    /* Missing pins: PF0 PF1 PF2 PF3 PF4 */
     #define BSP_PRV_PORTG_NE_PIN_MASK     (0xFF)    /* Missing pins: PG0 PG1 PG2 PG3 PG4 PG5 PG6 PG7 */
     #define BSP_PRV_PORTJ_NE_PIN_MASK     (0x00)    /* Missing pins: None */
-#elif (BSP_PACKAGE_PINS == 100)
+#elif BSP_PACKAGE_PINS == 100
     #define BSP_PRV_PORT0_NE_PIN_MASK     (0x0F)    /* Missing pins: P00 P01 P02 P03 */
     #define BSP_PRV_PORT1_NE_PIN_MASK     (0x03)    /* Missing pins: P10 P11 */
     #define BSP_PRV_PORT2_NE_PIN_MASK     (0x00)    /* Missing pins: None */
@@ -124,23 +125,59 @@ Private global variables and functions
 void bsp_non_existent_port_init (void)
 {
     /* OR in missing pin masks from above. */
+
+    /* Set PORT0.PDR */
     PORT0.PDR.BYTE |= BSP_PRV_PORT0_NE_PIN_MASK;
+
+    /* Set PORT1.PDR */
     PORT1.PDR.BYTE |= BSP_PRV_PORT1_NE_PIN_MASK;
+
+    /* Set PORT2.PDR */
     PORT2.PDR.BYTE |= BSP_PRV_PORT2_NE_PIN_MASK;
+
+    /* Set PORT3.PDR */
     PORT3.PDR.BYTE |= BSP_PRV_PORT3_NE_PIN_MASK;
+
+    /* Set PORT4.PDR */
     PORT4.PDR.BYTE |= BSP_PRV_PORT4_NE_PIN_MASK;
+
+    /* Set PORT5.PDR */
     PORT5.PDR.BYTE |= BSP_PRV_PORT5_NE_PIN_MASK;
+
+    /* Set PORT6.PDR */
     PORT6.PDR.BYTE |= BSP_PRV_PORT6_NE_PIN_MASK;
+
+    /* Set PORT7.PDR */
     PORT7.PDR.BYTE |= BSP_PRV_PORT7_NE_PIN_MASK;
+
+    /* Set PORT8.PDR */
     PORT8.PDR.BYTE |= BSP_PRV_PORT8_NE_PIN_MASK;
+
+    /* Set PORT9.PDR */
     PORT9.PDR.BYTE |= BSP_PRV_PORT9_NE_PIN_MASK;
+
+    /* Set PORTA.PDR */
     PORTA.PDR.BYTE |= BSP_PRV_PORTA_NE_PIN_MASK;
+
+    /* Set PORTB.PDR */
     PORTB.PDR.BYTE |= BSP_PRV_PORTB_NE_PIN_MASK;
+
+    /* Set PORTC.PDR */
     PORTC.PDR.BYTE |= BSP_PRV_PORTC_NE_PIN_MASK;
+
+    /* Set PORTD.PDR */
     PORTD.PDR.BYTE |= BSP_PRV_PORTD_NE_PIN_MASK;
+
+    /* Set PORTE.PDR */
     PORTE.PDR.BYTE |= BSP_PRV_PORTE_NE_PIN_MASK;
+
+    /* Set PORTF.PDR */
     PORTF.PDR.BYTE |= BSP_PRV_PORTF_NE_PIN_MASK;
+
+    /* Set PORTG.PDR */
     PORTG.PDR.BYTE |= BSP_PRV_PORTG_NE_PIN_MASK;
+
+    /* Set PORTJ.PDR */
     PORTJ.PDR.BYTE |= BSP_PRV_PORTJ_NE_PIN_MASK;
-}
+} /* End of function bsp_non_existent_port_init() */
 

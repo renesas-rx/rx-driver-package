@@ -14,7 +14,7 @@
 * following link:
 * http://www.renesas.com/disclaimer 
 *
-* Copyright (C) 2013-2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * File Name    : r_byteq_if.h
@@ -27,14 +27,13 @@
 *         : 04.04.2015 1.40    Updated version to 1.40 for RX231 release
 *         : 30.09.2015 1.50    Added dependency to BSP
 *         : 29.01.2016 1.60    Updated version to 1.60 for correspondence to RX Family
+*         : 01.06.2018 1.70    Updated version to 1.70
+*         : 03.12.2018 1.71    Updated version to 1.71 for update of xml file.
+*         : 07.02.2019 1.80    Updated version to 1.80.
 ***********************************************************************************************************************/
 
 #ifndef BYTEQ_IF_H
 #define BYTEQ_IF_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /***********************************************************************************************************************
 Includes   <System Includes> , "Project Includes"
@@ -46,7 +45,7 @@ Macro definitions
 ***********************************************************************************************************************/
 /* Version Number of API. */
 #define BYTEQ_VERSION_MAJOR (1)
-#define BYTEQ_VERSION_MINOR (60)
+#define BYTEQ_VERSION_MINOR (80)
 
 
 /*****************************************************************************
@@ -95,10 +94,6 @@ byteq_err_t R_BYTEQ_Unused(byteq_hdl_t const    hdl,
 
 uint32_t R_BYTEQ_GetVersion(void);
 
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* BYTEQ_IF_H */
 

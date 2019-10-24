@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_t4_rx
-VERSION = 		v2.07
+VERSION = 		v2.09
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules
@@ -19,4 +19,4 @@ $(TARGET_FOLDER)/$(MODULE_NAME)_$(VERSION)_extend.mdf:
 	cp ./$(MODULE_NAME)_vx.xx_extend.mdf $(TARGET_FOLDER)/$(MODULE_NAME)_$(VERSION)_extend.mdf
 
 clean:
-	rm -rf $(TARGET_FOLDER)/$(MODULE_NAME)_$(VERSION)*.*
+	rm -rf $(TARGET_FOLDER)/$(MODULE_NAME)*.*

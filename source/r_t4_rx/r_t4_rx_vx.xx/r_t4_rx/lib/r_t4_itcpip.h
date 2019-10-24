@@ -14,11 +14,11 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2004-2017 Renesas Electronics Corporation, All Rights Reserved.
+* Copyright (C) 2004-2019 Renesas Electronics Corporation, All Rights Reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * File Name    : r_t4_itcpip.h
-* Version      : 2.07
+* Version      : 2.09
 * Description  : TCP/IP library T4 Header file.
 * Website      : https://www.renesas.com/mw/t4
 ***********************************************************************************************************************/
@@ -64,15 +64,23 @@
 *         : 01.12.2015 2.05     Added IGMP support.
 *         : 30.11.2016 2.06     Added DHCP support.
 *         : 12.12.2017 2.07     Fixed bug: Fixed behavior of UDP's cancele-callback sequence.
-*         :                     Fixed behavior of ICMP operation sequence.
+*         :                     Fixed bug: Fixed behavior of ICMP operation sequence.
+*         : 10.12.2018 2.08     Fixed bug: Memory access violation due to the number of channels.
+*         :                     Fixed bug: Transaction ID generation.
+*         :                     Fixed bug: UDP callback routine.
+*         :                     Fixed bug: DHCP sequence when connecting a repeatoer hub.
+*         : 20.06.2019 2.09     Added TCP Keep-Alive function.
+*         :                     Added support GCC RX compiler and IAR RX compiler .
+*         :                     Changed specification T_TCP_CCEP, T_UDP_CCEP.
+*         :                     Fixed bug: Subnetmask filtering.
+*         :                     Fixed bug: API returns E_QOVR in Callback routine.
+*         :                     Fixed bug: the callback routine is called when
+*         :                     IP packet is received before IP address is bound.
 ***********************************************************************************************************************/
 
 #ifndef _R_T4_ITCPIP_H
 #define _R_T4_ITCPIP_H
 
-#if defined(__GNUC__)
-#include "r_tcpip_private.h"
-#endif /* #if defined(__GNUC__) */
 /*
  * ITRON data type definition
  */
@@ -85,9 +93,9 @@
 #if defined(R8C) || defined(M16C) || defined(M16C80) || defined(M32C80) ||\
     defined(__300HA__) || defined(__2600A__) ||\
     defined(_SH2) || defined(_SH2A) || defined(_SH2AFPU) || defined(_SH4) || defined(_SH4A) ||\
-    defined(__RX) || defined(__v850) || defined(__GNUC__)
+    defined(__RX) || defined(__v850) || defined(__GNUC__) || defined(__ICCRX__)
 
-#if defined(__RX) || defined(__GNUC__)
+#if defined(__RX) || defined(__GNUC__) || defined(__ICCRX__)
 #include <stdint.h>
 #else
 #include "r_stdint.h"
@@ -102,16 +110,11 @@ typedef uint32_t        UW;
 typedef int8_t          VB;
 typedef int16_t         VH;
 typedef int32_t         VW;
-typedef void _far *     VP;
+typedef void  *         VP;
 typedef void    (*FP)(void);
 
-#if defined(__GNUC__)
-typedef int             INT;
-typedef unsigned int    UINT;
-#else
 typedef W               INT;
 typedef UW              UINT;
-#endif
 typedef H               ID;
 typedef H               PRI;
 typedef W               TMO;
@@ -148,20 +151,23 @@ typedef struct t_tcp_crep
 /***  TCP communication end point  ***/
 typedef struct t_tcp_ccep
 {
-    ATR      cepatr;    /* TCP communication end point attribute  */
-    VP       sbuf;      /* Top address of transmit window buffer  */
-    INT      sbufsz;    /* Size of transmit window buffer         */
-    VP       rbuf;      /* Top address of receive window buffer   */
-    INT      rbufsz;    /* Size of receive window buffer          */
+    ATR      cepatr;     /* TCP communication end point attribute  */
+    VP       sbuf;       /* Top address of transmit window buffer  */
+    INT      sbufsz;     /* Size of transmit window buffer         */
+    VP       rbuf;       /* Top address of receive window buffer   */
+    INT      rbufsz;     /* Size of receive window buffer          */
     ER(*callback)(ID cepid, FN fncd , VP p_parblk);   /* Callback routine */
+    UW lan_port_number;  /* LAN port number */
+    UW keepalive_enable; /* Keep-alive function */
 } T_TCP_CCEP;
 
 /***  UDP communication end point  ***/
 typedef struct t_udp_ccep
 {
-    ATR      cepatr;    /* UDP communication end point attribute  */
-    T_IPV4EP myaddr;    /* Local IP address and port number       */
+    ATR      cepatr;     /* UDP communication end point attribute  */
+    T_IPV4EP myaddr;     /* Local IP address and port number       */
     ER(*callback)(ID cepid, FN fncd , VP p_parblk); /* Callback routine */
+    UW lan_port_number;  /* LAN port number */
 } T_UDP_CCEP;
 
 /***  IP address settings  ***/
@@ -209,7 +215,7 @@ typedef struct T4_STATISTICS
     UW re_igmp_header2_cnt;    /* v205 IGMP ext. */
     UW re_dhcp_header1_cnt;    /* v206 DHCP ext. */
     UW re_dhcp_header2_cnt;    /* v206 DHCP ext. */
-}T4_STATISTICS;
+} T4_STATISTICS;
 
 typedef struct _dhcp
 {
@@ -218,9 +224,9 @@ typedef struct _dhcp
     uint8_t gwaddr[4];
     uint8_t dnsaddr[4];
     uint8_t dnsaddr2[4];
-    char    domain[253+1];
+    char    domain[253 + 1];
     uint8_t macaddr[6];
-}DHCP;
+} DHCP;
 
 typedef ER(*callback_from_system_t)(UB channel, UW eventid, VP param);
 
@@ -413,23 +419,23 @@ extern "C"
 {
 #endif
 #endif
-    ER udp_snd_dat(ID cepid, T_IPV4EP *p_dstaddr, VP data, INT len, TMO tmout);
-    ER udp_rcv_dat(ID cepid, T_IPV4EP *p_dstaddr, VP data, INT len, TMO tmout);
-    ER udp_can_cep(ID cepid, FN fncd);
+ER udp_snd_dat(ID cepid, T_IPV4EP *p_dstaddr, VP data, INT len, TMO tmout);
+ER udp_rcv_dat(ID cepid, T_IPV4EP *p_dstaddr, VP data, INT len, TMO tmout);
+ER udp_can_cep(ID cepid, FN fncd);
 
-    ER tcp_acp_cep(ID cepid, ID repid, T_IPV4EP *p_dstadr, TMO tmout);
-    ER tcp_con_cep(ID cepid, T_IPV4EP *p_myadr,  T_IPV4EP *p_dstadr, TMO tmout);
-    ER tcp_sht_cep(ID cepid);
-    ER tcp_cls_cep(ID cepid, TMO tmout);
-    ER tcp_snd_dat(ID cepid, VP data,  INT dlen, TMO tmout);
-    ER tcp_rcv_dat(ID cepid, VP data, INT dlen, TMO tmout);
-    ER tcp_can_cep(ID cepid, FN fncd);
+ER tcp_acp_cep(ID cepid, ID repid, T_IPV4EP *p_dstadr, TMO tmout);
+ER tcp_con_cep(ID cepid, T_IPV4EP *p_myadr,  T_IPV4EP *p_dstadr, TMO tmout);
+ER tcp_sht_cep(ID cepid);
+ER tcp_cls_cep(ID cepid, TMO tmout);
+ER tcp_snd_dat(ID cepid, VP data,  INT dlen, TMO tmout);
+ER tcp_rcv_dat(ID cepid, VP data, INT dlen, TMO tmout);
+ER tcp_can_cep(ID cepid, FN fncd);
 
-    ER tcpudp_open(UW *workp);    /* Open TCP/IP library (initialization)                         */
-    ER tcpudp_close(void);        /* Close TCP/IP library (stop)                                  */
-    ER tcpudp_reset(UB channel);
-    W  tcpudp_get_ramsize(void);  /* Calculation of size of work area                             */
-    void _process_tcpip(void);    /* TCP/IP process function called from ether INT and timer INT. */
+ER tcpudp_open(UW *workp);    /* Open TCP/IP library (initialization)                         */
+ER tcpudp_close(void);        /* Close TCP/IP library (stop)                                  */
+ER tcpudp_reset(UB channel);
+W  tcpudp_get_ramsize(void);  /* Calculation of size of work area                             */
+void _process_tcpip(void);    /* TCP/IP process function called from ether INT and timer INT. */
 #if defined(__GNUC__)
 #if defined(__cplusplus)
 }
@@ -471,7 +477,7 @@ extern const mw_version_t R_t4_version;
 
 /* common variable in T4 */
 extern TCPUDP_ENV tcpudp_env[];
-extern far const H __udpcepn;
+extern const H __udpcepn;
 extern const UB _t4_channel_num;
 extern const callback_from_system_t g_fp_user;
 extern const UH _t4_dhcp_ip_reply_arp_delay;
@@ -542,10 +548,10 @@ ER  modem_close(void);
 /* PPP driver interface function (called by library) */
 H  ppp_read(UB **ppp);
 H  ppp_write(B *hdr, H hlen, B **pdata, H *pdlen, H num);
-ER ppp_api_req(UH type, void far *parblk, H tmout);
+ER ppp_api_req(UH type, void *parblk, H tmout);
 UH ppp_drv_status(void);            /* Get PPP driver state      */
 H  modem_read(UB **rzlt);
-H  modem_write(void far *parblk);
+H  modem_write(void *parblk);
 
 
 /*++++++++++++++++ Ether related +++++++++++++++++*/
@@ -555,11 +561,11 @@ extern "C"
 {
 #endif
 #endif
-    ER lan_open(void);                   /* Initialize LAN driver         */
-    ER lan_close(void);                  /* Deactivate the LAN driver     */
-    H lan_read(UB lan_port_no, B **buf);
-    H  lan_write(UB lan_port_no, B *header, H header_len, B *data , H data_len);  /* Send LAN data                 */
-    void lan_reset(UB lan_port_no);
+ER lan_open(void);                   /* Initialize LAN driver         */
+ER lan_close(void);                  /* Deactivate the LAN driver     */
+H lan_read(UB lan_port_no, B **buf);
+H  lan_write(UB lan_port_no, B *header, H header_len, B *data , H data_len);  /* Send LAN data                 */
+void lan_reset(UB lan_port_no);
 #if defined(__GNUC__)
 #if defined(__cplusplus)
 }

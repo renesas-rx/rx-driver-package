@@ -12,9 +12,9 @@
 * Renesas reserves the right, without notice, to make changes to this software and to discontinue the availability of 
 * this software. By using this software, you agree to the additional terms and conditions found by accessing the 
 * following link:
-* http://www.renesas.com/disclaimer 
+* http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.    
+* Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * File Name    : vecttbl.c
@@ -29,9 +29,10 @@
 *         : 15.05.2017 1.03     Deleted unnecessary comments.
 *         : 01.11.2017 2.00     Added the bsp startup module disable function.
 *         : 27.07.2018 2.01     Changed the setting of ID code protection.
-*         : xx.xx.xxxx 3.00     Deleted exception functions.
-*                               (Exception functions moved to the common file (interrupts.c).)
+*         : 28.02.2019 3.00     Deleted exception functions.
+*                               (Exception functions moved to the common file (r_bsp_interrupts.c).)
 *                               Added support for GNUC and ICCRX.
+*                               Fixed coding style.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -41,7 +42,7 @@ Includes   <System Includes> , "Project Includes"
 #include "platform.h"
 
 /* When using the user startup program, disable the following code. */
-#if (BSP_CFG_STARTUP_DISABLE == 0)
+#if BSP_CFG_STARTUP_DISABLE == 0
 
 /***********************************************************************************************************************
 Macro definitions
@@ -53,36 +54,14 @@ Exported global functions (to be accessed by other files)
 R_BSP_POR_FUNCTION(R_BSP_POWER_ON_RESET_FUNCTION);
 R_BSP_UB_POR_FUNCTION(R_BSP_UB_POWER_ON_RESET_FUNCTION);
 
-#ifdef BSP_MCU_EXCEP_SUPERVISOR_INST_ISR
-R_BSP_PRAGMA_INTERRUPT_FUNCTION(excep_supervisor_inst_isr)
-#endif
-#ifdef BSP_MCU_EXCEP_ACCESS_ISR
-R_BSP_PRAGMA_INTERRUPT_FUNCTION(excep_access_isr)
-#endif
-#ifdef BSP_MCU_EXCEP_UNDEFINED_INST_ISR
-R_BSP_PRAGMA_INTERRUPT_FUNCTION(excep_undefined_inst_isr)
-#endif
-#ifdef BSP_MCU_EXCEP_FLOATING_POINT_ISR
-R_BSP_PRAGMA_INTERRUPT_FUNCTION(excep_floating_point_isr)
-#endif
-#ifdef BSP_MCU_NON_MASKABLE_ISR
-R_BSP_PRAGMA_INTERRUPT_FUNCTION(non_maskable_isr)
-#endif
-#ifdef BSP_MCU_UNDEFINED_INTERRUPT_SOURCE_ISR
-R_BSP_PRAGMA_INTERRUPT_DEFAULT(undefined_interrupt_source_isr)
-#endif
-#ifdef BSP_MCU_BUS_ERROR_ISR
-R_BSP_PRAGMA_INTERRUPT(bus_error_isr, VECT(BSC,BUSERR))
-#endif
-
 /***********************************************************************************************************************
 * The following array fills in the UB codes to get into User Boot Mode, the MDEB register, and the User Boot reset
 * vector.
 ***********************************************************************************************************************/
 #ifdef __BIG
-    #define MDE_VALUE (0xfffffff8)    /* big */
+    #define BSP_PRV_MDE_VALUE (0xfffffff8)    /* big */
 #else
-    #define MDE_VALUE (0xffffffff)    /* little */
+    #define BSP_PRV_MDE_VALUE (0xffffffff)    /* little */
 #endif
 
 /* The UB Code A, UB Code B, and Endian select register B (MDEB) are located in the User Boot space. Immediately
@@ -92,10 +71,10 @@ R_BSP_PRAGMA_INTERRUPT(bus_error_isr, VECT(BSC,BUSERR))
    1) UB code A is 55736572h and 426F6F74h.
    2) UB code B is FFFF FF07h and 0008 C04Ch.
    3) The low level is being input on the MD pin.
-   4) The high level is being input on the PC7 pin. 
+   4) The high level is being input on the PC7 pin.
    Please see the Option-Setting Memory section of your MCU's HW manual for more information. */
 
-/* 0xFF7FFFE8 - 0xFF7FFFEF : UB Code A register  
+/* 0xFF7FFFE8 - 0xFF7FFFEF : UB Code A register
    0xFF7FFFF0 - 0xFF7FFFF7 : UB Code B register
    0xFF7FFFF8 - 0xFF7FFFFB : Reserved
    0xFF7FFFFC - 0xFF7FFFFF : User Boot Reset Vector */
@@ -106,12 +85,13 @@ R_BSP_PRAGMA_INTERRUPT(bus_error_isr, VECT(BSC,BUSERR))
 /* Allocate this space in the user boot sector. */
 R_BSP_ATTRIB_SECTION_CHANGE_UBSETTINGS const uint32_t user_boot_settings[6] =
 {
-    0x55736572,                 //Required setting for UB Code A to get into User Boot
-    0x426f6f74,                 //Required setting for UB Code A to get into User Boot
-    0xffffff07,                 //Required setting for UB Code B to get into User Boot
-    0x0008c04c,                 //Required setting for UB Code B to get into User Boot
+    0x55736572,                 /* Required setting for UB Code A to get into User Boot */
+    0x426f6f74,                 /* Required setting for UB Code A to get into User Boot */
+    0xffffff07,                 /* Required setting for UB Code B to get into User Boot */
+    0x0008c04c,                 /* Required setting for UB Code B to get into User Boot */
     0xFFFFFFFF,                 /* Reserved */
-    (uint32_t) R_BSP_UB_POWER_ON_RESET_FUNCTION //This is the User Boot Reset Vector. When using User Boot put in the reset address here
+    (uint32_t) R_BSP_UB_POWER_ON_RESET_FUNCTION /* This is the User Boot Reset Vector.
+                                                   When using User Boot put in the reset address here */
 };
 R_BSP_ATTRIB_SECTION_CHANGE_END
 
@@ -119,40 +99,40 @@ R_BSP_ATTRIB_SECTION_CHANGE_END
 
 #if defined(__CCRX__)
 
-#pragma address __SPCCreg  = 0x00120040         // SPCC register
-#pragma address __TMEFreg  = 0x00120048         // TMEF register
-#pragma address __OSIS1reg = 0x00120050         // OSIC register (ID codes)
-#pragma address __OSIS2reg = 0x00120054         // OSIC register (ID codes)
-#pragma address __OSIS3reg = 0x00120058         // OSIC register (ID codes)
-#pragma address __OSIS4reg = 0x0012005C         // OSIC register (ID codes)
-#pragma address __TMINFreg = 0x00120060         // TMINF register
-#pragma address __MDEreg   = 0x00120064         // MDE register (Single Chip Mode)
-#pragma address __OFS0reg  = 0x00120068         // OFS0 register
-#pragma address __OFS1reg  = 0x0012006c         // OFS1 register
+#pragma address __SPCCreg  = 0x00120040         /* SPCC register */
+#pragma address __TMEFreg  = 0x00120048         /* TMEF register */
+#pragma address __OSIS1reg = 0x00120050         /* OSIC register (ID codes) */
+#pragma address __OSIS2reg = 0x00120054         /* OSIC register (ID codes) */
+#pragma address __OSIS3reg = 0x00120058         /* OSIC register (ID codes) */
+#pragma address __OSIS4reg = 0x0012005C         /* OSIC register (ID codes) */
+#pragma address __TMINFreg = 0x00120060         /* TMINF register */
+#pragma address __MDEreg   = 0x00120064         /* MDE register (Single Chip Mode) */
+#pragma address __OFS0reg  = 0x00120068         /* OFS0 register */
+#pragma address __OFS1reg  = 0x0012006c         /* OFS1 register */
 
-const unsigned long __SPCCreg  = 0xffffffff;
-const unsigned long __TMEFreg  = BSP_CFG_TRUSTED_MODE_FUNCTION;
-const unsigned long __OSIS1reg = BSP_CFG_ID_CODE_LONG_1;
-const unsigned long __OSIS2reg = BSP_CFG_ID_CODE_LONG_2;
-const unsigned long __OSIS3reg = BSP_CFG_ID_CODE_LONG_3;
-const unsigned long __OSIS4reg = BSP_CFG_ID_CODE_LONG_4;
-const unsigned long __TMINFreg = 0xffffffff;
-const unsigned long __MDEreg   = MDE_VALUE;
-const unsigned long __OFS0reg  = BSP_CFG_OFS0_REG_VALUE;
-const unsigned long __OFS1reg  = BSP_CFG_OFS1_REG_VALUE;
+const uint32_t __SPCCreg  = 0xffffffff;
+const uint32_t __TMEFreg  = BSP_CFG_TRUSTED_MODE_FUNCTION;
+const uint32_t __OSIS1reg = BSP_CFG_ID_CODE_LONG_1;
+const uint32_t __OSIS2reg = BSP_CFG_ID_CODE_LONG_2;
+const uint32_t __OSIS3reg = BSP_CFG_ID_CODE_LONG_3;
+const uint32_t __OSIS4reg = BSP_CFG_ID_CODE_LONG_4;
+const uint32_t __TMINFreg = 0xffffffff;
+const uint32_t __MDEreg   = BSP_PRV_MDE_VALUE;
+const uint32_t __OFS0reg  = BSP_CFG_OFS0_REG_VALUE;
+const uint32_t __OFS1reg  = BSP_CFG_OFS1_REG_VALUE;
 
 #elif defined(__GNUC__)
 
-const unsigned long __SPCCreg  __attribute__ ((section(".ofs1"))) = 0xffffffff;
-const unsigned long __TMEFreg  __attribute__ ((section(".ofs2"))) = BSP_CFG_TRUSTED_MODE_FUNCTION;
-const unsigned long __OSIS1reg __attribute__ ((section(".ofs3"))) = BSP_CFG_ID_CODE_LONG_1;
-const unsigned long __OSIS2reg __attribute__ ((section(".ofs3"))) = BSP_CFG_ID_CODE_LONG_2;
-const unsigned long __OSIS3reg __attribute__ ((section(".ofs3"))) = BSP_CFG_ID_CODE_LONG_3;
-const unsigned long __OSIS4reg __attribute__ ((section(".ofs3"))) = BSP_CFG_ID_CODE_LONG_4;
-const unsigned long __TMINFreg __attribute__ ((section(".ofs4"))) = 0xffffffff;
-const unsigned long __MDEreg   __attribute__ ((section(".ofs4"))) = MDE_VALUE;
-const unsigned long __OFS0reg  __attribute__ ((section(".ofs4"))) = BSP_CFG_OFS0_REG_VALUE;
-const unsigned long __OFS1reg  __attribute__ ((section(".ofs4"))) = BSP_CFG_OFS1_REG_VALUE;
+const uint32_t __SPCCreg  __attribute__ ((section(".ofs1"))) = 0xffffffff;
+const uint32_t __TMEFreg  __attribute__ ((section(".ofs2"))) = BSP_CFG_TRUSTED_MODE_FUNCTION;
+const uint32_t __OSIS1reg __attribute__ ((section(".ofs3"))) = BSP_CFG_ID_CODE_LONG_1;
+const uint32_t __OSIS2reg __attribute__ ((section(".ofs3"))) = BSP_CFG_ID_CODE_LONG_2;
+const uint32_t __OSIS3reg __attribute__ ((section(".ofs3"))) = BSP_CFG_ID_CODE_LONG_3;
+const uint32_t __OSIS4reg __attribute__ ((section(".ofs3"))) = BSP_CFG_ID_CODE_LONG_4;
+const uint32_t __TMINFreg __attribute__ ((section(".ofs4"))) = 0xffffffff;
+const uint32_t __MDEreg   __attribute__ ((section(".ofs4"))) = BSP_PRV_MDE_VALUE;
+const uint32_t __OFS0reg  __attribute__ ((section(".ofs4"))) = BSP_CFG_OFS0_REG_VALUE;
+const uint32_t __OFS1reg  __attribute__ ((section(".ofs4"))) = BSP_CFG_OFS1_REG_VALUE;
 
 #elif defined(__ICCRX__)
 
@@ -163,7 +143,7 @@ const unsigned long __OFS1reg  __attribute__ ((section(".ofs4"))) = BSP_CFG_OFS1
 #pragma public_equ = "__OSIS_3", BSP_CFG_ID_CODE_LONG_3
 #pragma public_equ = "__OSIS_4", BSP_CFG_ID_CODE_LONG_4
 #pragma public_equ = "__TMINF", 0xffffffff
-#pragma public_equ = "__MDE", MDE_VALUE
+#pragma public_equ = "__MDE", BSP_PRV_MDE_VALUE
 #pragma public_equ = "__OFS0", BSP_CFG_OFS0_REG_VALUE
 #pragma public_equ = "__OFS1", BSP_CFG_OFS1_REG_VALUE
 

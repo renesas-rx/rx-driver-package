@@ -12,35 +12,33 @@
 * Renesas reserves the right, without notice, to make changes to this software and to discontinue the availability of 
 * this software. By using this software, you agree to the additional terms and conditions found by accessing the 
 * following link:
-* http://www.renesas.com/disclaimer 
+* http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.    
+* Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * File Name    : r_bsp.h
-* H/W Platform : GENERIC_RX64M 
+* H/W Platform : GENERIC_RX64M
 * Description  : Has the header files that should be included for this platform.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * History : DD.MM.YYYY Version  Description
 *         : 07.08.2013 1.00     First Release
-*         : 01.11.2017 2.00     Added include path of "mcu_startup.h".
+*         : 01.11.2017 2.00     Added include path of "r_bsp_mcu_startup.h".
 *         : 01.07.2018 2.01     Additional RTOS header file.
-*         : xx.xx.xxxx 3.00     Added the following include path.
+*         : 28.02.2019 3.00     Added the following include path.
 *                                - r_rx_compiler.h
 *                                - r_rtos.h
-*                                - interrupts.h
+*                                - r_bsp_interrupts.h
 *                                - mcu_clocks.h
 *                                - r_rx_intrinsic_functions.h
 *                               Modified the following include path.
 *                                - lowsrc.h
-*                                - mcu_startup.h
+*                                - r_bsp_mcu_startup.h
 *                                - vecttbl.h
 *                               Added support for GNUC and ICCRX.
+*                               Fixed coding style.
 ***********************************************************************************************************************/
-
-#ifndef BSP_BOARD_GENERIC_RX64M
-#define BSP_BOARD_GENERIC_RX64M
 
 /* Make sure that no other platforms have already been defined. Do not touch this! */
 #ifdef  PLATFORM_DEFINED
@@ -62,8 +60,9 @@ INCLUDE APPROPRIATE MCU AND BOARD FILES
 #include    "r_bsp_config.h"
 #include    "r_bsp_interrupt_config.h"
 
+#include    "mcu/all/lowlvl.h"
 #include    "mcu/all/lowsrc.h"
-#include    "mcu/all/mcu_startup.h"
+#include    "mcu/all/r_bsp_mcu_startup.h"
 
 #if defined(__CCRX__)
 #include    "mcu/rx64m/register_access/ccrx/iodefine.h"
@@ -72,8 +71,8 @@ INCLUDE APPROPRIATE MCU AND BOARD FILES
 #elif defined(__ICCRX__)
 #include    "mcu/rx64m/register_access/iccrx/iodefine.h"
 #endif /* defined(__CCRX__), defined(__GNUC__), defined(__ICCRX__) */
-#include    "mcu/rx64m/cpu.h"
-#include    "mcu/rx64m/locking.h"
+#include    "mcu/rx64m/r_bsp_cpu.h"
+#include    "mcu/rx64m/r_bsp_locking.h"
 #include    "mcu/rx64m/mcu_clocks.h"
 #include    "mcu/rx64m/mcu_info.h"
 #include    "mcu/rx64m/mcu_init.h"
@@ -85,7 +84,7 @@ INCLUDE APPROPRIATE MCU AND BOARD FILES
 
 #include    "board/generic_rx64m/hwsetup.h"
 
-#include    "mcu/all/interrupts.h"
+#include    "mcu/all/r_bsp_interrupts.h"
 #include    "mcu/all/r_rx_intrinsic_functions.h"
 #include    "mcu/all/r_rtos.h"
 
@@ -93,6 +92,8 @@ INCLUDE APPROPRIATE MCU AND BOARD FILES
 }
 #endif
 
-#endif /* BSP_BOARD_GENERIC_RX64M */
+#ifndef BSP_BOARD_GENERIC_RX64M
+#define BSP_BOARD_GENERIC_RX64M
 
+#endif /* BSP_BOARD_GENERIC_RX64M */
 

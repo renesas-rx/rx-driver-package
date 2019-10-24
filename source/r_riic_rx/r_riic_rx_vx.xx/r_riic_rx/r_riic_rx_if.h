@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer 
  *
- * Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2013(2019) Renesas Electronics Corporation. All rights reserved.
  **********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_riic_rx_if.h
@@ -50,15 +50,17 @@
  *         : 01.10.2016 2.00     Added RX65N support.
  *         : 02.06.2017 2.10     Changed minor version to '10' for RX24U support.
  *         : 31.08.2017 2.20     Changed minor version to '20' for RX65N-2MB and RX130-512KB support.
+ *         : 30.10.2017 2.30     Changed minor version to '30' for RX66T support.
+ *         : 03.12.2018 2.31     Changed minor version to '31' for update of xml file.
+ *         : 15.10.2018 2.40     Changed minor version to '40' for RX72T support.
+ *         : 20.05.2019 2.41     Added support for GNUC and ICCRX.
+ *                               Fixed coding style.
+ *         : 20.06.2019 2.42     Changed minor version to '42' for RX23W support. 
+ *         : 30.07.2019 2.43     Changed minor version to '43' for RX72M support.
  **********************************************************************************************************************/
 /* Guards against multiple inclusion */
 #ifndef RIIC_IF_H
     #define RIIC_IF_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /***********************************************************************************************************************
  Includes   <System Includes> , "Project Includes"
  **********************************************************************************************************************/
@@ -67,14 +69,13 @@ extern "C" {
 /* Used for configuring the RIIC code */
     #include "r_riic_rx_config.h"
 
-    R_BSP_PRAGMA_UNPACK
-
+R_BSP_PRAGMA_UNPACK
 /***********************************************************************************************************************
  Macro definitions
  **********************************************************************************************************************/
 /* Version Number of API. */
     #define RIIC_VERSION_MAJOR      (2)
-    #define RIIC_VERSION_MINOR      (20)
+    #define RIIC_VERSION_MINOR      (43)
 
 /*----------------------------------------------------------------------------*/
 /*   Defines the argument of the R_RIIC_Control function.                     */
@@ -126,19 +127,19 @@ typedef enum
 typedef void (*riic_callback) (void); /* Callback function type */
 
 /* ---- IIC Information structure type. ---- */
-typedef volatile R_BSP_ATTRIB_STRUCT_BIT_ORDER_LEFT_10
-(
-    uint8_t              rsv2, /* reserved */
-    uint8_t              rsv1, /* reserved */
-    riic_ch_dev_status_t dev_sts, /* Device status flag */
-    uint8_t              ch_no, /* Channel No. */
-    riic_callback        callbackfunc, /* Callback function */
-    uint32_t             cnt2nd, /* 2nd Data Counter */
-    uint32_t             cnt1st, /* 1st Data Counter */
-    uint8_t            * p_data2nd, /* Pointer for 2nd Data buffer */
-    uint8_t            * p_data1st, /* Pointer for 1st Data buffer */
-    uint8_t            * p_slv_adr  /* Pointer for Slave address buffer */
-) riic_info_t;
+typedef volatile struct
+{
+    uint8_t              rsv2; /* reserved */
+    uint8_t              rsv1; /* reserved */
+    riic_ch_dev_status_t dev_sts; /* Device status flag */
+    uint8_t              ch_no; /* Channel No. */
+    riic_callback        callbackfunc; /* Callback function */
+    uint32_t             cnt2nd; /* 2nd Data Counter */
+    uint32_t             cnt1st; /* 1st Data Counter */
+    uint8_t            * p_data2nd; /* Pointer for 2nd Data buffer */
+    uint8_t            * p_data1st; /* Pointer for 1st Data buffer */
+    uint8_t            * p_slv_adr; /* Pointer for Slave address buffer */
+} riic_info_t;
 
 /*----------------------------------------------------------------------------*/
 /*   Define riic status structure type.                                       */
@@ -168,7 +169,7 @@ typedef union
         uint32_t SDAI :1, /* SDA pin level */
         uint32_t NACK :1, /* NACK detection flag */
         uint32_t TRS :1, /* Send mode / Receive mode flag */
-        uint32_t BSY :1  /* Bus status flag */
+        uint32_t BSY :1 /* Bus status flag */
     ) BIT;
 } riic_mcu_status_t;
 
@@ -191,11 +192,6 @@ riic_return_t R_RIIC_Control (riic_info_t *, uint8_t ctrl_ptn);
 riic_return_t R_RIIC_Close (riic_info_t *);
 uint32_t R_RIIC_GetVersion (void);
 
-    R_BSP_PRAGMA_PACKOPTION
-
-#ifdef __cplusplus
-}
-#endif
-
+R_BSP_PRAGMA_PACKOPTION
 #endif /* RIIC_IF_H */
 

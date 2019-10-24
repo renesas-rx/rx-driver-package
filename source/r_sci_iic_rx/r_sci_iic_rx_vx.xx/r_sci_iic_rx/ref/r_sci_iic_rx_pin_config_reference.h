@@ -43,9 +43,9 @@
 /*   Set using port as sci iic port                                             */
 /*------------------------------------------------------------------------------*/
 /* Select the port group and pin used by setting
- "R_SCI_IIC_CFG_SCIx_SSCLx_PORT (select from port group 0 to J)"
+ "R_SCI_IIC_CFG_SCIx_SSCLx_PORT (select from port group 0 to K)"
  and "R_SCI_IIC_CFG_SCIx_SSCLx_BIT (select from pin number 0 to 7)"
- and "R_SCI_IIC_CFG_SCIx_SSDAx_PORT (select from port group 0 to J)"
+ and "R_SCI_IIC_CFG_SCIx_SSDAx_PORT (select from port group 0 to K)"
  and "R_SCI_IIC_CFG_SCIx_SSDAx_BIT (select from pin number 0 to 7)",
  respectively. */
 

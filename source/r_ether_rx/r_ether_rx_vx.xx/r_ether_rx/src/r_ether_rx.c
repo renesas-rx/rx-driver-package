@@ -18,7 +18,7 @@
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_ether_rx.c
- * Version      : 1.14
+ * Version      : 1.17
  * Description  : Ethernet module device driver
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
@@ -51,7 +51,18 @@
  *                                 The issue occurs when R_ETHER_LinkProcess function is called
  *                                 in the interrupt function.
  *                               Corrected source code of the R_ETHER_Read_ZC2 function.
- *         : xx.xx.xxxx x.xx     Added support for GNUC and ICCRX.
+ *         : 20.05.2019 1.16     Added support for GNUC and ICCRX.
+ *                               Fixed coding style.
+ *         : 30.07.2019 1.17     Added WAIT LOOP.
+ *                               Added changes for RX72M.
+ *                               The module is updated to fix the software issue.
+ *                               When R_ETHER_Read_ZC2_BufRelease function and R_ETHER_Read function are executed,
+ *                               data is received when the reception descriptor (RAM) operated by EDMAC and the 
+ *                               reception descriptor (RAM) operated by Ether FIT module are the same. There may occer two 
+ *                               phenomena:
+ *                               (1) Data loss for one frame of received data may occur.
+ *                               (2) Also, even if no data loss occurs, if an error frame is received, it may be 
+ *                                   erroneously recognized as a normal frame.
  ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -101,10 +112,10 @@ static void power_off (uint32_t channel);
 static ether_return_t ether_set_multicastframe_filter (ether_param_t const control);
 static ether_return_t ether_set_broadcastframe_filter (ether_param_t const control);
 
-#if (defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N))
+#if (defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX72M))
 static void ether_eint0 (void * pparam);
 #endif
-#if (defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M))
+#if (defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX72M))
 static void ether_eint1(void * pparam);
 #endif
 
@@ -202,7 +213,7 @@ static uint8_t lchng_flag[ETHER_CHANNEL_MAX];
  * ETHER_MC_FILTER_ON           (1) : Enable multicast frame filtering.
  *
  * The frame multicast filtering is software filter. If you want to use Hardware filter,
- * please use it EPTPC in RX64M/RX71M.
+ * please use it EPTPC in RX64M/RX71M/RX72M.
  */
 static uint8_t mc_filter_flag[ETHER_CHANNEL_MAX];
 
@@ -234,9 +245,9 @@ static const pauseresolution_t pause_resolution[PAUSE_TABLE_ENTRIES] =
  * on the memory map.
  */
 R_BSP_ATTRIB_SECTION_CHANGE(B, _RX_DESC, 1)
-static descriptor_t rx_descriptors[ETHER_CHANNEL_MAX][ETHER_CFG_EMAC_RX_DESCRIPTORS];
+static R_BSP_VOLATILE_EVENACCESS descriptor_t rx_descriptors[ETHER_CHANNEL_MAX][ETHER_CFG_EMAC_RX_DESCRIPTORS];
 R_BSP_ATTRIB_SECTION_CHANGE(B, _TX_DESC, 1)
-static descriptor_t tx_descriptors[ETHER_CHANNEL_MAX][ETHER_CFG_EMAC_TX_DESCRIPTORS];
+static R_BSP_VOLATILE_EVENACCESS descriptor_t tx_descriptors[ETHER_CHANNEL_MAX][ETHER_CFG_EMAC_TX_DESCRIPTORS];
 
 /* 
  * As for Ethernet buffer, the size of total buffer which are use for transmission and the reception is secured.
@@ -257,31 +268,31 @@ static uint8_t promiscuous_mode[ETHER_CHANNEL_MAX];
 static const ether_control_t ether_ch_0[]=
 {
     /* Ether = ch0, Phy access = ch0 */
-    {   &ETHERC, &EDMAC, &ETHERC.PIR.LONG, ETHER_CFG_CH0_PHY_ADDRESS, PORT_CONNECT_ET0}
+    {   &ETHERC, &EDMAC, (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ETHERC.PIR.LONG, ETHER_CFG_CH0_PHY_ADDRESS, PORT_CONNECT_ET0}
 };
     #elif (defined(BSP_MCU_RX65N))
 static const ether_control_t ether_ch_0[] =
 {
 /* Ether = ch0, Phy access = ch0 */
-{ &ETHERC0, &EDMAC0, &ETHERC0.PIR.LONG, ETHER_CFG_CH0_PHY_ADDRESS, PORT_CONNECT_ET0 } };
+    {   &ETHERC0, &EDMAC0, (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ETHERC0.PIR.LONG, ETHER_CFG_CH0_PHY_ADDRESS, PORT_CONNECT_ET0 } };
     #endif
 #elif (ETHER_CHANNEL_MAX == 2)
 static const ether_control_t ether_ch_0[]=
 {
     /* Ether = ch0, Phy access = ch0 */
-    {   &ETHERC0, &EDMAC0, &ETHERC0.PIR.LONG, ETHER_CFG_CH0_PHY_ADDRESS, PORT_CONNECT_ET0},
+    {   &ETHERC0, &EDMAC0, (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ETHERC0.PIR.LONG, ETHER_CFG_CH0_PHY_ADDRESS, PORT_CONNECT_ET0},
 
     /* Ether = ch0, Phy access = ch1 */
-    {   &ETHERC0, &EDMAC0, &ETHERC1.PIR.LONG, ETHER_CFG_CH0_PHY_ADDRESS, PORT_CONNECT_ET0_ET1}
+    {   &ETHERC0, &EDMAC0, (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ETHERC1.PIR.LONG, ETHER_CFG_CH0_PHY_ADDRESS, PORT_CONNECT_ET0_ET1}
 };
 
 static const ether_control_t ether_ch_1[]=
 {
     /* Ether = ch1, Phy access = ch0 */
-    {   &ETHERC1, &EDMAC1, &ETHERC0.PIR.LONG, ETHER_CFG_CH1_PHY_ADDRESS, PORT_CONNECT_ET0_ET1},
+    {   &ETHERC1, &EDMAC1, (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ETHERC0.PIR.LONG, ETHER_CFG_CH1_PHY_ADDRESS, PORT_CONNECT_ET0_ET1},
 
     /* Ether = ch1, Phy access = ch1 */
-    {   &ETHERC1, &EDMAC1, &ETHERC1.PIR.LONG, ETHER_CFG_CH1_PHY_ADDRESS, PORT_CONNECT_ET1}
+    {   &ETHERC1, &EDMAC1, (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ETHERC1.PIR.LONG, ETHER_CFG_CH1_PHY_ADDRESS, PORT_CONNECT_ET1}
 };
 #endif
 
@@ -336,8 +347,8 @@ const ether_ch_control_t g_eth_control_ch[] =
 void R_ETHER_Initial (void)
 {
     /* Initialize the transmit and receive descriptor */
-    memset(&rx_descriptors, 0x00, sizeof(rx_descriptors));
-    memset(&tx_descriptors, 0x00, sizeof(tx_descriptors));
+    memset((void *)&rx_descriptors, 0x00, sizeof(rx_descriptors));
+    memset((void *)&tx_descriptors, 0x00, sizeof(tx_descriptors));
 
     /* Initialize the Ether buffer */
     memset(&ether_buffers, 0x00, sizeof(ether_buffers));
@@ -396,8 +407,8 @@ ether_return_t R_ETHER_Open_ZC2 (uint32_t channel, const uint8_t mac_addr[], uin
     const ether_control_t * pether_ch;
     uint32_t phy_access;
 
-    volatile struct st_etherc __evenaccess * petherc_adr;
-    volatile struct st_edmac __evenaccess * pedmac_adr;
+    volatile struct st_etherc R_BSP_EVENACCESS_SFR * petherc_adr;
+    volatile struct st_edmac R_BSP_EVENACCESS_SFR * pedmac_adr;
 
     /* Check argument */
     if (ETHER_CHANNEL_MAX <= channel)
@@ -432,14 +443,12 @@ ether_return_t R_ETHER_Open_ZC2 (uint32_t channel, const uint8_t mac_addr[], uin
     mac_addr_buf[channel][4] = mac_addr[4];
     mac_addr_buf[channel][5] = mac_addr[5];
 
-#if (defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M))
+#if (defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX72M))
     /* Subscribe to r_bsp an interrupt function */
     if (false == is_entry)
     {
         bsp_int_err = R_BSP_InterruptWrite(BSP_INT_SRC_AL1_EDMAC0_EINT0, ether_eint0); /* EINT0 */
-        INTERNAL_NOT_USED(&bsp_int_err); /* The '&' is for the volatile declaration of the "bsp_int_err". */
         bsp_int_err = R_BSP_InterruptWrite(BSP_INT_SRC_AL1_EDMAC1_EINT1, ether_eint1); /* EINT1 */
-        INTERNAL_NOT_USED(&bsp_int_err); /* The '&' is for the volatile declaration of the "bsp_int_err". */
         is_entry = true;
     }
 #elif (defined(BSP_MCU_RX65N))
@@ -447,7 +456,6 @@ ether_return_t R_ETHER_Open_ZC2 (uint32_t channel, const uint8_t mac_addr[], uin
     if (false == is_entry)
     {
         bsp_int_err = R_BSP_InterruptWrite(BSP_INT_SRC_AL1_EDMAC0_EINT0, ether_eint0); /* EINT0 */
-        INTERNAL_NOT_USED(&bsp_int_err); /* The '&' is for the volatile declaration of the "bsp_int_err". */
         is_entry = true;
     }
 #endif
@@ -499,8 +507,8 @@ ether_return_t R_ETHER_Open_ZC2 (uint32_t channel, const uint8_t mac_addr[], uin
  ***********************************************************************************************************************/
 ether_return_t R_ETHER_Close_ZC2 (uint32_t channel)
 {
-    volatile struct st_etherc __evenaccess * petherc_adr;
-    volatile struct st_edmac __evenaccess * pedmac_adr;
+    volatile struct st_etherc R_BSP_EVENACCESS_SFR * petherc_adr;
+    volatile struct st_edmac R_BSP_EVENACCESS_SFR * pedmac_adr;
     const ether_control_t * pether_ch;
     uint32_t phy_access;
 
@@ -593,6 +601,7 @@ int32_t R_ETHER_Read_ZC2 (uint32_t channel, void **pbuf)
     {
         ret = ETHER_NO_DATA;
         complete_flag = ETHER_ERR_OTHER;
+        /* WAIT_LOOP */
         while (ETHER_SUCCESS != complete_flag)
         {
             /* When receive data exists. */
@@ -668,7 +677,7 @@ int32_t R_ETHER_Read_ZC2 (uint32_t channel, void **pbuf)
 int32_t R_ETHER_Read_ZC2_BufRelease (uint32_t channel)
 {
     int32_t ret;
-    volatile struct st_edmac __evenaccess * pedmac_adr;
+    volatile struct st_edmac R_BSP_EVENACCESS_SFR * pedmac_adr;
     const ether_control_t * pether_ch;
     uint32_t phy_access;
     uint32_t status;
@@ -699,7 +708,6 @@ int32_t R_ETHER_Read_ZC2_BufRelease (uint32_t channel)
         if (RACT != (papp_rx_desc[channel]->status & RACT))
         {
             /* Move to next descriptor */
-            papp_rx_desc[channel]->status |= RACT;
 
             status = RFP1;
             status |= RFP0;
@@ -714,6 +722,7 @@ int32_t R_ETHER_Read_ZC2_BufRelease (uint32_t channel)
             status |= RFS0_CERF;
 
             papp_rx_desc[channel]->status &= (~status);
+            papp_rx_desc[channel]->status |= RACT;
             papp_rx_desc[channel] = papp_rx_desc[channel]->next;
         }
         pether_ch = g_eth_control_ch[channel].pether_control;
@@ -825,7 +834,7 @@ ether_return_t R_ETHER_Write_ZC2_GetBuf (uint32_t channel, void **pbuf, uint16_t
 ether_return_t R_ETHER_Write_ZC2_SetBuf (uint32_t channel, const uint32_t len)
 {
     ether_return_t ret;
-    volatile struct st_edmac __evenaccess * pedmac_adr;
+    volatile struct st_edmac R_BSP_EVENACCESS_SFR * pedmac_adr;
     const ether_control_t * pether_ch;
     uint32_t phy_access;
 
@@ -856,9 +865,9 @@ ether_return_t R_ETHER_Write_ZC2_SetBuf (uint32_t channel, const uint32_t len)
     else
     {
         /* The data of the buffer is made active.  */
-        papp_tx_desc[channel]->bufsize = (uint16_t) len;
-        papp_tx_desc[channel]->status &= (uint32_t) (~(TFP1 | TFP0));
-        papp_tx_desc[channel]->status |= (uint32_t) ((TFP1 | TFP0) | TACT);
+        papp_tx_desc[channel]->bufsize = len;
+        papp_tx_desc[channel]->status &= (~(TFP1 | TFP0));
+        papp_tx_desc[channel]->status |= ((TFP1 | TFP0) | TACT);
         papp_tx_desc[channel] = papp_tx_desc[channel]->next;
 
         pether_ch = g_eth_control_ch[channel].pether_control;
@@ -922,11 +931,11 @@ ether_return_t R_ETHER_CheckLink_ZC (uint32_t channel)
  ***********************************************************************************************************************/
 void R_ETHER_LinkProcess (uint32_t channel)
 {
-    volatile struct st_etherc __evenaccess * petherc_adr;
+    volatile struct st_etherc R_BSP_EVENACCESS_SFR * petherc_adr;
     const ether_control_t * pether_ch;
     uint32_t phy_access;
 
-    int16_t ret;
+    int32_t ret;
     ether_cb_arg_t cb_arg;
 
     if (ETHER_CHANNEL_MAX <= channel)
@@ -994,8 +1003,8 @@ void R_ETHER_LinkProcess (uint32_t channel)
             lchng_flag[channel] = ETHER_FLAG_OFF;
 
             /* Initialize the transmit and receive descriptor */
-            memset(&rx_descriptors[channel], 0x00, sizeof(rx_descriptors[channel]));
-            memset(&tx_descriptors[channel], 0x00, sizeof(tx_descriptors[channel]));
+            memset((void *)&rx_descriptors[channel], 0x00, sizeof(rx_descriptors[channel]));
+            memset((void *)&tx_descriptors[channel], 0x00, sizeof(tx_descriptors[channel]));
 
             /* Initialize the Ether buffer */
             memset(&ether_buffers[channel], 0x00, sizeof(ether_buffers[channel]));
@@ -1037,8 +1046,8 @@ void R_ETHER_LinkProcess (uint32_t channel)
         lchng_flag[channel] = ETHER_FLAG_OFF;
 
         /* Initialize the transmit and receive descriptor */
-        memset(&rx_descriptors[channel], 0x00, sizeof(rx_descriptors[channel]));
-        memset(&tx_descriptors[channel], 0x00, sizeof(tx_descriptors[channel]));
+        memset((void *)&rx_descriptors[channel], 0x00, sizeof(rx_descriptors[channel]));
+        memset((void *)&tx_descriptors[channel], 0x00, sizeof(tx_descriptors[channel]));
 
         /* Initialize the Ether buffer */
         memset(&ether_buffers[channel], 0x00, sizeof(ether_buffers[channel]));
@@ -1147,7 +1156,7 @@ void R_ETHER_LinkProcess (uint32_t channel)
 ether_return_t R_ETHER_WakeOnLAN (uint32_t channel)
 {
 #if (ETHER_CFG_USE_LINKSTA == 1)
-    volatile struct st_etherc __evenaccess * petherc_adr;
+    volatile struct st_etherc R_BSP_EVENACCESS_SFR * petherc_adr;
     const ether_control_t * pether_ch;
     uint32_t phy_access;
 #endif
@@ -1362,7 +1371,7 @@ ether_return_t R_ETHER_Write (uint32_t channel, void *pbuf, const uint32_t len)
 ether_return_t R_ETHER_CheckWrite (uint32_t channel)
 {
     ether_return_t ret;
-    volatile struct st_edmac __evenaccess * pedmac_adr;
+    volatile struct st_edmac R_BSP_EVENACCESS_SFR * pedmac_adr;
     const ether_control_t * pether_ch;
     uint32_t phy_access;
 
@@ -1376,6 +1385,7 @@ ether_return_t R_ETHER_CheckWrite (uint32_t channel)
         pether_ch = g_eth_control_ch[channel].pether_control;
         phy_access = g_eth_control_ch[channel].phy_access;
         pedmac_adr = pether_ch[phy_access].pedmac;
+        /* WAIT_LOOP */
         while (0 != pedmac_adr->EDTRR.BIT.TR)
         {
             /* Do Nothing */
@@ -1454,7 +1464,6 @@ ether_return_t R_ETHER_Control (ether_cmd_t const cmd, ether_param_t const contr
  * Arguments    : none
  * Return Value : Version number
  ***********************************************************************************************************************/
-R_BSP_PRAGMA_INLINE(R_ETHER_GetVersion)
 uint32_t R_ETHER_GetVersion (void)
 {
     return ((((uint32_t) ETHER_RX_VERSION_MAJOR) << 16) | ((uint32_t) ETHER_RX_VERSION_MINOR));
@@ -1500,6 +1509,7 @@ static void ether_reset_mac (uint32_t channel)
      * Waiting time until the initialization of ETHERC and EDMAC is completed is 64 cycles
      * in the clock conversion of an internal bus of EDMAC. 
      */
+    /* WAIT_LOOP */
     for (i = 0; i < 0x00000180; i++)
     {
         ;
@@ -1520,6 +1530,7 @@ static void ether_init_descriptors (uint32_t channel)
     uint32_t i;
 
     /* Initialize the receive descriptors */
+    /* WAIT_LOOP */
     for (i = 0; i < ETHER_CFG_EMAC_RX_DESCRIPTORS; i++)
     {
         pdescriptor = (descriptor_t *) &rx_descriptors[channel][i];
@@ -1538,6 +1549,7 @@ static void ether_init_descriptors (uint32_t channel)
     papp_rx_desc[channel] = (descriptor_t *) &rx_descriptors[channel][0];
 
     /* Initialize the transmit descriptors */
+    /* WAIT_LOOP */
     for (i = 0; i < ETHER_CFG_EMAC_TX_DESCRIPTORS; i++)
     {
         pdescriptor = (descriptor_t *) &tx_descriptors[channel][i];
@@ -1572,8 +1584,8 @@ static void ether_init_descriptors (uint32_t channel)
  ***********************************************************************************************************************/
 static void ether_config_ethernet (uint32_t channel, const uint8_t mode)
 {
-    volatile struct st_etherc __evenaccess * petherc_adr;
-    volatile struct st_edmac __evenaccess * pedmac_adr;
+    volatile struct st_etherc R_BSP_EVENACCESS_SFR * petherc_adr;
+    volatile struct st_edmac R_BSP_EVENACCESS_SFR * pedmac_adr;
     const ether_control_t * pether_ch;
     uint32_t phy_access;
 
@@ -1653,7 +1665,7 @@ static void ether_config_ethernet (uint32_t channel, const uint8_t mode)
 #if (defined(BSP_MCU_RX63N) || defined(BSP_MCU_RX65N))
     /* transmit fifo & receive fifo is 2048 bytes */
     pedmac_adr->FDR.LONG = 0x00000707;
-#elif (defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M))
+#elif (defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX72M))
     /* transmit fifo is 2048 bytes, receive fifo is 4096 bytes */
     pedmac_adr->FDR.LONG = 0x0000070F;
 #endif
@@ -1696,6 +1708,7 @@ static void ether_pause_resolution (uint16_t local_ability, uint16_t partner_abi
             | (partner_ability & LINK_RES_ABILITY_MASK));
 
     /* Walk through the look up table */
+    /* WAIT_LOOP */
     for (i = 0; i < PAUSE_TABLE_ENTRIES; i++)
     {
         if ((ability_compare & pause_resolution[i].mask) == pause_resolution[i].value)
@@ -1724,7 +1737,7 @@ static void ether_configure_mac (uint32_t channel, const uint8_t mac_addr[], con
 {
     uint32_t mac_h;
     uint32_t mac_l;
-    volatile struct st_etherc __evenaccess * petherc_adr;
+    volatile struct st_etherc R_BSP_EVENACCESS_SFR * petherc_adr;
     const ether_control_t * pether_ch;
     uint32_t phy_access;
 
@@ -1785,9 +1798,9 @@ static ether_return_t ether_do_link (uint32_t channel, const uint8_t mode)
     uint16_t transmit_pause_set = 0;
     uint16_t receive_pause_set = 0;
     uint16_t full_duplex = 0;
-    int16_t link_result = 0;
-    volatile struct st_etherc __evenaccess * petherc_adr;
-    volatile struct st_edmac __evenaccess * pedmac_adr;
+    uint16_t link_result = 0;
+    volatile struct st_etherc R_BSP_EVENACCESS_SFR * petherc_adr;
+    volatile struct st_edmac R_BSP_EVENACCESS_SFR * pedmac_adr;
     const ether_control_t * pether_ch;
     uint32_t phy_access;
 
@@ -2256,7 +2269,7 @@ static ether_return_t ether_set_multicastframe_filter (ether_param_t const contr
     ether_return_t ret;
     uint32_t phy_access;
 
-    volatile struct st_etherc __evenaccess * petherc_adr;
+    volatile struct st_etherc R_BSP_EVENACCESS_SFR * petherc_adr;
     const ether_control_t * pether_ch;
 
     ret = ETHER_ERR_INVALID_ARG;
@@ -2320,7 +2333,7 @@ static ether_return_t ether_set_broadcastframe_filter (ether_param_t const contr
     ether_return_t ret;
     uint32_t phy_access;
 
-    volatile struct st_etherc __evenaccess * petherc_adr;
+    volatile struct st_etherc R_BSP_EVENACCESS_SFR * petherc_adr;
     const ether_control_t * pether_ch;
 
     ret = ETHER_ERR_INVALID_ARG;
@@ -2508,7 +2521,7 @@ R_BSP_ATTRIB_INTERRUPT void ether_eint(void)
     ether_int_common(ETHER_CHANNEL_0);
 } /* End of function ether_eint() */
 
-#elif (defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N))
+#elif (defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX72M))
 /***********************************************************************************************************************
  * Function Name: ether_eint0
  * Description  : EINT0 interrupt processing (A callback function to be called from r_bsp.)
@@ -2518,16 +2531,15 @@ R_BSP_ATTRIB_INTERRUPT void ether_eint(void)
  ***********************************************************************************************************************/
 static void ether_eint0 (void * pparam)
 {
-    volatile uint32_t dummy; /* FIXME: Replace this line and last two lines to one "INTERNAL_NOT_USED(pparam);". */
+    volatile uint32_t dummy;
 
     ether_int_common(ETHER_CHANNEL_0);
 
     dummy = (uint32_t) pparam;
-    INTERNAL_NOT_USED(&dummy); /* The '&' is for the volatile declaration of the "dummy". */
 } /* End of function ether_eint0() */
 #endif
 
-#if (defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M))
+#if (defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX72M))
 /***********************************************************************************************************************
  * Function Name: ether_eint1
  * Description  : EINT1 interrupt processing (A callback function to be called from r_bsp.)
@@ -2537,12 +2549,11 @@ static void ether_eint0 (void * pparam)
  ***********************************************************************************************************************/
 static void ether_eint1(void * pparam)
 {
-    volatile uint32_t dummy; /* FIXME: Replace this line and last two lines to one "INTERNAL_NOT_USED(pparam);". */
+    volatile uint32_t dummy;
 
     ether_int_common(ETHER_CHANNEL_1);
 
     dummy = (uint32_t)pparam;
-    INTERNAL_NOT_USED(&dummy); /* The '&' is for the volatile declaration of the "dummy". */
 } /* End of function ether_eint1() */
 #endif
 
@@ -2557,8 +2568,8 @@ static void ether_int_common (uint32_t channel)
 {
     uint32_t status_ecsr;
     uint32_t status_eesr;
-    volatile struct st_etherc __evenaccess * petherc_adr;
-    volatile struct st_edmac __evenaccess * pedmac_adr;
+    volatile struct st_etherc R_BSP_EVENACCESS_SFR * petherc_adr;
+    volatile struct st_edmac R_BSP_EVENACCESS_SFR * pedmac_adr;
     const ether_control_t * pether_ch;
     uint32_t phy_access;
     ether_cb_arg_t cb_arg;

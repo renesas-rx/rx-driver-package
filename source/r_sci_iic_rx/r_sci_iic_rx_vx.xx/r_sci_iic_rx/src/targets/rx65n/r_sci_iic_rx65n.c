@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer 
  *
- * Copyright (C) 2016 Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2016(2019) Renesas Electronics Corporation. All rights reserved.
  **********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_sci_iic_rx65n.c
@@ -27,6 +27,9 @@
  *                               Changed about the calculation processing for address of PFS, PCR, PDR, ODR0, ODR1,
  *                                DSCR and PMR register.
  *                               Corrected the drive capacity control setting process by r_sci_iic_io_open() function.
+ *         : 27.04.2018 2.30     Added "for", "while" and "do while" comment.
+ *         : 20.05.2019 2.41     Added support for GNUC and ICCRX.
+ *                               Fixed coding style.
  **********************************************************************************************************************/
 /***********************************************************************************************************************
  Includes   <System Includes> , "Project Includes"
@@ -60,12 +63,12 @@ const sci_iic_ch_rom_t g_sci_iic_ch0_rom =
 {
     BSP_LOCK_SCI0,
     (sci_regs_t)&SCI0,
-    &SYSTEM.MSTPCRB.LONG, BIT31_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&SYSTEM.MSTPCRB.LONG, BIT31_MASK,
     &ICU.IPR[IPR_SCI0_TXI0].BYTE,
     &ICU.IR[IR_SCI0_TXI0].BYTE,
-    &ICU.GRPBL0.LONG, BIT0_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GRPBL0.LONG, BIT0_MASK,
     &ICU.IER[IER_SCI0_TXI0].BYTE, BIT3_MASK,
-    &ICU.GENBL0.LONG, BIT0_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GENBL0.LONG, BIT0_MASK,
     BSP_INT_SRC_BL0_SCI0_TEI0,
     sci_iic_int_sci_iic0_tei_isr,
     SCI_IIC_CFG_CH0_INT_PRIORITY,
@@ -89,7 +92,7 @@ sci_iic_ch_ctrl_t g_sci_iic_ch0_ctrl =
     SCI_IIC_MODE_NONE,
     SCI_IIC_STS_NO_INIT,
     SCI_IIC_STS_NO_INIT,
-    (uint8_t)NULL,
+    (uint8_t)INT_ZERO,
     (sci_iic_info_t *)NULL
 };
     #endif
@@ -100,12 +103,12 @@ const sci_iic_ch_rom_t g_sci_iic_ch1_rom =
 {
     BSP_LOCK_SCI1,
     (sci_regs_t)&SCI1,
-    &SYSTEM.MSTPCRB.LONG, BIT30_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&SYSTEM.MSTPCRB.LONG, BIT30_MASK,
     &ICU.IPR[IPR_SCI1_TXI1].BYTE,
     &ICU.IR[IR_SCI1_TXI1].BYTE,
-    &ICU.GRPBL0.LONG, BIT2_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GRPBL0.LONG, BIT2_MASK,
     &ICU.IER[IER_SCI1_TXI1].BYTE, BIT5_MASK,
-    &ICU.GENBL0.LONG, BIT2_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GENBL0.LONG, BIT2_MASK,
     BSP_INT_SRC_BL0_SCI1_TEI1,
     sci_iic_int_sci_iic1_tei_isr,
     SCI_IIC_CFG_CH1_INT_PRIORITY,
@@ -129,7 +132,7 @@ sci_iic_ch_ctrl_t g_sci_iic_ch1_ctrl =
     SCI_IIC_MODE_NONE,
     SCI_IIC_STS_NO_INIT,
     SCI_IIC_STS_NO_INIT,
-    (uint8_t)NULL,
+    (uint8_t)INT_ZERO,
     (sci_iic_info_t *)NULL
 };
     #endif
@@ -140,12 +143,12 @@ const sci_iic_ch_rom_t g_sci_iic_ch2_rom =
 {
     BSP_LOCK_SCI2,
     (sci_regs_t)&SCI2,
-    &SYSTEM.MSTPCRB.LONG, BIT29_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&SYSTEM.MSTPCRB.LONG, BIT29_MASK,
     &ICU.IPR[IPR_SCI2_TXI2].BYTE,
     &ICU.IR[IR_SCI2_TXI2].BYTE,
-    &ICU.GRPBL0.LONG, BIT4_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GRPBL0.LONG, BIT4_MASK,
     &ICU.IER[IER_SCI2_TXI2].BYTE, BIT7_MASK,
-    &ICU.GENBL0.LONG, BIT4_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GENBL0.LONG, BIT4_MASK,
     BSP_INT_SRC_BL0_SCI2_TEI2,
     sci_iic_int_sci_iic2_tei_isr,
     SCI_IIC_CFG_CH2_INT_PRIORITY,
@@ -169,7 +172,7 @@ sci_iic_ch_ctrl_t g_sci_iic_ch2_ctrl =
     SCI_IIC_MODE_NONE,
     SCI_IIC_STS_NO_INIT,
     SCI_IIC_STS_NO_INIT,
-    (uint8_t)NULL,
+    (uint8_t)INT_ZERO,
     (sci_iic_info_t *)NULL
 };
     #endif
@@ -180,12 +183,12 @@ const sci_iic_ch_rom_t g_sci_iic_ch3_rom =
 {
     BSP_LOCK_SCI3,
     (sci_regs_t)&SCI3,
-    &SYSTEM.MSTPCRB.LONG, BIT28_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&SYSTEM.MSTPCRB.LONG, BIT28_MASK,
     &ICU.IPR[IPR_SCI3_TXI3].BYTE,
     &ICU.IR[IR_SCI3_TXI3].BYTE,
-    &ICU.GRPBL0.LONG, BIT6_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GRPBL0.LONG, BIT6_MASK,
     &ICU.IER[IER_SCI3_TXI3].BYTE, BIT1_MASK,
-    &ICU.GENBL0.LONG, BIT6_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GENBL0.LONG, BIT6_MASK,
     BSP_INT_SRC_BL0_SCI3_TEI3,
     sci_iic_int_sci_iic3_tei_isr,
     SCI_IIC_CFG_CH3_INT_PRIORITY,
@@ -209,7 +212,7 @@ sci_iic_ch_ctrl_t g_sci_iic_ch3_ctrl =
     SCI_IIC_MODE_NONE,
     SCI_IIC_STS_NO_INIT,
     SCI_IIC_STS_NO_INIT,
-    (uint8_t)NULL,
+    (uint8_t)INT_ZERO,
     (sci_iic_info_t *)NULL
 };
     #endif
@@ -220,12 +223,12 @@ const sci_iic_ch_rom_t g_sci_iic_ch4_rom =
 {
     BSP_LOCK_SCI4,
     (sci_regs_t)&SCI4,
-    &SYSTEM.MSTPCRB.LONG, BIT27_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&SYSTEM.MSTPCRB.LONG, BIT27_MASK,
     &ICU.IPR[IPR_SCI4_TXI4].BYTE,
     &ICU.IR[IR_SCI4_TXI4].BYTE,
-    &ICU.GRPBL0.LONG, BIT8_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GRPBL0.LONG, BIT8_MASK,
     &ICU.IER[IER_SCI4_TXI4].BYTE, BIT3_MASK,
-    &ICU.GENBL0.LONG, BIT8_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GENBL0.LONG, BIT8_MASK,
     BSP_INT_SRC_BL0_SCI4_TEI4,
     sci_iic_int_sci_iic4_tei_isr,
     SCI_IIC_CFG_CH4_INT_PRIORITY,
@@ -249,7 +252,7 @@ sci_iic_ch_ctrl_t g_sci_iic_ch4_ctrl =
     SCI_IIC_MODE_NONE,
     SCI_IIC_STS_NO_INIT,
     SCI_IIC_STS_NO_INIT,
-    (uint8_t)NULL,
+    (uint8_t)INT_ZERO,
     (sci_iic_info_t *)NULL
 };
     #endif
@@ -260,12 +263,12 @@ const sci_iic_ch_rom_t g_sci_iic_ch5_rom =
 {
     BSP_LOCK_SCI5,
     (sci_regs_t)&SCI5,
-    &SYSTEM.MSTPCRB.LONG, BIT26_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&SYSTEM.MSTPCRB.LONG, BIT26_MASK,
     &ICU.IPR[IPR_SCI5_TXI5].BYTE,
     &ICU.IR[IR_SCI5_TXI5].BYTE,
-    &ICU.GRPBL0.LONG, BIT10_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GRPBL0.LONG, BIT10_MASK,
     &ICU.IER[IER_SCI5_TXI5].BYTE, BIT5_MASK,
-    &ICU.GENBL0.LONG, BIT10_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GENBL0.LONG, BIT10_MASK,
     BSP_INT_SRC_BL0_SCI5_TEI5,
     sci_iic_int_sci_iic5_tei_isr,
     SCI_IIC_CFG_CH5_INT_PRIORITY,
@@ -289,7 +292,7 @@ sci_iic_ch_ctrl_t g_sci_iic_ch5_ctrl =
     SCI_IIC_MODE_NONE,
     SCI_IIC_STS_NO_INIT,
     SCI_IIC_STS_NO_INIT,
-    (uint8_t)NULL,
+    (uint8_t)INT_ZERO,
     (sci_iic_info_t *)NULL
 };
     #endif
@@ -300,12 +303,12 @@ const sci_iic_ch_rom_t g_sci_iic_ch6_rom =
 {
     BSP_LOCK_SCI6,
     (sci_regs_t)&SCI6,
-    &SYSTEM.MSTPCRB.LONG, BIT25_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&SYSTEM.MSTPCRB.LONG, BIT25_MASK,
     &ICU.IPR[IPR_SCI6_TXI6].BYTE,
     &ICU.IR[IR_SCI6_TXI6].BYTE,
-    &ICU.GRPBL0.LONG, BIT12_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GRPBL0.LONG, BIT12_MASK,
     &ICU.IER[IER_SCI6_TXI6].BYTE, BIT7_MASK,
-    &ICU.GENBL0.LONG, BIT12_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GENBL0.LONG, BIT12_MASK,
     BSP_INT_SRC_BL0_SCI6_TEI6,
     sci_iic_int_sci_iic6_tei_isr,
     SCI_IIC_CFG_CH6_INT_PRIORITY,
@@ -329,7 +332,7 @@ sci_iic_ch_ctrl_t g_sci_iic_ch6_ctrl =
     SCI_IIC_MODE_NONE,
     SCI_IIC_STS_NO_INIT,
     SCI_IIC_STS_NO_INIT,
-    (uint8_t)NULL,
+    (uint8_t)INT_ZERO,
     (sci_iic_info_t *)NULL
 };
     #endif
@@ -340,12 +343,12 @@ const sci_iic_ch_rom_t g_sci_iic_ch7_rom =
 {
     BSP_LOCK_SCI7,
     (sci_regs_t)&SCI7,
-    &SYSTEM.MSTPCRB.LONG, BIT24_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&SYSTEM.MSTPCRB.LONG, BIT24_MASK,
     &ICU.IPR[IPR_SCI7_TXI7].BYTE,
     &ICU.IR[IR_SCI7_TXI7].BYTE,
-    &ICU.GRPBL0.LONG, BIT14_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GRPBL0.LONG, BIT14_MASK,
     &ICU.IER[IER_SCI7_TXI7].BYTE, BIT3_MASK,
-    &ICU.GENBL0.LONG, BIT14_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GENBL0.LONG, BIT14_MASK,
     BSP_INT_SRC_BL0_SCI7_TEI7,
     sci_iic_int_sci_iic7_tei_isr,
     SCI_IIC_CFG_CH7_INT_PRIORITY,
@@ -369,7 +372,7 @@ sci_iic_ch_ctrl_t g_sci_iic_ch7_ctrl =
     SCI_IIC_MODE_NONE,
     SCI_IIC_STS_NO_INIT,
     SCI_IIC_STS_NO_INIT,
-    (uint8_t)NULL,
+    (uint8_t)INT_ZERO,
     (sci_iic_info_t *)NULL
 };
     #endif
@@ -380,12 +383,12 @@ const sci_iic_ch_rom_t g_sci_iic_ch8_rom =
 {
     BSP_LOCK_SCI8,
     (sci_regs_t)&SCI8,
-    &SYSTEM.MSTPCRC.LONG, BIT27_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&SYSTEM.MSTPCRC.LONG, BIT27_MASK,
     &ICU.IPR[IPR_SCI8_TXI8].BYTE,
     &ICU.IR[IR_SCI8_TXI8].BYTE,
-    &ICU.GRPBL1.LONG, BIT24_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GRPBL1.LONG, BIT24_MASK,
     &ICU.IER[IER_SCI8_TXI8].BYTE, BIT5_MASK,
-    &ICU.GENBL1.LONG, BIT24_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GENBL1.LONG, BIT24_MASK,
     BSP_INT_SRC_BL1_SCI8_TEI8,
     sci_iic_int_sci_iic8_tei_isr,
     SCI_IIC_CFG_CH8_INT_PRIORITY,
@@ -409,7 +412,7 @@ sci_iic_ch_ctrl_t g_sci_iic_ch8_ctrl =
     SCI_IIC_MODE_NONE,
     SCI_IIC_STS_NO_INIT,
     SCI_IIC_STS_NO_INIT,
-    (uint8_t)NULL,
+    (uint8_t)INT_ZERO,
     (sci_iic_info_t *)NULL
 };
     #endif
@@ -420,12 +423,12 @@ const sci_iic_ch_rom_t g_sci_iic_ch9_rom =
 {
     BSP_LOCK_SCI9,
     (sci_regs_t)&SCI9,
-    &SYSTEM.MSTPCRC.LONG, BIT26_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&SYSTEM.MSTPCRC.LONG, BIT26_MASK,
     &ICU.IPR[IPR_SCI9_TXI9].BYTE,
     &ICU.IR[IR_SCI9_TXI9].BYTE,
-    &ICU.GRPBL1.LONG, BIT26_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GRPBL1.LONG, BIT26_MASK,
     &ICU.IER[IER_SCI9_TXI9].BYTE, BIT7_MASK,
-    &ICU.GENBL1.LONG, BIT26_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GENBL1.LONG, BIT26_MASK,
     BSP_INT_SRC_BL1_SCI9_TEI9,
     sci_iic_int_sci_iic9_tei_isr,
     SCI_IIC_CFG_CH9_INT_PRIORITY,
@@ -449,7 +452,7 @@ sci_iic_ch_ctrl_t g_sci_iic_ch9_ctrl =
     SCI_IIC_MODE_NONE,
     SCI_IIC_STS_NO_INIT,
     SCI_IIC_STS_NO_INIT,
-    (uint8_t)NULL,
+    (uint8_t)INT_ZERO,
     (sci_iic_info_t *)NULL
 };
     #endif
@@ -460,12 +463,12 @@ const sci_iic_ch_rom_t g_sci_iic_ch10_rom =
 {
     BSP_LOCK_SCI10,
     (sci_regs_t)&SCI10,
-    &SYSTEM.MSTPCRC.LONG, BIT25_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&SYSTEM.MSTPCRC.LONG, BIT25_MASK,
     &ICU.IPR[IPR_SCI10_TXI10].BYTE,
     &ICU.IR[IR_SCI10_TXI10].BYTE,
-    &ICU.GRPAL0.LONG, BIT8_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GRPAL0.LONG, BIT8_MASK,
     &ICU.IER[IER_SCI10_TXI10].BYTE, BIT1_MASK,
-    &ICU.GENAL0.LONG, BIT8_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GENAL0.LONG, BIT8_MASK,
     BSP_INT_SRC_AL0_SCI10_TEI10,
     sci_iic_int_sci_iic10_tei_isr,
     SCI_IIC_CFG_CH10_INT_PRIORITY,
@@ -489,7 +492,7 @@ sci_iic_ch_ctrl_t g_sci_iic_ch10_ctrl =
     SCI_IIC_MODE_NONE,
     SCI_IIC_STS_NO_INIT,
     SCI_IIC_STS_NO_INIT,
-    (uint8_t)NULL,
+    (uint8_t)INT_ZERO,
     (sci_iic_info_t *)NULL
 };
     #endif
@@ -500,12 +503,12 @@ const sci_iic_ch_rom_t g_sci_iic_ch11_rom =
 {
     BSP_LOCK_SCI11,
     (sci_regs_t)&SCI11,
-    &SYSTEM.MSTPCRC.LONG, BIT24_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&SYSTEM.MSTPCRC.LONG, BIT24_MASK,
     &ICU.IPR[IPR_SCI11_TXI11].BYTE,
     &ICU.IR[IR_SCI11_TXI11].BYTE,
-    &ICU.GRPAL0.LONG, BIT12_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GRPAL0.LONG, BIT12_MASK,
     &ICU.IER[IER_SCI11_TXI11].BYTE, BIT3_MASK,
-    &ICU.GENAL0.LONG, BIT12_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GENAL0.LONG, BIT12_MASK,
     BSP_INT_SRC_AL0_SCI11_TEI11,
     sci_iic_int_sci_iic11_tei_isr,
     SCI_IIC_CFG_CH11_INT_PRIORITY,
@@ -529,7 +532,7 @@ sci_iic_ch_ctrl_t g_sci_iic_ch11_ctrl =
     SCI_IIC_MODE_NONE,
     SCI_IIC_STS_NO_INIT,
     SCI_IIC_STS_NO_INIT,
-    (uint8_t)NULL,
+    (uint8_t)INT_ZERO,
     (sci_iic_info_t *)NULL
 };
     #endif
@@ -540,12 +543,12 @@ const sci_iic_ch_rom_t g_sci_iic_ch12_rom =
 {
     BSP_LOCK_SCI12,
     (sci_regs_t)&SCI12,
-    &SYSTEM.MSTPCRB.LONG, BIT4_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&SYSTEM.MSTPCRB.LONG, BIT4_MASK,
     &ICU.IPR[IPR_SCI12_TXI12].BYTE,
     &ICU.IR[IR_SCI12_TXI12].BYTE,
-    &ICU.GRPBL0.LONG, BIT16_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GRPBL0.LONG, BIT16_MASK,
     &ICU.IER[IER_SCI12_TXI12].BYTE, BIT5_MASK,
-    &ICU.GENBL0.LONG, BIT16_MASK,
+    (volatile uint32_t R_BSP_EVENACCESS_SFR *)&ICU.GENBL0.LONG, BIT16_MASK,
     BSP_INT_SRC_BL0_SCI12_TEI12,
     sci_iic_int_sci_iic12_tei_isr,
     SCI_IIC_CFG_CH12_INT_PRIORITY,
@@ -569,7 +572,7 @@ sci_iic_ch_ctrl_t g_sci_iic_ch12_ctrl =
     SCI_IIC_MODE_NONE,
     SCI_IIC_STS_NO_INIT,
     SCI_IIC_STS_NO_INIT,
-    (uint8_t)NULL,
+    (uint8_t)INT_ZERO,
     (sci_iic_info_t *)NULL
 };
     #endif
@@ -665,7 +668,7 @@ sci_iic_return_t r_sci_iic_check_arguments (sci_iic_info_t * p_sci_iic_info, sci
     {
 
         if (((NULL == p_sci_iic_info->p_slv_adr) || (NULL == p_sci_iic_info->p_data2nd))
-                || (NULL == p_sci_iic_info->cnt2nd))
+                || ((uint32_t)NULL == p_sci_iic_info->cnt2nd))
         {
             return SCI_IIC_ERR_INVALID_ARG;
         }
@@ -699,14 +702,18 @@ sci_iic_return_t r_sci_iic_check_arguments (sci_iic_info_t * p_sci_iic_info, sci
  **********************************************************************************************************************/
 void r_sci_iic_power_on (uint8_t channel)
 {
-    volatile __evenaccess const sci_iic_ch_rom_t * prom = g_sci_iic_handles[channel]->prom;
+    R_BSP_VOLATILE_EVENACCESS const sci_iic_ch_rom_t * prom = g_sci_iic_handles[channel]->prom;
+    uint32_t mstp;
+    uint32_t stop_mask;
 
     /* Enable writing to MSTP registers. */
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
 
     /* Enable selected SCI_IIC Channel. */
     /* Bring module out of stop state. */
-    (*prom->pmstp) &= (~prom->stop_mask);
+    mstp = (*prom->pmstp);
+    stop_mask = prom->stop_mask;
+    (*prom->pmstp) = mstp & (~stop_mask);
 
     /* Disable writing to MSTP registers. */
     R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);
@@ -721,14 +728,19 @@ void r_sci_iic_power_on (uint8_t channel)
  **********************************************************************************************************************/
 void r_sci_iic_power_off (uint8_t channel)
 {
-    volatile __evenaccess const sci_iic_ch_rom_t * prom = g_sci_iic_handles[channel]->prom;
+    R_BSP_VOLATILE_EVENACCESS const sci_iic_ch_rom_t * prom = g_sci_iic_handles[channel]->prom;
+    
+    uint32_t mstp;
+    uint32_t stop_mask;
 
     /* Enable writing to MSTP registers. */
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
 
     /* Disable selected SCI_IIC Channel. */
     /* Put module in stop state. */
-    (*prom->pmstp) |= prom->stop_mask;
+    mstp = (*prom->pmstp);
+    stop_mask = prom->stop_mask;
+    (*prom->pmstp) = mstp | stop_mask;
 
     /* Disable writing to MSTP registers. */
     R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);
@@ -744,13 +756,13 @@ void r_sci_iic_power_off (uint8_t channel)
  **********************************************************************************************************************/
 void r_sci_iic_io_open (uint8_t port_gr, uint8_t pin_num)
 {
-    volatile uint8_t __evenaccess * const ppcr = (uint8_t *)((uint32_t)SCI_IIC_PRV_PCR_BASE_REG + (uint32_t)port_gr);
-    volatile uint8_t __evenaccess * const ppdr = (uint8_t *)((uint32_t)SCI_IIC_PRV_PDR_BASE_REG + (uint32_t)port_gr);
-    volatile uint8_t __evenaccess * const podr0 = (uint8_t *)((uint32_t)SCI_IIC_PRV_ODR0_BASE_REG
+    R_BSP_VOLATILE_EVENACCESS uint8_t * const ppcr = (uint8_t *)((uint32_t)SCI_IIC_PRV_PCR_BASE_REG + (uint32_t)port_gr);
+    R_BSP_VOLATILE_EVENACCESS uint8_t * const ppdr = (uint8_t *)((uint32_t)SCI_IIC_PRV_PDR_BASE_REG + (uint32_t)port_gr);
+    R_BSP_VOLATILE_EVENACCESS uint8_t * const podr0 = (uint8_t *)((uint32_t)SCI_IIC_PRV_ODR0_BASE_REG
                                                            + (uint32_t)(port_gr * 2));
-    volatile uint8_t __evenaccess * const podr1 = (uint8_t *)((uint32_t)SCI_IIC_PRV_ODR1_BASE_REG
+    R_BSP_VOLATILE_EVENACCESS uint8_t * const podr1 = (uint8_t *)((uint32_t)SCI_IIC_PRV_ODR1_BASE_REG
                                                            + (uint32_t)(port_gr * 2));
-    volatile uint8_t __evenaccess * const pdscr = (uint8_t *)((uint32_t)SCI_IIC_PRV_DSCR_BASE_REG + (uint32_t)port_gr);
+    R_BSP_VOLATILE_EVENACCESS uint8_t * const pdscr = (uint8_t *)((uint32_t)SCI_IIC_PRV_DSCR_BASE_REG + (uint32_t)port_gr);
 
     /* Sets the port register */
     if ((PORT3_GR != port_gr) && (PORTF_GR != port_gr))
@@ -786,7 +798,7 @@ void r_sci_iic_io_open (uint8_t port_gr, uint8_t pin_num)
 void r_sci_iic_init_io_register (sci_iic_info_t * p_sci_iic_info)
 {
     sci_regs_t pregs = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom->regs;
-    volatile __evenaccess const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
+    R_BSP_VOLATILE_EVENACCESS const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
 
     /* Sets SCLn and SDAn to non-driven state. */
     /* SCR - Serial Control Register 
@@ -881,18 +893,26 @@ void r_sci_iic_clear_io_register (sci_iic_info_t * p_sci_iic_info)
  **********************************************************************************************************************/
 void r_sci_iic_int_disable (sci_iic_info_t * p_sci_iic_info)
 {
-    volatile __evenaccess const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
+    R_BSP_VOLATILE_EVENACCESS const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
     uint32_t ipl;
+    uint8_t icu_txi;
+    uint8_t txi_en_mask;
+    uint32_t icu_tei;
+    uint32_t tei_en_mask;
 
     /* TEI interrupt set to callback function of group interrupt in bsp */
     R_BSP_InterruptWrite(prom->grp_tei_def, (bsp_int_cb_t) (FIT_NO_FUNC));
 
     /* Disables interrupt. */
     /* Disables TXI interrupt request enable register. */
-    (*prom->picu_txi) &= (~prom->txi_en_mask);
+    icu_txi = (*prom->picu_txi);
+    txi_en_mask = prom->txi_en_mask;
+    (*prom->picu_txi) = icu_txi & (~txi_en_mask);
 
     /* Disables TEI (in Group BL0) interrupt request enable register. */
-    (*prom->picu_tei) &= (~prom->tei_en_mask);
+    icu_tei = (*prom->picu_tei);
+    tei_en_mask = prom->tei_en_mask;
+    (*prom->picu_tei) = icu_tei & (~tei_en_mask);
 
     /* Clears interrupt source priority. */
     (*prom->pipr) = 0; /* Clears TXI interrupt source priority register. */
@@ -921,24 +941,38 @@ void r_sci_iic_int_disable (sci_iic_info_t * p_sci_iic_info)
  **********************************************************************************************************************/
 void r_sci_iic_int_enable (sci_iic_info_t * p_sci_iic_info)
 {
-    volatile __evenaccess const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
+    R_BSP_VOLATILE_EVENACCESS const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
     uint32_t ipl;
+    bsp_int_src_t grp_tei_def;
+    uint8_t icu_txi;
+    uint8_t txi_en_mask;
+    uint32_t icu_tei;
+    uint32_t tei_en_mask;
+    uint8_t ipr_set_val;
+    
+    
 
     /* Clears the interrupt request register. */
     sci_iic_clear_ir_flag(p_sci_iic_info);
 
     /* TEI interrupt set to callback function of group interrupt in bsp */
-    R_BSP_InterruptWrite(prom->grp_tei_def, (bsp_int_cb_t) (*prom->grp_tei_func));
+    grp_tei_def = prom->grp_tei_def;
+    R_BSP_InterruptWrite(grp_tei_def, (bsp_int_cb_t) (*prom->grp_tei_func));
 
     /* Enables interrupt. */
     /* Enables TXI interrupt request enable register. */
-    (*prom->picu_txi) |= prom->txi_en_mask;
+    icu_txi = (*prom->picu_txi);
+    txi_en_mask = prom->txi_en_mask;
+    (*prom->picu_txi) = icu_txi | txi_en_mask;
 
     /* Enables TEI (in Group BL0) interrupt request enable register. */
-    (*prom->picu_tei) |= prom->tei_en_mask;
+    icu_tei = (*prom->picu_tei);
+    tei_en_mask = prom->tei_en_mask;
+    (*prom->picu_tei) = icu_tei | tei_en_mask;
 
     /* Sets interrupt source priority. */
-    (*prom->pipr) = prom->ipr_set_val; /* Sets TXI interrupt source priority register. */
+    ipr_set_val = prom->ipr_set_val;
+    (*prom->pipr) = ipr_set_val; /* Sets TXI interrupt source priority register. */
 
     /* dummy read */
     if (*prom->pipr)
@@ -963,9 +997,11 @@ static void sci_iic_set_frequency (sci_iic_info_t * p_sci_iic_info)
     volatile uint16_t brr_n = 32U; /* default: 64*2^(2*0-1) = 32 */
     volatile uint8_t cks_value = 0U; /* default: PCLK/1 */
     volatile uint32_t brr_value = 0U;
+    uint16_t brr_n_tmp;
+    uint8_t cks_value_tmp;
 
     sci_regs_t pregs = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom->regs;
-    volatile __evenaccess const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
+    R_BSP_VOLATILE_EVENACCESS const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
 
     /*  ---- Calculation BRR ---- */
     /* Macro definition does not have the type of declaration. The cast for the calculation of the floating point, 
@@ -973,14 +1009,17 @@ static void sci_iic_set_frequency (sci_iic_info_t * p_sci_iic_info)
      Calculation results are not affected by casting, it is no problem. */
     if ((SCI_IIC_NUM_CH10 == p_sci_iic_info->ch_no) || (SCI_IIC_NUM_CH11 == p_sci_iic_info->ch_no))
     {
-        brr_value = (uint32_t) ((double) ((double) ((double) BSP_PCLKA_HZ / (brr_n * (prom->bitrate)))) - 0.1);
+        brr_n_tmp = brr_n;
+        brr_value = (uint32_t) ((double) ((double) ((double) BSP_PCLKA_HZ / (brr_n_tmp * (prom->bitrate)))) - 0.1);
     }
     else
     {
-        brr_value = (uint32_t) ((double) ((double) ((double) BSP_PCLKB_HZ / (brr_n * (prom->bitrate)))) - 0.1);
+        brr_n_tmp = brr_n;
+        brr_value = (uint32_t) ((double) ((double) ((double) BSP_PCLKB_HZ / (brr_n_tmp * (prom->bitrate)))) - 0.1);
     }
 
     /* Set clock source */
+    /* WAIT_LOOP */
     while (brr_value > 255)
     {
         /* Counter over 0xff */
@@ -1013,11 +1052,13 @@ static void sci_iic_set_frequency (sci_iic_info_t * p_sci_iic_info)
          Calculation results are not affected by casting, it is no problem. */
         if ((SCI_IIC_NUM_CH10 == p_sci_iic_info->ch_no) || (SCI_IIC_NUM_CH11 == p_sci_iic_info->ch_no))
         {
-            brr_value = (uint32_t) ((double) (((double) BSP_PCLKA_HZ / (brr_n * (prom->bitrate)))) - 0.1);
+            brr_n_tmp = brr_n;
+            brr_value = (uint32_t) ((double) (((double) BSP_PCLKA_HZ / (brr_n_tmp * (prom->bitrate)))) - 0.1);
         }
         else
         {
-            brr_value = (uint32_t) ((double) (((double) BSP_PCLKB_HZ / (brr_n * (prom->bitrate)))) - 0.1);
+            brr_n_tmp = brr_n;
+            brr_value = (uint32_t) ((double) (((double) BSP_PCLKB_HZ / (brr_n_tmp * (prom->bitrate)))) - 0.1);
         }
 
         /* When the clock source of the on-chip baud rate generator is PCLK/64 and when the value
@@ -1028,7 +1069,8 @@ static void sci_iic_set_frequency (sci_iic_info_t * p_sci_iic_info)
         }
     }
 
-    pregs->SMR.BYTE |= cks_value; /* Sets SMR */
+    cks_value_tmp = cks_value;
+    pregs->SMR.BYTE |= cks_value_tmp; /* Sets SMR */
     pregs->BRR = brr_value; /* Sets BRR */
 } /* End of function sci_iic_set_frequency() */
 
@@ -1042,8 +1084,8 @@ static void sci_iic_set_frequency (sci_iic_info_t * p_sci_iic_info)
  **********************************************************************************************************************/
 void r_sci_iic_mpc_setting (uint8_t port_gr, uint8_t pin_num, uint8_t set_value)
 {
-    volatile uint8_t __evenaccess * const ppmr = (uint8_t *)((uint32_t)SCI_IIC_PRV_PMR_BASE_REG + (uint32_t)port_gr);
-    volatile uint8_t __evenaccess * const ppfs = (uint8_t *)((uint32_t)SCI_IIC_PRV_PFS_BASE_REG
+    R_BSP_VOLATILE_EVENACCESS uint8_t * const ppmr = (uint8_t *)((uint32_t)SCI_IIC_PRV_PMR_BASE_REG + (uint32_t)port_gr);
+    R_BSP_VOLATILE_EVENACCESS uint8_t * const ppfs = (uint8_t *)((uint32_t)SCI_IIC_PRV_PFS_BASE_REG
                                                            + (uint32_t)((port_gr * 8) + pin_num));
 
     if ((*ppfs) != set_value)
@@ -1079,7 +1121,7 @@ void r_sci_iic_mpc_setting (uint8_t port_gr, uint8_t pin_num, uint8_t set_value)
 static void sci_iic_clear_ir_flag (sci_iic_info_t * p_sci_iic_info)
 {
     sci_regs_t pregs = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom->regs;
-    volatile __evenaccess const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
+    R_BSP_VOLATILE_EVENACCESS const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
 
     /* Checks IR flag. */
     /* If IR flag is set, clears IR flag. */
@@ -1088,6 +1130,7 @@ static void sci_iic_clear_ir_flag (sci_iic_info_t * p_sci_iic_info)
         /* Initializes ICIER->SCR register. */
         pregs->SCR.BYTE = SCI_IIC_SCR_INIT;
 
+        /* WAIT_LOOP */
         while (SCI_IIC_SCR_INIT != pregs->SCR.BYTE)
         {
             /* nothing to do */

@@ -22,13 +22,13 @@
 ***********************************************************************************************************************/
 /**********************************************************************************************************************
 * History : DD.MM.YYYY Version  Description
-*         : xx.xx.xxxx 1.00     First Release
+*         : 28.02.2019 1.00     First Release
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 Includes   <System Includes> , "Project Includes"
 ***********************************************************************************************************************/
-#include "platform.h"
+#include "r_bsp_common.h"
 
 /***********************************************************************************************************************
 Macro definitions
@@ -59,6 +59,8 @@ Macro definitions
 /* #define __RXV1 1 */ /* This is automatically defined by CCRX. */
 /* #define __RXV2 1 */ /* This is automatically defined by CCRX. */
 /* #define __RXV3 1 */ /* This is automatically defined by CCRX. */
+/* #define __TFU 1 */ /* This is automatically defined by CCRX. */
+/* #define __DPFPU 1 */ /* This is automatically defined by CCRX. */
 
 #elif defined(__GNUC__)
 
@@ -100,6 +102,18 @@ Macro definitions
 #endif
 #endif
 
+#if defined(__TFU__)   /* Not yet supported. */
+#if !defined(__TFU)
+#define __TFU 1
+#endif
+#endif
+
+#if defined(__RX_DPFPU_INSNS__)   /* Not yet supported. */
+#if !defined(__DPFPU)
+#define __DPFPU 1
+#endif
+#endif
+
 #elif defined(__ICCRX__)
 
 #if !defined(__RX)
@@ -112,6 +126,8 @@ Macro definitions
 /* #define __RXV1 1 */ /* This is automatically defined by ICCRX. */
 /* #define __RXV2 1 */ /* This is automatically defined by ICCRX. */
 /* #define __RXV3 1 */ /* This is automatically defined by ICCRX. */
+/* #define __TFU 1 */ /* Not yet supported. */
+/* #define __DPFPU 1 */ /* Not yet supported. */
 
 #endif
 
@@ -126,20 +142,59 @@ Macro definitions
 
 #if defined(__CCRX__)
 
-/* #define volatile        volatile __evenaccess */
+#define R_BSP_VOLATILE_EVENACCESS        volatile __evenaccess
+#define R_BSP_EVENACCESS                 __evenaccess
+#define R_BSP_EVENACCESS_SFR             __evenaccess
+#define R_BSP_VOLATILE_SFR               volatile
+#define R_BSP_SFR                        /* none */
 
 #elif defined(__GNUC__)
 
-#define __evenaccess    /* none */
+#define R_BSP_VOLATILE_EVENACCESS        volatile
+#define R_BSP_EVENACCESS                 /* none */
+#define R_BSP_EVENACCESS_SFR             /* none */
+#define R_BSP_VOLATILE_SFR               volatile
+#define R_BSP_SFR                        /* none */
 
 #elif defined(__ICCRX__)
 
-#define __evenaccess    __sfr
+#define R_BSP_VOLATILE_EVENACCESS        volatile
+#define R_BSP_EVENACCESS                 volatile
+#define R_BSP_EVENACCESS_SFR             __sfr
+#define R_BSP_VOLATILE_SFR               volatile __sfr
+#define R_BSP_SFR                        __sfr
 
 #endif
 
 
 /* ========== Sections ========== */
+
+/* ---------- Operators ---------- */
+#if defined(__CCRX__)
+
+#define R_BSP_SECTOP(name)        __sectop(#name)
+#define R_BSP_SECEND(name)        __secend(#name)
+#define R_BSP_SECSIZE(name)       __secsize(#name)
+
+#define R_BSP_SECTION_OPERATORS_INIT(name)    /* none */
+
+#elif defined(__GNUC__)
+
+#define R_BSP_SECTOP(name)        ((void *)name##_start)
+#define R_BSP_SECEND(name)        ((void *)name##_end)
+#define R_BSP_SECSIZE(name)       ((size_t)((uint8_t *)R_BSP_SECEND(name) - (uint8_t *)R_BSP_SECTOP(name)))
+
+#define R_BSP_SECTION_OPERATORS_INIT(name)    extern uint8_t name##_start[], name##_end[];
+
+#elif defined(__ICCRX__)
+
+#define R_BSP_SECTOP(name)        __section_begin(#name)
+#define R_BSP_SECEND(name)        __section_end(#name)
+#define R_BSP_SECSIZE(name)       __section_size(#name)
+
+#define R_BSP_SECTION_OPERATORS_INIT(name)    R_BSP_PRAGMA(section = #name);
+
+#endif
 
 /* ---------- Names ---------- */
 #if defined(__CCRX__)
@@ -196,9 +251,9 @@ extern void * const                   exvectors_start[];
 
 #elif defined(__ICCRX__)
 
-#define R_BSP_SECTOP_INTVECTTBL       __section_begin(R_BSP_SECNAME_INTVECTTBL)
+#define R_BSP_SECTOP_INTVECTTBL       /* none */
 #if defined(__RXV2) || defined(__RXV3)
-#define R_BSP_SECTOP_EXCEPTVECTTBL    __section_begin(R_BSP_SECNAME_EXCEPTVECTTBL)
+#define R_BSP_SECTOP_EXCEPTVECTTBL    /* none */
 #endif
 
 #endif
@@ -253,10 +308,10 @@ extern void * const                   exvectors_start[];
 
 #define R_BSP_ATTRIB_SECTION_CHANGE_UBSETTINGS                R_BSP_PRAGMA(location=R_BSP_SECNAME_UBSETTINGS)
 #if defined(__RXV2) || defined(__RXV3)
-#define R_BSP_ATTRIB_SECTION_CHANGE_EXCEPTVECT                R_BSP_PRAGMA(location=R_BSP_SECNAME_EXCEPTVECTTBL)
-#define R_BSP_ATTRIB_SECTION_CHANGE_RESETVECT                 R_BSP_PRAGMA(location=R_BSP_SECNAME_RESETVECT)
+#define R_BSP_ATTRIB_SECTION_CHANGE_EXCEPTVECT                /* none */
+#define R_BSP_ATTRIB_SECTION_CHANGE_RESETVECT                 /* none */
 #else
-#define R_BSP_ATTRIB_SECTION_CHANGE_FIXEDVECT                 R_BSP_PRAGMA(location=R_BSP_SECNAME_FIXEDVECTTBL)
+#define R_BSP_ATTRIB_SECTION_CHANGE_FIXEDVECT                 /* none */
 #endif
 #endif
 
@@ -269,20 +324,22 @@ extern void * const                   exvectors_start[];
 #define _R_BSP_ATTRIB_SECTION_CHANGE_B1(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(B, B##section_tag) /* The CC-RX adds postfix '_1' automatically */
 #define _R_BSP_ATTRIB_SECTION_CHANGE_B2(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(B, B##section_tag) /* The CC-RX adds postfix '_2' automatically */
 #define _R_BSP_ATTRIB_SECTION_CHANGE_B4(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(B, B##section_tag) /* The CC-RX does not add postfix '_4' */
+#define _R_BSP_ATTRIB_SECTION_CHANGE_B8(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(B, B##section_tag) /* The CC-RX adds postfix '_8' automatically */
 #define _R_BSP_ATTRIB_SECTION_CHANGE_C1(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(C, C##section_tag) /* The CC-RX adds postfix '_1' automatically */
 #define _R_BSP_ATTRIB_SECTION_CHANGE_C2(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(C, C##section_tag) /* The CC-RX adds postfix '_2' automatically */
 #define _R_BSP_ATTRIB_SECTION_CHANGE_C4(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(C, C##section_tag) /* The CC-RX does not add postfix '_4' */
+#define _R_BSP_ATTRIB_SECTION_CHANGE_C8(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(C, C##section_tag) /* The CC-RX adds postfix '_8' automatically */
 #define _R_BSP_ATTRIB_SECTION_CHANGE_D1(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(D, D##section_tag) /* The CC-RX adds postfix '_1' automatically */
 #define _R_BSP_ATTRIB_SECTION_CHANGE_D2(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(D, D##section_tag) /* The CC-RX adds postfix '_2' automatically */
 #define _R_BSP_ATTRIB_SECTION_CHANGE_D4(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(D, D##section_tag) /* The CC-RX does not add postfix '_4' */
+#define _R_BSP_ATTRIB_SECTION_CHANGE_D8(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(D, D##section_tag) /* The CC-RX adds postfix '_8' automatically */
 #define _R_BSP_ATTRIB_SECTION_CHANGE_P(section_tag)            __R_BSP_ATTRIB_SECTION_CHANGE_F(P, P##section_tag)
-
-#define R_BSP_ATTRIB_SECTION_CHANGE(type, section_tag, ...)    _R_BSP_ATTRIB_SECTION_CHANGE_##type##__VA_ARGS__(section_tag)
 
 #if !defined(__cplusplus)
 #define R_BSP_ATTRIB_SECTION_CHANGE(type, section_tag, ...)    _R_BSP_ATTRIB_SECTION_CHANGE_##type##__VA_ARGS__(section_tag)
 #else
 /* CC-RX' C++ mode does not support variadic macros */
+#define R_BSP_ATTRIB_SECTION_CHANGE(type, section_tag, align)  _R_BSP_ATTRIB_SECTION_CHANGE_##type##align(section_tag)
 #endif
 
 #define R_BSP_ATTRIB_SECTION_CHANGE_END                        R_BSP_PRAGMA(section)
@@ -295,12 +352,15 @@ extern void * const                   exvectors_start[];
 #define _R_BSP_ATTRIB_SECTION_CHANGE_B1(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(B##section_tag##_1)
 #define _R_BSP_ATTRIB_SECTION_CHANGE_B2(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(B##section_tag##_2)
 #define _R_BSP_ATTRIB_SECTION_CHANGE_B4(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(B##section_tag) /* No postfix '_4' because the CC-RX does not add it */
+#define _R_BSP_ATTRIB_SECTION_CHANGE_B8(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(B##section_tag##_8)
 #define _R_BSP_ATTRIB_SECTION_CHANGE_C1(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(C##section_tag##_1)
 #define _R_BSP_ATTRIB_SECTION_CHANGE_C2(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(C##section_tag##_2)
 #define _R_BSP_ATTRIB_SECTION_CHANGE_C4(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(C##section_tag) /* No postfix '_4' because the CC-RX does not add it */
+#define _R_BSP_ATTRIB_SECTION_CHANGE_C8(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(C##section_tag##_8)
 #define _R_BSP_ATTRIB_SECTION_CHANGE_D1(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(D##section_tag##_1)
 #define _R_BSP_ATTRIB_SECTION_CHANGE_D2(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(D##section_tag##_2)
 #define _R_BSP_ATTRIB_SECTION_CHANGE_D4(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(D##section_tag) /* No postfix '_4' because the CC-RX does not add it */
+#define _R_BSP_ATTRIB_SECTION_CHANGE_D8(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(D##section_tag##_8)
 #define _R_BSP_ATTRIB_SECTION_CHANGE_P(section_tag)            __R_BSP_ATTRIB_SECTION_CHANGE_F(P##section_tag)
 
 #define R_BSP_ATTRIB_SECTION_CHANGE(type, section_tag, ...)    _R_BSP_ATTRIB_SECTION_CHANGE_##type##__VA_ARGS__(section_tag)
@@ -315,12 +375,15 @@ extern void * const                   exvectors_start[];
 #define _R_BSP_ATTRIB_SECTION_CHANGE_B1(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(B##section_tag##_1)
 #define _R_BSP_ATTRIB_SECTION_CHANGE_B2(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(B##section_tag##_2)
 #define _R_BSP_ATTRIB_SECTION_CHANGE_B4(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(B##section_tag) /* No postfix '_4' because the CC-RX does not add it */
+#define _R_BSP_ATTRIB_SECTION_CHANGE_B8(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(B##section_tag##_8)
 #define _R_BSP_ATTRIB_SECTION_CHANGE_C1(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(C##section_tag##_1)
 #define _R_BSP_ATTRIB_SECTION_CHANGE_C2(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(C##section_tag##_2)
 #define _R_BSP_ATTRIB_SECTION_CHANGE_C4(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(C##section_tag) /* No postfix '_4' because the CC-RX does not add it */
+#define _R_BSP_ATTRIB_SECTION_CHANGE_C8(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(C##section_tag##_8)
 #define _R_BSP_ATTRIB_SECTION_CHANGE_D1(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(D##section_tag##_1)
 #define _R_BSP_ATTRIB_SECTION_CHANGE_D2(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(D##section_tag##_2)
 #define _R_BSP_ATTRIB_SECTION_CHANGE_D4(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(D##section_tag) /* No postfix '_4' because the CC-RX does not add it */
+#define _R_BSP_ATTRIB_SECTION_CHANGE_D8(section_tag)           __R_BSP_ATTRIB_SECTION_CHANGE_V(D##section_tag##_8)
 #define _R_BSP_ATTRIB_SECTION_CHANGE_P(section_tag)            __R_BSP_ATTRIB_SECTION_CHANGE_F(P##section_tag)
 
 #define R_BSP_ATTRIB_SECTION_CHANGE(type, section_tag, ...)    _R_BSP_ATTRIB_SECTION_CHANGE_##type##__VA_ARGS__(section_tag)
@@ -475,12 +538,12 @@ extern void * const                   exvectors_start[];
 /* Using inline assembler without operands and clobbered resources is dangerous but using it with them is too difficult. */
 
 #define R_BSP_PRAGMA_INLINE_ASM(function_name)           R_BSP_PRAGMA(inline=never)\
-                                                         extern __task
+                                                         extern
 #define R_BSP_PRAGMA_STATIC_INLINE_ASM(function_name)    R_BSP_PRAGMA(inline=never)\
-                                                         static __task
+                                                         static
 
-#define R_BSP_ATTRIB_INLINE_ASM                          extern __task /* ICCRX requires __task not only at a function declaration but also at a function definition */
-#define R_BSP_ATTRIB_STATIC_INLINE_ASM                   static __task /* ICCRX requires __task not only at a function declaration but also at a function definition */
+#define R_BSP_ATTRIB_INLINE_ASM                          extern /* ICCRX requires __task not only at a function declaration but also at a function definition */
+#define R_BSP_ATTRIB_STATIC_INLINE_ASM                   static /* ICCRX requires __task not only at a function declaration but also at a function definition */
 
 #endif
 
@@ -531,7 +594,7 @@ extern void * const                   exvectors_start[];
 
 #endif
 
-#endif
+#endif /* defined(__CDT_PARSER__) */
 
 /* ---------- Inline Expansion of Assembly-Language Function (part3) ---------- */
 #if defined(__CCRX__)
@@ -601,7 +664,7 @@ R_BSP_PRAGMA(bit_order)\
 
 #elif defined(__GNUC__)
 
-#if defined(__RX_LITTLE_ENDIAN__)
+#if defined(__LIT)
 
 #define R_BSP_ATTRIB_STRUCT_BIT_ORDER_LEFT(bf0, bf1, bf2, bf3, bf4, bf5, bf6, bf7, bf8, bf9, \
                                            bf10, bf11, bf12, bf13, bf14, bf15, bf16, bf17, bf18, bf19, \
@@ -642,7 +705,7 @@ struct {\
     bf0;\
 }
 
-#else
+#else /* defined(__LIT) */
 
 #define R_BSP_ATTRIB_STRUCT_BIT_ORDER_LEFT(bf0, bf1, bf2, bf3, bf4, bf5, bf6, bf7, bf8, bf9, \
                                            bf10, bf11, bf12, bf13, bf14, bf15, bf16, bf17, bf18, bf19, \
@@ -683,7 +746,7 @@ struct {\
     bf31;\
 }
 
-#endif
+#endif /* defined(__LIT) */
 
 #elif defined(__ICCRX__)
 
@@ -730,9 +793,9 @@ R_BSP_PRAGMA(bitfields=reversed_disjoint_types)\
 R_BSP_PRAGMA(bitfields=default)\
 }
 
-#endif
+#endif /* defined(__ICCRX__) */
 
-#define R_BSP_ATTRIB_STRUCT_BIT_ORDER_LEFT_1(bf01)\
+#define R_BSP_ATTRIB_STRUCT_BIT_ORDER_LEFT_1(bf0)\
  R_BSP_ATTRIB_STRUCT_BIT_ORDER_LEFT( \
  bf0, uint8_t :0, uint8_t :0, uint8_t :0, uint8_t :0, uint8_t :0, uint8_t :0, uint8_t :0, \
  uint8_t :0, uint8_t :0, uint8_t :0, uint8_t :0, uint8_t :0, uint8_t :0, uint8_t :0, uint8_t :0, \
@@ -1040,7 +1103,7 @@ R_BSP_PRAGMA(bit_order)\
 
 #elif defined(__GNUC__)
 
-#if defined(__RX_LITTLE_ENDIAN__)
+#if defined(__LIT)
 
 #define R_BSP_ATTRIB_STRUCT_BIT_ORDER_RIGHT(bf0, bf1, bf2, bf3, bf4, bf5, bf6, bf7, bf8, bf9, \
                                             bf10, bf11, bf12, bf13, bf14, bf15, bf16, bf17, bf18, bf19, \
@@ -1081,7 +1144,7 @@ struct {\
     bf31;\
 }
 
-#else
+#else /* defined(__LIT) */
 
 #define R_BSP_ATTRIB_STRUCT_BIT_ORDER_RIGHT(bf0, bf1, bf2, bf3, bf4, bf5, bf6, bf7, bf8, bf9, \
                                             bf10, bf11, bf12, bf13, bf14, bf15, bf16, bf17, bf18, bf19, \
@@ -1122,7 +1185,7 @@ struct {\
     bf0;\
 }
 
-#endif
+#endif /* defined(__LIT) */
 
 #elif defined(__ICCRX__)
 
@@ -1131,7 +1194,7 @@ struct {\
                                             bf20, bf21, bf22, bf23, bf24, bf25, bf26, bf27, bf28, bf29, \
                                             bf30, bf31)\
 struct {\
-R_BSP_PRAGMA(bitfields=reversed_disjoint_types)\
+R_BSP_PRAGMA(bitfields=disjoint_types)\
     struct {\
         bf0;\
         bf1;\
@@ -1169,7 +1232,7 @@ R_BSP_PRAGMA(bitfields=reversed_disjoint_types)\
 R_BSP_PRAGMA(bitfields=default)\
 }
 
-#endif
+#endif /* defined(__ICCRX__) */
 
 #define R_BSP_ATTRIB_STRUCT_BIT_ORDER_RIGHT_1(bf0)\
  R_BSP_ATTRIB_STRUCT_BIT_ORDER_RIGHT( \
@@ -1495,11 +1558,11 @@ R_BSP_PRAGMA(bitfields=default)\
 #elif defined(__ICCRX__)
 
 #define R_BSP_POR_FUNCTION(name)            extern int name(void)
-#define R_BSP_POWER_ON_RESET_FUNCTION       __iar_program_start
+#define R_BSP_POWER_ON_RESET_FUNCTION       _iar_program_start
 #define R_BSP_STARTUP_FUNCTION              __low_level_init
 
 #define R_BSP_UB_POR_FUNCTION(name)         extern int name(void)
-#define R_BSP_UB_POWER_ON_RESET_FUNCTION    __iar_program_start
+#define R_BSP_UB_POWER_ON_RESET_FUNCTION    _iar_program_start
 
 #define R_BSP_MAIN_FUNCTION                 _iar_main_call
 

@@ -19,15 +19,13 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2011-2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) 2011-2019 Renesas Electronics Corporation. All rights reserved.
 *******************************************************************************/
 
 /*******************************************************************************
 * File Name     : t4_driver.c
-* Version       : -----
-* Device(s)     : RX64M/RX71M
+* Version       : 1.08
 * Tool-Chain    : C/C++ Compiler Package for RX Family
-* H/W Platform  : Renesas Starter Kit+ for RX64M/RX71M (Renesas)
 * Description   : T4 ethernet driver interface program.
 ******************************************************************************/
 /******************************************************************************
@@ -42,6 +40,9 @@
 *               :                     counter variable "tcpudp_time_cnt".
 *               : 09.05.2016 ----   Added RX63N and RX65N support.
 *                                   Supported the LinkProcess function execution during processing of the interrupt.
+*               : 10.12.2018 ----   Fixed Random number conflict.
+*               :                   Fixed IP address conflict.
+*               : 20.06.2019 ----   Added support GCC RX compiler and IAR RX compiler .
 ******************************************************************************/
 
 /******************************************************************************
@@ -95,8 +96,10 @@ UH get_timer(void);
 Imported global variables and functions (from other files)
 ******************************************************************************/
 extern UB _myethaddr[][6];
+#if   (BSP_CFG_RTOS_USED >= 1)
 extern const H __tcpcepn;
 extern const H __udpcepn;
+#endif
 extern int32_t callback_ether_regist(void);
 #if defined (_T4_TEST)
 extern H lan_read_for_test(UB lan_port_no, B **buf, H return_code);
@@ -266,6 +269,7 @@ void udp_api_slp(ID cepid)
     ercd = sleep_task(cepid, IP_TYPE_UDP);
     if(ercd != E_OK)
     {
+        /* WAIT_LOOP */
         while(1);
     }
 #endif /* #if   (BSP_CFG_RTOS_USED >= 1) */
@@ -279,6 +283,7 @@ void udp_api_wup(ID cepid)
     ercd = wakeup_task(cepid, IP_TYPE_UDP);
     if(ercd != E_OK)
     {
+        /* WAIT_LOOP */
         while(1);
     }
 #endif /* #if   (BSP_CFG_RTOS_USED >= 1) */
@@ -292,6 +297,7 @@ void tcp_api_slp(ID cepid)
     ercd = sleep_task(cepid, IP_TYPE_TCP);
     if(ercd != E_OK)
     {
+        /* WAIT_LOOP */
         while(1);
     }
 #endif /* #if   (BSP_CFG_RTOS_USED >= 1) */
@@ -305,6 +311,7 @@ void tcp_api_wup(ID cepid)
     ercd = wakeup_task(cepid, IP_TYPE_TCP);
     if(ercd != E_OK)
     {
+        /* WAIT_LOOP */
         while(1);
     }
 #endif /* #if   (BSP_CFG_RTOS_USED >= 1) */
@@ -314,10 +321,18 @@ H lan_read(UB lan_port_no, B **buf)
 {
     int32_t driver_ret;
     H return_code;
+    B *data;
 
     driver_ret = R_ETHER_Read_ZC2(lan_port_no, (void **)buf);
     if (driver_ret > 0)
     {
+        data = (B *)*buf;
+        if(0 == memcmp(&data[6], &_myethaddr[lan_port_no], 6))
+        {
+            rcv_buff_release(lan_port_no);
+            return_code = -1;
+            return return_code;
+        }
         t4_stat[lan_port_no].t4_rec_cnt++;
         t4_stat[lan_port_no].t4_rec_byte += (UW)driver_ret;
         return_code = (H)driver_ret;
@@ -509,6 +524,7 @@ void wait_Xms(UH limit_time)
     wait_timer = 0;
     max = limit_time / 10;
 
+    /* WAIT_LOOP */
     while (wait_timer < max);
 }
 
@@ -528,12 +544,19 @@ Functions : random number generator(XorShift method)
 void get_random_number(UB *data, UW len)
 {
     static uint32_t y = 2463534242;
+    static uint32_t *z = (uint32_t *)&_myethaddr[0][2];
     uint32_t res;
     uint32_t lp;
     uint8_t *bPtr;
 
+    if(z != NULL)
+    {
+        y ^= *z;
+        z = NULL;
+    }
     y += tcpudp_time_cnt;
     res = len / 4;
+    /* WAIT_LOOP */
     for (lp = 0; lp < res; lp++)
     {
         y = y ^ (y << 13);

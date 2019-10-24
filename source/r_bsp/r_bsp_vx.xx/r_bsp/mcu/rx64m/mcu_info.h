@@ -12,14 +12,14 @@
 * Renesas reserves the right, without notice, to make changes to this software and to discontinue the availability of 
 * this software. By using this software, you agree to the additional terms and conditions found by accessing the 
 * following link:
-* http://www.renesas.com/disclaimer 
+* http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.    
+* Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * File Name    : mcu_info.h
 * Device(s)    : RX64M
-* Description  : Information about the MCU on this board.
+* Description  : Information about the MCU.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * History : DD.MM.YYYY Version  Description
@@ -34,14 +34,15 @@
 *                               Removed Character(s) of the following macro definition.
 *                               - BSP_CFG_MCU_PART_PACKAGE - LA = 0x6 = TFLGA/100/0.50.
 *                               - BSP_CFG_MCU_PART_PACKAGE - JA = 0x7 = TFLGA/100/0.65.
-*         : xx.xx.xxxx 2.00     Added macro definition of MCU functions. 
+*         : 28.02.2019 2.00     Added macro definition of MCU functions.
 *                               Added the following macro definition.
 *                               - BSP_MCU_CPU_VERSION
 *                               - CPU_CYCLES_PER_LOOP
+*                               Fixed coding style.
+*                               Added the error check of BSP_CFG_CLOCK_SOURCE.
+*                               Added the following enumeration constant.
+*                               - BSP_MCU_GROUP_INTERRUPT_BE0
 ***********************************************************************************************************************/
-
-#ifndef MCU_INFO
-#define MCU_INFO
 
 /***********************************************************************************************************************
 Includes   <System Includes> , "Project Includes"
@@ -52,14 +53,18 @@ Includes   <System Includes> , "Project Includes"
 /***********************************************************************************************************************
 Macro definitions
 ***********************************************************************************************************************/
+/* Multiple inclusion prevention macro */
+#ifndef MCU_INFO
+#define MCU_INFO
+
 /* MCU CPU Version */
 #define BSP_MCU_CPU_VERSION    (2)
 
-/* CPU cycles. */
-#define CPU_CYCLES_PER_LOOP    (4)    // Known number of RXv2 CPU cycles required to execute the delay_wait() loop
+/* CPU cycles. Known number of RXv2 CPU cycles required to execute the delay_wait() loop */
+#define CPU_CYCLES_PER_LOOP    (4)
 
 /* MCU Series. */
-#if   (BSP_CFG_MCU_PART_SERIES == 0x0)
+#if BSP_CFG_MCU_PART_SERIES == 0x0
     #define BSP_MCU_SERIES_RX600    (1)
 #else
     #error "ERROR - BSP_CFG_MCU_PART_SERIES - Unknown MCU Series chosen in r_bsp_config.h"
@@ -69,32 +74,32 @@ Macro definitions
 #define BSP_MCU_RX64_ALL            (1)
 
 /* MCU Group name. */
-#if   (BSP_CFG_MCU_PART_GROUP == 0x0)
+#if BSP_CFG_MCU_PART_GROUP == 0x0
     #define BSP_MCU_RX64M           (1)
 #else
     #error "ERROR - BSP_CFG_MCU_PART_GROUP - Unknown MCU Group chosen in r_bsp_config.h"
 #endif
 
 /* Package. */
-#if   (BSP_CFG_MCU_PART_PACKAGE == 0x0)
+#if   BSP_CFG_MCU_PART_PACKAGE == 0x0
     #define BSP_PACKAGE_LFQFP176    (1)
     #define BSP_PACKAGE_PINS        (176)
-#elif (BSP_CFG_MCU_PART_PACKAGE == 0x1)
+#elif BSP_CFG_MCU_PART_PACKAGE == 0x1
     #define BSP_PACKAGE_LFBGA176    (1)
     #define BSP_PACKAGE_PINS        (176)
-#elif (BSP_CFG_MCU_PART_PACKAGE == 0x2)
+#elif BSP_CFG_MCU_PART_PACKAGE == 0x2
     #define BSP_PACKAGE_TFLGA177    (1)
     #define BSP_PACKAGE_PINS        (177)
-#elif (BSP_CFG_MCU_PART_PACKAGE == 0x3)
+#elif BSP_CFG_MCU_PART_PACKAGE == 0x3
     #define BSP_PACKAGE_LFQFP144    (1)
     #define BSP_PACKAGE_PINS        (144)
-#elif (BSP_CFG_MCU_PART_PACKAGE == 0x4)
+#elif BSP_CFG_MCU_PART_PACKAGE == 0x4
     #define BSP_PACKAGE_TFLGA145    (1)
     #define BSP_PACKAGE_PINS        (145)
-#elif (BSP_CFG_MCU_PART_PACKAGE == 0x5)
+#elif BSP_CFG_MCU_PART_PACKAGE == 0x5
     #define BSP_PACKAGE_LFQFP100    (1)
     #define BSP_PACKAGE_PINS        (100)
-#elif (BSP_CFG_MCU_PART_PACKAGE == 0xA)
+#elif BSP_CFG_MCU_PART_PACKAGE == 0xA
     #define BSP_PACKAGE_TFLGA100    (1)
     #define BSP_PACKAGE_PINS        (100)
 #else
@@ -102,19 +107,19 @@ Macro definitions
 #endif
 
 /* Memory size of your MCU. */
-#if   (BSP_CFG_MCU_PART_MEMORY_SIZE == 0xF)
+#if   BSP_CFG_MCU_PART_MEMORY_SIZE == 0xF
     #define BSP_ROM_SIZE_BYTES              (2097152)
     #define BSP_RAM_SIZE_BYTES              (524288)
     #define BSP_DATA_FLASH_SIZE_BYTES       (65536)
-#elif (BSP_CFG_MCU_PART_MEMORY_SIZE == 0x10)
+#elif BSP_CFG_MCU_PART_MEMORY_SIZE == 0x10
     #define BSP_ROM_SIZE_BYTES              (2621440)
     #define BSP_RAM_SIZE_BYTES              (524288)
     #define BSP_DATA_FLASH_SIZE_BYTES       (65536)
-#elif (BSP_CFG_MCU_PART_MEMORY_SIZE == 0x13)
+#elif BSP_CFG_MCU_PART_MEMORY_SIZE == 0x13
     #define BSP_ROM_SIZE_BYTES              (3145728)
     #define BSP_RAM_SIZE_BYTES              (524288)
     #define BSP_DATA_FLASH_SIZE_BYTES       (65536)
-#elif (BSP_CFG_MCU_PART_MEMORY_SIZE == 0x15)
+#elif BSP_CFG_MCU_PART_MEMORY_SIZE == 0x15
     #define BSP_ROM_SIZE_BYTES              (4194304)
     #define BSP_RAM_SIZE_BYTES              (524288)
     #define BSP_DATA_FLASH_SIZE_BYTES       (65536)
@@ -123,16 +128,15 @@ Macro definitions
 #endif
 
 /* These macros define clock speeds for fixed speed clocks. */
-#define BSP_LOCO_HZ                         (240000)        //Low-speed On-Chip Oscillator
-#define BSP_SUB_CLOCK_HZ                    (32768)         //Sub-Clock Oscillator
-
+#define BSP_LOCO_HZ                         (240000)
+#define BSP_SUB_CLOCK_HZ                    (32768)
 
 /* Define frequency of HOCO. */
-#if   (BSP_CFG_HOCO_FREQUENCY == 0)
+#if   BSP_CFG_HOCO_FREQUENCY == 0
     #define BSP_HOCO_HZ                     (16000000)
-#elif (BSP_CFG_HOCO_FREQUENCY == 1)
+#elif BSP_CFG_HOCO_FREQUENCY == 1
     #define BSP_HOCO_HZ                     (18000000)
-#elif (BSP_CFG_HOCO_FREQUENCY == 2)
+#elif BSP_CFG_HOCO_FREQUENCY == 2
     #define BSP_HOCO_HZ                     (20000000)
 #else
     #error "ERROR - Invalid HOCO frequency chosen in r_bsp_config.h! Set valid value for BSP_CFG_HOCO_FREQUENCY."
@@ -145,22 +149,24 @@ Macro definitions
    3 = Sub-Clock Oscillator
    4 = PLL Circuit
 */ 
-#if   (BSP_CFG_CLOCK_SOURCE == 0)
+#if   BSP_CFG_CLOCK_SOURCE == 0
     #define BSP_SELECTED_CLOCK_HZ       (BSP_LOCO_HZ)
-#elif (BSP_CFG_CLOCK_SOURCE == 1)
+#elif BSP_CFG_CLOCK_SOURCE == 1
     #define BSP_SELECTED_CLOCK_HZ       (BSP_HOCO_HZ)
-#elif (BSP_CFG_CLOCK_SOURCE == 2)
+#elif BSP_CFG_CLOCK_SOURCE == 2
     #define BSP_SELECTED_CLOCK_HZ       (BSP_CFG_XTAL_HZ)
-#elif (BSP_CFG_CLOCK_SOURCE == 3)
+#elif BSP_CFG_CLOCK_SOURCE == 3
     #define BSP_SELECTED_CLOCK_HZ       (BSP_SUB_CLOCK_HZ)
-#elif (BSP_CFG_CLOCK_SOURCE == 4)
-    #if   (BSP_CFG_PLL_SRC == 0)
+#elif BSP_CFG_CLOCK_SOURCE == 4
+    #if   BSP_CFG_PLL_SRC == 0
         #define BSP_SELECTED_CLOCK_HZ   ((BSP_CFG_XTAL_HZ/BSP_CFG_PLL_DIV) * BSP_CFG_PLL_MUL)
-    #elif (BSP_CFG_PLL_SRC == 1)
+    #elif BSP_CFG_PLL_SRC == 1
         #define BSP_SELECTED_CLOCK_HZ   ((BSP_HOCO_HZ/BSP_CFG_PLL_DIV) * BSP_CFG_PLL_MUL)
     #else
         #error "ERROR - Valid PLL clock source must be chosen in r_bsp_config.h using BSP_CFG_PLL_SRC macro."
     #endif
+#else
+    #error "ERROR - BSP_CFG_CLOCK_SOURCE - Unknown clock source chosen in r_bsp_config.h"
 #endif
 
 /* System clock speed in Hz. */
@@ -181,8 +187,8 @@ Macro definitions
 #define BSP_UCLK_HZ                 (BSP_SELECTED_CLOCK_HZ / BSP_CFG_UCK_DIV)
 
 /* Null argument definitions. */
-#define FIT_NO_FUNC                 ((void (*)(void *))0x10000000)  //Reserved space on RX
-#define FIT_NO_PTR                  ((void *)0x10000000)            //Reserved space on RX
+#define FIT_NO_FUNC                 ((void (*)(void *))0x10000000)  /* Reserved space on RX */
+#define FIT_NO_PTR                  ((void *)0x10000000)            /* Reserved space on RX */
 
 /* Mininum and maximum IPL levels available for this MCU. */
 #define BSP_MCU_IPL_MAX             (0xF)
@@ -196,6 +202,11 @@ Macro definitions
 #define BSP_MCU_FLOATING_POINT
 #define BSP_MCU_EXCEPTION_TABLE
 #define BSP_MCU_GROUP_INTERRUPT
+#define BSP_MCU_GROUP_INTERRUPT_BE0
+#define BSP_MCU_GROUP_INTERRUPT_BL0
+#define BSP_MCU_GROUP_INTERRUPT_BL1
+#define BSP_MCU_GROUP_INTERRUPT_AL0
+#define BSP_MCU_GROUP_INTERRUPT_AL1
 #define BSP_MCU_SOFTWARE_CONFIGURABLE_INTERRUPT
 #define BSP_MCU_EXCEP_SUPERVISOR_INST_ISR
 #define BSP_MCU_EXCEP_ACCESS_ISR

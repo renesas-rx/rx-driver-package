@@ -43,11 +43,15 @@
 *         : 01.07.2018 1.24     Changed Minor version to 3.80
 *         : 27.07.2018 1.25     Changed Minor version to 3.90.
 *         : 31.08.2018 1.26     Changed Minor version to 3.91.
-*         : xx.xx.xxxx 1.28     Changed Major version to x.xx.
+*         : 31.10.2018 1.27     Changed Major/Minor version to 4.00.
+*         : 11.01.2019 1.28     Changed Minor version to 4.01.
+*         : 28.02.2019 1.29     Changed Major version to 5.00.
 *                               Added the following macro definition.
 *                                - INTERNAL_NOT_USED(p)
 *                               Added support for GNUC and ICCRX.
 *                               Fixed coding style.
+*         : 29.03.2019 1.30     Changed Minor version to 5.10.
+*         : 08.04.2019 1.31     Changed Minor version to 5.20.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -55,7 +59,7 @@ Includes   <System Includes> , "Project Includes"
 ***********************************************************************************************************************/
 /* C99 (or later) is necessary because r_rx_compiler.h uses Pragma operator and variadic macros.
  * This means that r_typedefs.h is not used in any case. */
-#if !defined(__cplusplus)
+#if !defined(__cplusplus) && !defined(CPPAPP)
 /* All implementation is C99 (or later) */
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
 #include    <stdint.h>
@@ -64,13 +68,14 @@ Includes   <System Includes> , "Project Includes"
 #include    <stddef.h>
 #else
 #error "This version of FIT needs C99 (or later)."
-//#include    "r_typedefs.h"
 #endif
-#else
+#else /* defined(__cplusplus) || defined(CPPAPP) */
 /* Interface might be referred from C++ */
 #include    <stdint.h>
+#include    <stdbool.h>
+#include    <stdio.h>
 #include    <stddef.h>
-#endif
+#endif /* !defined(__cplusplus) && !defined(CPPAPP) */
 
 #if defined(__CCRX__) || defined(__ICCRX__)
 /* Intrinsic functions provided by compiler. */
@@ -89,8 +94,8 @@ Macro definitions
 #define R_BSP_COMMON_H
 
 /* Version Number of r_bsp. */
-#define R_BSP_VERSION_MAJOR           (3)
-#define R_BSP_VERSION_MINOR           (92)
+#define R_BSP_VERSION_MAJOR           (5)
+#define R_BSP_VERSION_MINOR           (20)
 
 /* This macro is used to suppress compiler messages about not only a parameter but also a auto variable not being used
  * in a function. The nice thing about using this implementation is that it does not take any extra RAM or ROM.
@@ -99,7 +104,7 @@ Macro definitions
  * CC-RX's 'W0520550:Variable "XXXX" was set but never used'
  * GNURX's 'unused parameter 'XXXX' [-Wunused-parameter]'
  * GNURX's 'variable 'XXXX' set but not used [-Wunused-but-set-variable]'
- * When the variable is declared as volatile, the '&' can be applied like 'INTERNAL_NOT_USED(&volatile_variable);'.
+ * When the variable is declared as volatile, the '&' can be applied like 'R_INTERNAL_NOT_USED(&volatile_variable);'.
  */
 #define INTERNAL_NOT_USED(p)        ((void)(p))
 

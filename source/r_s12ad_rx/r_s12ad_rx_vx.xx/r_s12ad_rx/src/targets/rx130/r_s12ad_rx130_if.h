@@ -12,9 +12,9 @@
 * Renesas reserves the right, without notice, to make changes to this software and to discontinue the availability of 
 * this software. By using this software, you agree to the additional terms and conditions found by accessing the 
 * following link:
-* http://www.renesas.com/disclaimer 
+* http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2016-2017 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) 2016 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /**********************************************************************************************************************
 * File Name    : r_s12ad_rx130_if.h
@@ -26,6 +26,7 @@
 *                              Delete parameter check by the enum value.
 *                              Comparison parameter change.(adjust the parameter structure to RX65N)
 *           03.04.2017 2.30    Added RX130-512KB support.
+*           05.04.2019 4.00    Modified comment.
 ***********************************************************************************************************************/
 #ifndef S12AD_RX130_IF_H
 #define S12AD_RX130_IF_H
@@ -85,8 +86,8 @@ typedef enum e_adc_clear
 
 typedef enum e_adc_trig              // trigger sources (set to TRSA bit or TRSB bit)
 {
-    ADC_TRIG_ASYNC_ADTRG            = 0,    // external asynchronous trigger; not for Group modes
-                                            //  nor double trigger modes
+    ADC_TRIG_ASYNC_ADTRG            = 0,    /* external asynchronous trigger; not for Group modes
+                                               nor double trigger modes */
     ADC_TRIG_SYNC_TRG0AN            = 1,    // MTU0 TRGA
     ADC_TRIG_SYNC_TRG0BN            = 2,    // MTU0 TRGB
     ADC_TRIG_SYNC_TRGAN_OR_UDF4N    = 3,    // MTUx TRGA or MTU4 underflow(complementary PWM mode)
@@ -97,9 +98,9 @@ typedef enum e_adc_trig              // trigger sources (set to TRSA bit or TRSB
     ADC_TRIG_SYNC_TRG4AN_AND_TRG4BN = 8,    // MTU4 TADCORA and MTU4 TADCORB
     ADC_TRIG_SYNC_ELC               = 9,    // ELC
 
-    ADC_TRIG_SOFTWARE               = 10,   // software trigger; not for Group modes
-                                            //  nor double trigger modes
-                                            //  This is not set to TRSA or TRSB
+    ADC_TRIG_SOFTWARE               = 10,   /* software trigger; not for Group modes
+                                               nor double trigger modes
+                                               This is not set to TRSA or TRSB */
     ADC_TRIG_NONE                   = 0x3F
 } adc_trig_t;
 
@@ -127,30 +128,30 @@ typedef struct st_adc_cfg
 
 typedef enum e_adc_cmd
 {
-    // Commands for special hardware configurations
+    /* Commands for special hardware configurations */
     ADC_CMD_USE_VREFL0,             // Low reference. Default is to use AVSS0.
     ADC_CMD_USE_VREFH0,             // High reference. Default is to use AVCC0.
     ADC_CMD_SET_DDA_STATE_CNT,      // For Disconnect Detection Assist
     ADC_CMD_SET_SAMPLE_STATE_CNT,   // Set the conversion time
 
-    // Command to configure channels, sensors, and comparator
+    /* Command to configure channels, sensors, and comparator */
     ADC_CMD_ENABLE_CHANS,           // Configure channels to scan
     ADC_CMD_ENABLE_TEMP_SENSOR,     // "configure" temperature sensor
     ADC_CMD_ENABLE_VOLT_SENSOR,     // "configure" internal ref voltage sensor
     ADC_CMD_EN_COMPARATOR_LEVEL,    // Enable comparator for threshold compare
     ADC_CMD_EN_COMPARATOR_WINDOW,   // Enable comparator for range compare
 
-    // Commands to enable hardware triggers or cause software trigger
+    /* Commands to enable hardware triggers or cause software trigger */
     ADC_CMD_ENABLE_TRIG,            // ADCSR.TRGE=1 for sync/asynchronous triggers
     ADC_CMD_SCAN_NOW,               // Software trigger start scan
 
-    // Commands to poll for scan completion and comparator results
+    /* Commands to poll for scan completion and comparator results */
     ADC_CMD_CHECK_SCAN_DONE,        // For Normal or GroupA scan
     ADC_CMD_CHECK_SCAN_DONE_GROUPA,
     ADC_CMD_CHECK_SCAN_DONE_GROUPB,
     ADC_CMD_CHECK_CONDITION_MET,    // comparator condition
 
-    // Advanced control commands
+    /* Advanced control commands */
     ADC_CMD_DISABLE_TRIG,           // ADCSR.TRGE=0 for sync/async trigs
     ADC_CMD_DISABLE_INT,            // interrupt disable; ADCSR.ADIE=0
     ADC_CMD_ENABLE_INT,             // interrupt enable;  ADCSR.ADIE=1
@@ -209,8 +210,8 @@ typedef struct st_adc_sst
 
 
 /* for ADC_CMD_ENABLE_CHANS */
-// Bitwise OR these masks together for desired channels and sensors
-// Used for all commands containing a "mask" or "flags" field
+/* Bitwise OR these masks together for desired channels and sensors
+   Used for all commands containing a "mask" or "flags" field */
 #define ADC_MASK_CH0    (1<<0)
 #define ADC_MASK_CH1    (1<<1)
 #define ADC_MASK_CH2    (1<<2)
@@ -343,5 +344,6 @@ typedef struct st_adc_data
 /*****************************************************************************
 Public Functions
 ******************************************************************************/
-                                    
+
 #endif /* S12AD_RX130_IF_H */
+

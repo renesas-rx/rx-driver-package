@@ -14,11 +14,11 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2011-2016 Renesas Electronics Corporation, All Rights Reserved.
+* Copyright (C) 2011-2019 Renesas Electronics Corporation, All Rights Reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * File Name    : r_stdint.h
-* Version      : 1.06
+* Version      : 1.08
 * Description  : Integer type definition header file.
 * Website      : https://www.renesas.com/mw/t4
 ***********************************************************************************************************************/
@@ -30,7 +30,9 @@
 *         : 17.01.2013 1.03    Fixed H8 compiler option "C89/C99"
 *         : 13.05.2013 1.04    Add IAR(RL78) compiler. Add Define "far" and "near".
 *         : 09.07.2014 1.05    Clean up.
-*         : 30.11.2016 1.06    File Header maintenance
+*         : 18.09.2014 1.06    Add armcc compiler.
+*         : 07.08.2015 1.07    Add ccrl compiler.
+*         : 20.05.2019 1.08    Add IAR(RX) compiler.
 ***********************************************************************************************************************/
 #ifndef __r_stdint_h__
 #define __r_stdint_h__
@@ -41,7 +43,10 @@
 || defined(__GNUC__)\
 || (defined(__H8__) && (__RENESAS_VERSION__ >= 0x0700) && (__STDC_VERSION__ == 199901L))\
 || (defined(_WIN32) && defined(_MSC_VER) && (_MSC_VER >= 1600))\
-|| defined(__ICCRL78__)
+|| defined(__ICCRL78__)\
+|| defined(__arm__)\
+|| defined(__CCRL__)\
+|| defined(__ICCRX__)
 #include <stdint.h>
 
 #elif defined(_SH)\

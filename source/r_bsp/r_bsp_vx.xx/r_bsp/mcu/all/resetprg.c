@@ -23,7 +23,7 @@
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * History : DD.MM.YYYY Version   Description
-*         : xx.xx.xxxx 3.00      Merged processing of all devices.
+*         : 28.02.2019 3.00      Merged processing of all devices.
 *                                Added support for GNUC and ICCRX.
 *                                Fixed coding style.
 *                                Renamed following macro definitions.
@@ -31,6 +31,8 @@
 *                                - BSP_PRV_FPSW_INIT
 *                                - BSP_PRV_FPU_ROUND
 *                                - BSP_PRV_FPU_DENOM
+*                                Added following macro definitions.
+*                                - BSP_PRV_DPSW_INIT
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -45,10 +47,10 @@ Includes   <System Includes> , "Project Includes"
 #include    "platform.h"
 
 /* When using the user startup program, disable the following code. */
-#if (BSP_CFG_STARTUP_DISABLE == 0)
+#if BSP_CFG_STARTUP_DISABLE == 0
 
 /* Declaration of stack size. */
-#if (BSP_CFG_USER_STACK_ENABLE == 1)
+#if BSP_CFG_USER_STACK_ENABLE == 1
 R_BSP_PRAGMA_STACKSIZE_SU(BSP_CFG_USTACK_BYTES)
 #endif
 R_BSP_PRAGMA_STACKSIZE_SI(BSP_CFG_ISTACK_BYTES)
@@ -57,7 +59,7 @@ R_BSP_PRAGMA_STACKSIZE_SI(BSP_CFG_ISTACK_BYTES)
 Macro definitions
 ***********************************************************************************************************************/
 /* If the user chooses only 1 stack then the 'U' bit will not be set and the CPU will always use the interrupt stack. */
-#if (BSP_CFG_USER_STACK_ENABLE == 1)
+#if BSP_CFG_USER_STACK_ENABLE == 1
     #define BSP_PRV_PSW_INIT  (0x00030000)
 #else
     #define BSP_PRV_PSW_INIT  (0x00010000)
@@ -68,6 +70,10 @@ Macro definitions
 #ifdef BSP_MCU_FLOATING_POINT
     /* Initialize FPSW for floating-point operations */
 #define BSP_PRV_FPSW_INIT (0x00000000)  /* Currently nothing set by default. */
+#ifdef BSP_MCU_DOUBLE_PRECISION_FLOATING_POINT
+    /* Initialize DPSW for double-precision floating-point operations */
+#define BSP_PRV_DPSW_INIT (0x00000000)  /* Currently nothing set by default. */
+#endif
 
 #ifdef __ROZ
 #define BSP_PRV_FPU_ROUND (0x00000001)  /* Let FPSW RMbits=01 (round to zero) */
@@ -142,7 +148,7 @@ extern void R_BSP_MAIN_FUNCTION(void);
 *                   operating_frequency_set.
 *                5. Calls are made to functions to setup the C runtime environment which involves initializing all 
 *                   initialed data, zeroing all uninitialized variables, and configuring STDIO if used
-*                   (calls to _INITSCT and _INIT_IOLIB).
+*                   (calls to _INITSCT and init_iolib).
 *                6. Board-specific hardware setup, including configuring I/O pins on the MCU, in hardware_setup.
 *                7. Global interrupts are enabled by setting the I bit in the Program Status Word (PSW), and the stack 
 *                   is switched from the ISP to the USP.  The initial Interrupt Priority Level is set to zero, enabling 
@@ -164,6 +170,12 @@ R_BSP_POR_FUNCTION(R_BSP_STARTUP_FUNCTION)
 
     /* The bss sections have not been cleared and the data sections have not been initialized 
      * and constructors of C++ objects have not been executed until the _INITSCT() is executed. */
+#if defined(__GNUC__)
+#if BSP_CFG_USER_STACK_ENABLE == 1
+    INTERNAL_NOT_USED(ustack_area);
+#endif
+    INTERNAL_NOT_USED(istack_area);
+#endif
 
 #if defined(__CCRX__) || defined(__GNUC__)
 
@@ -176,8 +188,23 @@ R_BSP_POR_FUNCTION(R_BSP_STARTUP_FUNCTION)
 #endif
 
 #ifdef BSP_MCU_FLOATING_POINT
-    /* Casting is valid because it matches the type to the right side or argument. */
+#ifdef __FPU
+    /* Initialize the Floating-Point Status Word Register. */
     R_BSP_SET_FPSW(BSP_PRV_FPSW_INIT | BSP_PRV_FPU_ROUND | BSP_PRV_FPU_DENOM);
+#endif
+#endif
+
+#ifdef BSP_MCU_DOUBLE_PRECISION_FLOATING_POINT
+#ifdef __DPFPU
+    /* Initialize the Double-Precision Floating-Point Status Word Register. */
+    R_BSP_SET_DPSW(BSP_PRV_DPSW_INIT | BSP_PRV_FPU_ROUND | BSP_PRV_FPU_DENOM);
+#endif
+#endif
+
+#ifdef BSP_MCU_TRIGONOMETRIC
+#ifdef __TFU
+    R_BSP_INIT_TFU();
+#endif
 #endif
 
 #endif /* defined(__CCRX__), defined(__GNUC__) */
@@ -209,7 +236,7 @@ R_BSP_POR_FUNCTION(R_BSP_STARTUP_FUNCTION)
 #if BSP_CFG_IO_LIB_ENABLE == 1
     /* Comment this out if not using I/O lib */
 #if defined(__CCRX__)
-    _INIT_IOLIB();
+    init_iolib();
 #endif /* defined(__CCRX__) */
 #endif
 
@@ -240,7 +267,7 @@ R_BSP_POR_FUNCTION(R_BSP_STARTUP_FUNCTION)
 #if BSP_CFG_RTOS_USED == 0    /* Non-OS */
     /* Call the main program function (should not return) */
     R_BSP_MAIN_FUNCTION();
-#elif BSP_CFG_RTOS_USED == 1    // FreeRTOS
+#elif BSP_CFG_RTOS_USED == 1    /* FreeRTOS */
     /* Lock the channel that system timer of RTOS is using. */
     #if (((BSP_CFG_RTOS_SYSTEM_TIMER) >=0) && ((BSP_CFG_RTOS_SYSTEM_TIMER) <= 3))
         if (R_BSP_HardwareLock((mcu_lock_t)(BSP_LOCK_CMT0 + BSP_CFG_RTOS_SYSTEM_TIMER)) == false)
@@ -258,15 +285,15 @@ R_BSP_POR_FUNCTION(R_BSP_STARTUP_FUNCTION)
 
     /* Call the kernel startup (should not return) */
     vTaskStartScheduler();
-#elif BSP_CFG_RTOS_USED == 2    // SEGGER embOS
-#elif BSP_CFG_RTOS_USED == 3    // Micrium MicroC/OS
-#elif BSP_CFG_RTOS_USED == 4    // Renesas RI600V4 & RI600PX
+#elif BSP_CFG_RTOS_USED == 2    /* SEGGER embOS */
+#elif BSP_CFG_RTOS_USED == 3    /* Micrium MicroC/OS */
+#elif BSP_CFG_RTOS_USED == 4    /* Renesas RI600V4 & RI600PX */
 #endif
 
 #if BSP_CFG_IO_LIB_ENABLE == 1
     /* Comment this out if not using I/O lib - cleans up open files */
 #if defined(__CCRX__)
-    _CLOSEALL();
+    close_all();
 #endif /* defined(__CCRX__) */
 #endif
 
@@ -275,6 +302,7 @@ R_BSP_POR_FUNCTION(R_BSP_STARTUP_FUNCTION)
     while(1)
     {
         /* Infinite loop. Put a breakpoint here if you want to catch an exit of main(). */
+        R_BSP_NOP();
     }
 } /* End of function PowerON_Reset_PC() */
 

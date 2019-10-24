@@ -18,21 +18,19 @@
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * File Name    : mcu_locks.h
-* Device(s)    : RX64M
+* Device(s)    : RX71M
 * Description  : This source file has 1 lock per MCU resource.
 ***********************************************************************************************************************/
 /**********************************************************************************************************************
 * History : DD.MM.YYYY Version  Description
 *         : 07.08.2013 1.00     First Release
 *         : 25:09:2014 1.01     Added BSP_LOCK_CMTW0, BSP_LOCK_CMTW1
-*         : xx.xx.xxxx 1.02     Modified the following enumeration constant.
+*         : 28.02.2019 1.02     Modified the following enumeration constant.
 *                               - BSP_LOCK_EPTPC0
 *                               - BSP_LOCK_EPTPC1
 *                               - BSP_LOCK_PTPEDMAC
+*                               Fixed coding style.
 ***********************************************************************************************************************/
-
-#ifndef MCU_LOCKS_H
-#define MCU_LOCKS_H
 
 /***********************************************************************************************************************
 Includes   <System Includes> , "Project Includes"
@@ -43,6 +41,9 @@ Includes   <System Includes> , "Project Includes"
 /***********************************************************************************************************************
 Macro definitions
 ***********************************************************************************************************************/
+/* Multiple inclusion prevention macro */
+#ifndef MCU_LOCKS_H
+#define MCU_LOCKS_H
 
 /***********************************************************************************************************************
 Typedef definitions
@@ -50,7 +51,7 @@ Typedef definitions
 /* This enum defines all of the available hardware locks for this MCU. If you delete an entry out of this list then you
    will decrease the size of the locks array but will not be able to use that lock. For example, if your design is not
    using CAN at all then you can safely remove the BSP_LOCK_CAN# entries below. */
-typedef enum 
+typedef enum
 {
     BSP_LOCK_BSC = 0,
     BSP_LOCK_CAC,
@@ -177,6 +178,7 @@ typedef struct
 {
     /* The actual lock. int32_t is used because this is what the xchg() instruction takes as parameters. */
     int32_t     lock;
+
     /* Could add a ID for locking and unlocking. In this could protect against any function being able to unlock. */
 } bsp_lock_t;
 
@@ -188,8 +190,7 @@ Error checking
 #define BSP_CFG_USER_LOCKING_TYPE       bsp_lock_t
 #else
     #if !defined(BSP_CFG_USER_LOCKING_TYPE)
-    #error "R_BSP ERROR - If you are using your own locking mechanism then you must define BSP_CFG_USER_LOCKING_TYPE in \
-            r_bsp_config.h."
+    #error "R_BSP ERROR - If you are using your own locking mechanism then you must define BSP_CFG_USER_LOCKING_TYPE in r_bsp_config.h."
     #endif
 #endif
 

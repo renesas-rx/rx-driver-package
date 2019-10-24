@@ -18,7 +18,7 @@
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : phy.c
- * Version      : 1.10
+ * Version      : 1.17
  * Description  : Ethernet PHY device driver
  ***********************************************************************************************************************/
 /**********************************************************************************************************************
@@ -27,7 +27,9 @@
  *         : 16.12.2014 1.01     Made changes related to header file include.
  *         : 29.01.2015 1.02     Correction of ETHER_CFG_USE_PHY_KSZ8041NL.
  *         : 31.03.2016 1.10     Added changes behavior of phy_get_link_status function depending on number of Ethernet channel.
- *         : xx.xx.xxxx x.xx     Added support for GNUC and ICCRX.
+ *         : 20.05.2019 1.16     Added support for GNUC and ICCRX.
+ *                               Fixed coding style.
+ *         : 30.07.2019 1.17     Added WAIT LOOP.
  ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -132,7 +134,7 @@ static void phy_trans_zto0 (uint32_t ether_channel);
 static void phy_trans_1to0 (uint32_t ether_channel);
 static void phy_mii_write1 (uint32_t ether_channel);
 static void phy_mii_write0 (uint32_t ether_channel);
-static int16_t phy_get_pir_address (uint32_t ether_channel, volatile uint32_t __evenaccess ** pppir_addr);
+static int16_t phy_get_pir_address (uint32_t ether_channel, volatile uint32_t R_BSP_EVENACCESS_SFR ** pppir_addr);
 
 static uint16_t local_advertise[ETHER_CHANNEL_MAX]; /* the capabilities of the local link as PHY data */
 
@@ -165,7 +167,7 @@ int16_t phy_init (uint32_t ether_channel)
     {
         reg = phy_read(ether_channel, PHY_REG_CONTROL);
         count++;
-    } while ((reg & PHY_CONTROL_RESET) && (count < ETHER_CFG_PHY_DELAY_RESET));
+    } while ((reg & PHY_CONTROL_RESET) && (count < ETHER_CFG_PHY_DELAY_RESET));     /* WAIT_LOOP */
 
     if (count < ETHER_CFG_PHY_DELAY_RESET)
     {
@@ -230,7 +232,6 @@ void phy_start_autonegotiate (uint32_t ether_channel, uint8_t pause)
     PHY_CONTROL_AN_RESTART));
 
     reg = phy_read(ether_channel, PHY_REG_AN_ADVERTISEMENT);
-    INTERNAL_NOT_USED(&reg); /* The '&' is for the volatile declaration of the "reg". */
 
 } /* End of function phy_start_autonegotiate() */
 
@@ -426,6 +427,7 @@ static void phy_preamble (uint32_t ether_channel)
      * provided by "Table 22-12" of "22.2.4.5" of "IEEE 802.3-2008_section2".
      */
     i = 32;
+    /* WAIT_LOOP */
     while (i > 0)
     {
         phy_mii_write1(ether_channel);
@@ -468,15 +470,16 @@ static void phy_reg_set (uint32_t ether_channel, uint16_t reg_addr, int32_t opti
         data |= (PHY_MII_WRITE << 12); /* OP code(WT)  */
     }
 
-    phy_acc_channel = (int8_t) g_eth_control_ch[ether_channel].phy_access;
+    phy_acc_channel = g_eth_control_ch[ether_channel].phy_access;
 
     pether_control = g_eth_control_ch[ether_channel].pether_control;
 
     data |= (uint16_t) (pether_control[phy_acc_channel].phy_address << 7); /* PHY Address  */
 
-    data |= (uint16_t) (reg_addr << 2); /* Reg Address  */
+    data |= (reg_addr << 2); /* Reg Address  */
 
     i = 14;
+    /* WAIT_LOOP */
     while (i > 0)
     {
         if (0 == (data & 0x8000))
@@ -507,7 +510,7 @@ static void phy_reg_read (uint32_t ether_channel, uint16_t *pdata)
     int32_t j;
     uint16_t reg_data;
     int16_t ret;
-    volatile uint32_t __evenaccess * petherc_pir;
+    volatile uint32_t R_BSP_EVENACCESS_SFR * petherc_pir;
 
     ret = phy_get_pir_address(ether_channel, &petherc_pir);
     if ( R_PHY_ERROR == ret)
@@ -521,13 +524,16 @@ static void phy_reg_read (uint32_t ether_channel, uint16_t *pdata)
      */
     reg_data = 0;
     i = 16;
+    /* WAIT_LOOP */
     while (i > 0)
     {
+        /* WAIT_LOOP */
         for (j = ETHER_CFG_PHY_MII_WAIT; j > 0; j--)
         {
             (*petherc_pir) = 0x00000000;
         }
 
+        /* WAIT_LOOP */
         for (j = ETHER_CFG_PHY_MII_WAIT; j > 0; j--)
         {
             (*petherc_pir) = 0x00000001;
@@ -536,11 +542,13 @@ static void phy_reg_read (uint32_t ether_channel, uint16_t *pdata)
 
         reg_data |= (uint16_t) (((*petherc_pir) & 0x00000008) >> 3); /* MDI read  */
 
+        /* WAIT_LOOP */
         for (j = ETHER_CFG_PHY_MII_WAIT; j > 0; j--)
         {
             (*petherc_pir) = 0x00000001;
         }
 
+        /* WAIT_LOOP */
         for (j = ETHER_CFG_PHY_MII_WAIT; j > 0; j--)
         {
             (*petherc_pir) = 0x00000000;
@@ -569,6 +577,7 @@ static void phy_reg_write (uint32_t ether_channel, uint16_t data)
      * provided by "Table 22-12" of "22.2.4.5" of "IEEE 802.3-2008_section2".
      */
     i = 16;
+    /* WAIT_LOOP */
     while (i > 0)
     {
         if (0 == (data & 0x8000))
@@ -596,7 +605,7 @@ static void phy_trans_zto0 (uint32_t ether_channel)
 {
     int32_t j;
     int16_t ret;
-    volatile uint32_t __evenaccess * petherc_pir;
+    volatile uint32_t R_BSP_EVENACCESS_SFR * petherc_pir;
 
     ret = phy_get_pir_address(ether_channel, &petherc_pir);
     if ( R_PHY_ERROR == ret)
@@ -608,21 +617,25 @@ static void phy_trans_zto0 (uint32_t ether_channel)
      * The processing of TA (turnaround) about reading of the frame format of MII Management Interface which is 
      * provided by "Table 22-12" of "22.2.4.5" of "IEEE 802.3-2008_section2".
      */
+    /* WAIT_LOOP */
     for (j = ETHER_CFG_PHY_MII_WAIT; j > 0; j--)
     {
         (*petherc_pir) = 0x00000000;
     }
 
+    /* WAIT_LOOP */
     for (j = ETHER_CFG_PHY_MII_WAIT; j > 0; j--)
     {
         (*petherc_pir) = 0x00000001;
     }
 
+    /* WAIT_LOOP */
     for (j = ETHER_CFG_PHY_MII_WAIT; j > 0; j--)
     {
         (*petherc_pir) = 0x00000001;
     }
 
+    /* WAIT_LOOP */
     for (j = ETHER_CFG_PHY_MII_WAIT; j > 0; j--)
     {
         (*petherc_pir) = 0x00000000;
@@ -659,7 +672,7 @@ static void phy_mii_write1 (uint32_t ether_channel)
 {
     int32_t j;
     int16_t ret;
-    volatile uint32_t __evenaccess * petherc_pir;
+    volatile uint32_t R_BSP_EVENACCESS_SFR * petherc_pir;
 
     ret = phy_get_pir_address(ether_channel, &petherc_pir);
     if ( R_PHY_ERROR == ret)
@@ -672,21 +685,25 @@ static void phy_mii_write1 (uint32_t ether_channel)
      * provided by "Table 22-12" of "22.2.4.5" of "IEEE 802.3-2008_section2". 
      * The data that 1 is output. 
      */
+    /* WAIT_LOOP */
     for (j = ETHER_CFG_PHY_MII_WAIT; j > 0; j--)
     {
         (*petherc_pir) = 0x00000006;
     }
 
+    /* WAIT_LOOP */
     for (j = ETHER_CFG_PHY_MII_WAIT; j > 0; j--)
     {
         (*petherc_pir) = 0x00000007;
     }
 
+    /* WAIT_LOOP */
     for (j = ETHER_CFG_PHY_MII_WAIT; j > 0; j--)
     {
         (*petherc_pir) = 0x00000007;
     }
 
+    /* WAIT_LOOP */
     for (j = ETHER_CFG_PHY_MII_WAIT; j > 0; j--)
     {
         (*petherc_pir) = 0x00000006;
@@ -705,7 +722,7 @@ static void phy_mii_write0 (uint32_t ether_channel)
 {
     int32_t j;
     int16_t ret;
-    volatile uint32_t __evenaccess * petherc_pir;
+    volatile uint32_t R_BSP_EVENACCESS_SFR * petherc_pir;
 
     ret = phy_get_pir_address(ether_channel, &petherc_pir);
     if ( R_PHY_ERROR == ret)
@@ -718,21 +735,25 @@ static void phy_mii_write0 (uint32_t ether_channel)
      * provided by "Table 22-12" of "22.2.4.5" of "IEEE 802.3-2008_section2". 
      * The data that 0 is output. 
      */
+    /* WAIT_LOOP */
     for (j = ETHER_CFG_PHY_MII_WAIT; j > 0; j--)
     {
         (*petherc_pir) = 0x00000002;
     }
 
+    /* WAIT_LOOP */
     for (j = ETHER_CFG_PHY_MII_WAIT; j > 0; j--)
     {
         (*petherc_pir) = 0x00000003;
     }
 
+    /* WAIT_LOOP */
     for (j = ETHER_CFG_PHY_MII_WAIT; j > 0; j--)
     {
         (*petherc_pir) = 0x00000003;
     }
 
+    /* WAIT_LOOP */
     for (j = ETHER_CFG_PHY_MII_WAIT; j > 0; j--)
     {
         (*petherc_pir) = 0x00000002;
@@ -749,11 +770,11 @@ static void phy_mii_write0 (uint32_t ether_channel)
  *                    Pointer of the PHY interface register
  * Return Value : none
  ***********************************************************************************************************************/
-static int16_t phy_get_pir_address (uint32_t ether_channel, volatile uint32_t __evenaccess ** pppir_addr)
+static int16_t phy_get_pir_address (uint32_t ether_channel, volatile uint32_t R_BSP_EVENACCESS_SFR ** pppir_addr)
 {
     const ether_control_t * pether_ch;
     uint32_t phy_access;
-    volatile uint32_t __evenaccess * petherc_pir;
+    volatile uint32_t R_BSP_EVENACCESS_SFR * petherc_pir;
 
     if (ETHER_CHANNEL_MAX <= ether_channel)
     {

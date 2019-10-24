@@ -12,9 +12,9 @@
 * Renesas reserves the right, without notice, to make changes to this software and to discontinue the availability of 
 * this software. By using this software, you agree to the additional terms and conditions found by accessing the 
 * following link:
-* http://www.renesas.com/disclaimer 
+* http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.    
+* Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * File Name    : hwsetup.c
@@ -32,6 +32,7 @@
 *                               does not have to worry about writing 'missing' bits in PDR registers.
 *         : 03.12.2013 1.40     Cleaned up pin setup code to set PMR registers after MPC registers.
 *         : 27.07.2018 1.41     Deleted the pin setting for SPI Serial Flash, RS232 serial port and ADC potentiometer.
+*         : 28.02.2019 1.42     Fixed coding style.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -65,7 +66,7 @@ void hardware_setup(void)
     interrupts_configure();
     peripheral_modules_enable();
     bsp_non_existent_port_init();
-}
+} /* End of function hardware_setup() */
 
 /***********************************************************************************************************************
 * Function name: output_ports_configure
@@ -99,7 +100,7 @@ static void output_ports_configure(void)
     SW2_PMR = 0;
     SW3_PMR = 0;
 
-}
+} /* End of function output_ports_configure() */
 
 /***********************************************************************************************************************
 * Function name: interrupts_configure
@@ -110,7 +111,8 @@ static void output_ports_configure(void)
 static void interrupts_configure(void)
 {
     /* Add code here to setup additional interrupts */
-}
+    R_BSP_NOP();
+} /* End of function interrupts_configure() */
 
 /***********************************************************************************************************************
 * Function name: peripheral_modules_enable
@@ -121,4 +123,6 @@ static void interrupts_configure(void)
 static void peripheral_modules_enable(void)
 {
     /* Add code here to enable peripherals used by the application */
-}
+    R_BSP_NOP();
+} /* End of function peripheral_modules_enable() */
+

@@ -19,12 +19,12 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2011-2017 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) 2011-2019 Renesas Electronics Corporation. All rights reserved.
 *******************************************************************************/
 
 /*******************************************************************************
 * File Name     : config_tcpudp.c
-* Version       : 2.07
+* Version       : 2.09
 * Device(s)     : Renesas microcomputer
 * Tool-Chain    : Renesas compilers
 * OS            :
@@ -37,6 +37,8 @@
 *               : 30.08.2011 1.00    First release.
 *               : 30.11.2016 1.01    DHCP relation add.
 *               : 12.12.2017 2.07    Corresponding to Smart Configurator.
+*               : 20.06.2019 2.09    Added TCP Keep-Alive function.
+*               :                    Changed specification T_TCP_CCEP, T_UDP_CCEP.
 ******************************************************************************/
 
 #include "r_t4_itcpip.h"
@@ -113,18 +115,30 @@ const T_TCP_CCEP tcp_ccep[] =
          top address of receive window buffer, size of receive window buffer,
          address of callback routine }
     */
-    { T4_CFG_TCP_CEPID1_CHANNEL, 0, 0, 0
-        , T4_CFG_TCP_CEPID1_RECEIVE_WINDOW_SIZE, T4_CFG_TCP_CEPID1_CALLBACK_FUNCTION_NAME },
-    { T4_CFG_TCP_CEPID2_CHANNEL, 0, 0, 0
-        , T4_CFG_TCP_CEPID2_RECEIVE_WINDOW_SIZE, T4_CFG_TCP_CEPID2_CALLBACK_FUNCTION_NAME },
-    { T4_CFG_TCP_CEPID3_CHANNEL, 0, 0, 0
-        , T4_CFG_TCP_CEPID3_RECEIVE_WINDOW_SIZE, T4_CFG_TCP_CEPID3_CALLBACK_FUNCTION_NAME },
-    { T4_CFG_TCP_CEPID4_CHANNEL, 0, 0, 0
-        , T4_CFG_TCP_CEPID4_RECEIVE_WINDOW_SIZE, T4_CFG_TCP_CEPID4_CALLBACK_FUNCTION_NAME },
-    { T4_CFG_TCP_CEPID5_CHANNEL, 0, 0, 0
-        , T4_CFG_TCP_CEPID5_RECEIVE_WINDOW_SIZE, T4_CFG_TCP_CEPID5_CALLBACK_FUNCTION_NAME },
-    { T4_CFG_TCP_CEPID6_CHANNEL, 0, 0, 0
-        , T4_CFG_TCP_CEPID6_RECEIVE_WINDOW_SIZE, T4_CFG_TCP_CEPID6_CALLBACK_FUNCTION_NAME },
+    {
+        0, 0, 0, 0, T4_CFG_TCP_CEPID1_RECEIVE_WINDOW_SIZE, T4_CFG_TCP_CEPID1_CALLBACK_FUNCTION_NAME,
+        T4_CFG_TCP_CEPID1_CHANNEL, T4_CFG_TCP_CEPID1_KEEPALIVE_ENABLE
+    },
+    {
+        0, 0, 0, 0, T4_CFG_TCP_CEPID2_RECEIVE_WINDOW_SIZE, T4_CFG_TCP_CEPID2_CALLBACK_FUNCTION_NAME,
+        T4_CFG_TCP_CEPID2_CHANNEL, T4_CFG_TCP_CEPID2_KEEPALIVE_ENABLE
+    },
+    {
+        0, 0, 0, 0, T4_CFG_TCP_CEPID3_RECEIVE_WINDOW_SIZE, T4_CFG_TCP_CEPID3_CALLBACK_FUNCTION_NAME,
+        T4_CFG_TCP_CEPID3_CHANNEL, T4_CFG_TCP_CEPID3_KEEPALIVE_ENABLE
+    },
+    {
+        0, 0, 0, 0, T4_CFG_TCP_CEPID4_RECEIVE_WINDOW_SIZE, T4_CFG_TCP_CEPID4_CALLBACK_FUNCTION_NAME,
+        T4_CFG_TCP_CEPID4_CHANNEL, T4_CFG_TCP_CEPID4_KEEPALIVE_ENABLE
+    },
+    {
+        0, 0, 0, 0, T4_CFG_TCP_CEPID5_RECEIVE_WINDOW_SIZE, T4_CFG_TCP_CEPID5_CALLBACK_FUNCTION_NAME,
+        T4_CFG_TCP_CEPID5_CHANNEL, T4_CFG_TCP_CEPID5_KEEPALIVE_ENABLE
+    },
+    {
+        0, 0, 0, 0, T4_CFG_TCP_CEPID6_RECEIVE_WINDOW_SIZE, T4_CFG_TCP_CEPID6_CALLBACK_FUNCTION_NAME,
+        T4_CFG_TCP_CEPID6_CHANNEL, T4_CFG_TCP_CEPID6_KEEPALIVE_ENABLE
+    },
 };
 
 /* Total number of TCP communication end points */
@@ -150,11 +164,33 @@ const UH    _tcp_rt_tmo_rst[] =
     (T4_CFG_TCP_MAX_TIMEOUT_PERIOD * (1000 / 10)),     /* 10 min */
     (T4_CFG_TCP_MAX_TIMEOUT_PERIOD * (1000 / 10)),     /* 10 min */
 };
+
 /***  Transmit for delay ack (ON=1/OFF=0) ***/
 const UB   _tcp_dack[] =
 {
-	T4_CFG_TCP_DIVIDE_SENDING_PACKET,
-	T4_CFG_TCP_DIVIDE_SENDING_PACKET
+    T4_CFG_TCP_DIVIDE_SENDING_PACKET,
+    T4_CFG_TCP_DIVIDE_SENDING_PACKET
+};
+
+/***  Time to first transmit Keepalive packet (unit:10ms)  ***/
+const UW   _tcp_keepalive_start[] =
+{
+    (T4_CFG_TCP_KEEPALIVE_START * (1000 / 10)),
+    (T4_CFG_TCP_KEEPALIVE_START * (1000 / 10)),
+};
+
+/***  Second Keepalive packets transmission interval (unit:10ms)  ***/
+const UW   _tcp_keepalive_interval[] =
+{
+    (T4_CFG_TCP_KEEPALIVE_INTERVAL * (1000 / 10)),
+    (T4_CFG_TCP_KEEPALIVE_INTERVAL * (1000 / 10)),
+};
+
+/***  Keepalive packet transmission count  ***/
+const UW   _tcp_keepalive_count[] =
+{
+    T4_CFG_TCP_KEEPALIVE_COUNT,
+    T4_CFG_TCP_KEEPALIVE_COUNT,
 };
 
 /****************************************************************************/
@@ -163,13 +199,12 @@ const UB   _tcp_dack[] =
 /***  Definition of UDP communication end point  ***/
 const T_UDP_CCEP udp_ccep[] =
 {
-    /* only setting port number */
-    { T4_CFG_UDP_CEPID1_CHANNEL, { 0, T4_CFG_UDP_CEPID1_PORT_NUMBER }, T4_CFG_UDP_CEPID1_CALLBACK_FUNCTION_NAME },
-    { T4_CFG_UDP_CEPID2_CHANNEL, { 0, T4_CFG_UDP_CEPID2_PORT_NUMBER }, T4_CFG_UDP_CEPID2_CALLBACK_FUNCTION_NAME },
-    { T4_CFG_UDP_CEPID3_CHANNEL, { 0, T4_CFG_UDP_CEPID3_PORT_NUMBER }, T4_CFG_UDP_CEPID3_CALLBACK_FUNCTION_NAME },
-    { T4_CFG_UDP_CEPID4_CHANNEL, { 0, T4_CFG_UDP_CEPID4_PORT_NUMBER }, T4_CFG_UDP_CEPID4_CALLBACK_FUNCTION_NAME },
-    { T4_CFG_UDP_CEPID5_CHANNEL, { 0, T4_CFG_UDP_CEPID5_PORT_NUMBER }, T4_CFG_UDP_CEPID5_CALLBACK_FUNCTION_NAME },
-    { T4_CFG_UDP_CEPID6_CHANNEL, { 0, T4_CFG_UDP_CEPID6_PORT_NUMBER }, T4_CFG_UDP_CEPID6_CALLBACK_FUNCTION_NAME },
+    { 0, { 0, T4_CFG_UDP_CEPID1_PORT_NUMBER }, T4_CFG_UDP_CEPID1_CALLBACK_FUNCTION_NAME, T4_CFG_UDP_CEPID1_CHANNEL },
+    { 0, { 0, T4_CFG_UDP_CEPID2_PORT_NUMBER }, T4_CFG_UDP_CEPID2_CALLBACK_FUNCTION_NAME, T4_CFG_UDP_CEPID2_CHANNEL },
+    { 0, { 0, T4_CFG_UDP_CEPID3_PORT_NUMBER }, T4_CFG_UDP_CEPID3_CALLBACK_FUNCTION_NAME, T4_CFG_UDP_CEPID3_CHANNEL },
+    { 0, { 0, T4_CFG_UDP_CEPID4_PORT_NUMBER }, T4_CFG_UDP_CEPID4_CALLBACK_FUNCTION_NAME, T4_CFG_UDP_CEPID4_CHANNEL },
+    { 0, { 0, T4_CFG_UDP_CEPID5_PORT_NUMBER }, T4_CFG_UDP_CEPID5_CALLBACK_FUNCTION_NAME, T4_CFG_UDP_CEPID5_CHANNEL },
+    { 0, { 0, T4_CFG_UDP_CEPID6_PORT_NUMBER }, T4_CFG_UDP_CEPID6_CALLBACK_FUNCTION_NAME, T4_CFG_UDP_CEPID6_CHANNEL },
 };
 /* Total number of UDP communication end points */
 const H __udpcepn = (sizeof(udp_ccep) / sizeof(T_UDP_CCEP));
@@ -180,8 +215,8 @@ const UB __multi_TTL[] = { T4_CFG_UDP_MULTICAST_TTL, T4_CFG_UDP_MULTICAST_TTL };
 /*** Behavior of UDP zero checksum ***/
 const UB _udp_enable_zerochecksum[] =
 {
-	T4_CFG_UDP_BEHAVIOR_OF_RECEIVED_ZERO_CHECKSUM,
-	T4_CFG_UDP_BEHAVIOR_OF_RECEIVED_ZERO_CHECKSUM
+    T4_CFG_UDP_BEHAVIOR_OF_RECEIVED_ZERO_CHECKSUM,
+    T4_CFG_UDP_BEHAVIOR_OF_RECEIVED_ZERO_CHECKSUM
 }; /* 0 = disable, other = enable */
 
 /****************************************************************************/
@@ -242,5 +277,5 @@ const UB peer_dial[]      = "0,123";                /* Destination telephone num
 const UB at_commands[]   = "ATW2S0=2&C0&D0&S0M0S10=255X3";    /* Modem initialization command */
 
 
-/* Copyright 2014, RENESAS ELECTRONICS CORPORATION */
+/* Copyright 2019, RENESAS ELECTRONICS CORPORATION */
 

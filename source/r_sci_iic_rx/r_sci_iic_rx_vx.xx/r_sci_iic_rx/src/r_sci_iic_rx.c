@@ -1,4 +1,4 @@
-/***********************************************************************************************************************
+﻿/***********************************************************************************************************************
  * DISCLAIMER
  * This software is supplied by Renesas Electronics Corporation and is only intended for use with Renesas products.
  * No other uses are authorized. This software is owned by Renesas Electronics Corporation and is protected under all 
@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer 
  *
- * Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2013(2019) Renesas Electronics Corporation. All rights reserved.
  **********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_sci_iic_rx.c
@@ -34,12 +34,23 @@
  *         : 04.03.2016 1.90     RX24T support added.
  *         : 01.10.2016 2.00     Fixed a program according to the Renesas coding rules.
  *         : 31.08.2017 2.20     Changed about the calculation processing for address of PIDR.
- *         : xx.xx.xxxx x.xx     Added support for GNUC and ICCRX.
- *                               Deleted stddef.h, stdio.h, and stdint.h includes because platform.h.includes them.
+ *         : 29.01.2018 2.30     Reset Setting added for (SCR.RE, SCR.TE, SSR.RDRF).
+ *         : 27.04.2018 2.30     Added "for", "while" and "do while" comment.
+ *         : 21.09.2018 2.40     RX72T support added.
+ *         : 20.05.2019 2.41     Added support for GNUC and ICCRX.
+ *                               Fixed coding style.
+ *         : 20.06.2019 2.42     RX23W support added.
+ *         : 30.07.2019 2.43     RX72M support added.
  **********************************************************************************************************************/
 /***********************************************************************************************************************
  Includes   <System Includes> , "Project Includes"
  **********************************************************************************************************************/
+#include <stddef.h>
+/* Fixed width integers */
+#include <stdint.h>
+/* Boolean defines */
+#include <stdbool.h>
+
 /* Access to peripherals and board defines. */
 #include "platform.h"
 
@@ -99,6 +110,7 @@ static uint8_t sci_iic_get_receiving_data (sci_iic_info_t * p_sci_iic_info);
 static void sci_iic_iic_disable (sci_iic_info_t * p_sci_iic_info);
 static void sci_iic_iic_enable (sci_iic_info_t * p_sci_iic_info);
 static void sci_iic_register_init_setting (sci_iic_info_t * p_sci_iic_info);
+static void sci_iic_reset_setting (sci_iic_info_t * p_sci_iic_info);
 
 /*----------------------------------------------------------------------------*/
 /*   Function table                                                           */
@@ -255,7 +267,11 @@ static sci_iic_return_t sci_iic_open (sci_iic_info_t * p_sci_iic_info)
 {
     sci_iic_return_t ret;
 #if SCI_IIC_CFG_PORT_SETTING_PROCESSING
-    volatile __evenaccess    const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
+    R_BSP_VOLATILE_EVENACCESS const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
+    uint8_t sscl_port_gr;
+    uint8_t sscl_port_pin;
+    uint8_t ssda_port_gr;
+    uint8_t ssda_port_pin;
 #endif
 
     /* Updates the channel status. */
@@ -268,10 +284,14 @@ static sci_iic_return_t sci_iic_open (sci_iic_info_t * p_sci_iic_info)
     /* Disables SCI_IIC multi-function pin controller after setting SCL and SDA to Hi-z. */
     /* Includes I/O register read operation at the end of the following function. */
     /* Set Hi-z */
-    r_sci_iic_io_open(prom->sscl_port_gr, prom->sscl_port_pin);
-    r_sci_iic_mpc_setting(prom->sscl_port_gr, prom->sscl_port_pin, SCI_IIC_MPC_SSCL_INIT);
-    r_sci_iic_io_open(prom->ssda_port_gr, prom->ssda_port_pin);
-    r_sci_iic_mpc_setting(prom->ssda_port_gr, prom->ssda_port_pin, SCI_IIC_MPC_SSDA_INIT);
+    sscl_port_gr = prom->sscl_port_gr;
+    sscl_port_pin = prom->sscl_port_pin;
+    ssda_port_gr = prom->ssda_port_gr;
+    ssda_port_pin = prom->ssda_port_pin;
+    r_sci_iic_io_open(sscl_port_gr, sscl_port_pin);
+    r_sci_iic_mpc_setting(sscl_port_gr, sscl_port_pin, SCI_IIC_MPC_SSCL_INIT);
+    r_sci_iic_io_open(ssda_port_gr, ssda_port_pin);
+    r_sci_iic_mpc_setting(ssda_port_gr, ssda_port_pin, SCI_IIC_MPC_SSDA_INIT);
 #endif
 
     /* Enables the IIC peripheral registers. */
@@ -472,8 +492,13 @@ static sci_iic_return_t sci_iic_getstatus (sci_iic_info_t * p_sci_iic_info, sci_
 {
     sci_iic_mcu_status_t sts_flag;
     sci_regs_t pregs = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom->regs;
-    volatile uint8_t __evenaccess * const ppidr = SCI_IIC_PRV_PIDR_BASE_REG;
-    volatile __evenaccess    const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
+    R_BSP_VOLATILE_EVENACCESS uint8_t * const ppidr = SCI_IIC_PRV_PIDR_BASE_REG;
+    R_BSP_VOLATILE_EVENACCESS const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
+    
+    uint8_t sscl_port_gr;
+    uint8_t sscl_port_pin;
+    uint8_t ssda_port_gr;
+    uint8_t ssda_port_pin;
 
     /* ---- Check Bus state ---- */
     if (SCI_IIC_STPREQ != g_sci_iic_handles[p_sci_iic_info->ch_no]->mode)
@@ -522,7 +547,9 @@ static sci_iic_return_t sci_iic_getstatus (sci_iic_info_t * p_sci_iic_info, sci_
     }
 
     /* Check SSCL Pin level */
-    if (SCI_IIC_LOW == ((*(ppidr + prom->sscl_port_gr)) & (1U << prom->sscl_port_pin)))
+    sscl_port_gr = prom->sscl_port_gr;
+    sscl_port_pin = prom->sscl_port_pin;
+    if (SCI_IIC_LOW == ((*(ppidr + sscl_port_gr)) & (1U << sscl_port_pin)))
     {
         sts_flag.BIT.SCLI = 0;
     }
@@ -532,7 +559,9 @@ static sci_iic_return_t sci_iic_getstatus (sci_iic_info_t * p_sci_iic_info, sci_
     }
 
     /* Check SSDA Pin level */
-    if (SCI_IIC_LOW == ((*(ppidr + prom->ssda_port_gr)) & (1U << prom->ssda_port_pin)))
+    ssda_port_gr = prom->ssda_port_gr;
+    ssda_port_pin = prom->ssda_port_pin;
+    if (SCI_IIC_LOW == ((*(ppidr + ssda_port_gr)) & (1U << ssda_port_pin)))
     {
         sts_flag.BIT.SDAI = 0;
     }
@@ -604,9 +633,14 @@ static sci_iic_return_t sci_iic_control (sci_iic_info_t * p_sci_iic_info, sci_ii
     volatile uint32_t i;
     sci_iic_return_t ret = SCI_IIC_SUCCESS;
     sci_regs_t pregs = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom->regs;
-    volatile uint8_t __evenaccess * const ppidr = SCI_IIC_PRV_PIDR_BASE_REG;
-    volatile __evenaccess    const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
+    R_BSP_VOLATILE_EVENACCESS uint8_t * const ppidr = SCI_IIC_PRV_PIDR_BASE_REG;
+    R_BSP_VOLATILE_EVENACCESS const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
 
+    uint8_t sscl_port_gr;
+    uint8_t sscl_port_pin;
+    uint8_t ssda_port_gr;
+    uint8_t ssda_port_pin;
+    
     /* Enable Simple IIC mode */
     /* Enables SCI_IIC multi-function pin controller.*/
     sci_iic_iic_enable(p_sci_iic_info);
@@ -622,8 +656,12 @@ static sci_iic_return_t sci_iic_control (sci_iic_info_t * p_sci_iic_info, sci_ii
         if ((ctrl_ptn & SCI_IIC_GEN_START_CON) == SCI_IIC_GEN_START_CON)
         {
 
-            if ((SCI_IIC_LOW == ((*(ppidr + prom->sscl_port_gr)) & (1U << prom->sscl_port_pin)))
-                    || (SCI_IIC_LOW == ((*(ppidr + prom->ssda_port_gr)) & (1U << prom->ssda_port_pin))))
+            sscl_port_gr = prom->sscl_port_gr;
+            sscl_port_pin = prom->sscl_port_pin;
+            ssda_port_gr = prom->ssda_port_gr;
+            ssda_port_pin = prom->ssda_port_pin;
+            if ((SCI_IIC_LOW == ((*(ppidr + sscl_port_gr)) & (1U << sscl_port_pin)))
+                    || (SCI_IIC_LOW == ((*(ppidr + ssda_port_gr)) & (1U << ssda_port_pin))))
             {
                 /* When BBSY bit is "1"(Bus busy) */
                 ret = SCI_IIC_ERR_BUS_BUSY;
@@ -652,6 +690,7 @@ static sci_iic_return_t sci_iic_control (sci_iic_info_t * p_sci_iic_info, sci_ii
             /* Wait the request generation has been completed */
             i = SCI_IIC_CFG_BUS_CHECK_COUNTER;
 
+            /* WAIT_LOOP */
             while (1 != pregs->SIMR3.BIT.IICSTIF)
             {
                 /* Check Reply */
@@ -670,6 +709,7 @@ static sci_iic_return_t sci_iic_control (sci_iic_info_t * p_sci_iic_info, sci_ii
 
             pregs->SIMR3.BIT.IICSTIF = SCI_IIC_IICSTIF_CLEAR;
 
+            /* WAIT_LOOP */
             while (SCI_IIC_IICSTIF_CLEAR != pregs->SIMR3.BIT.IICSTIF)
             {
                 /* nothing to do */
@@ -692,7 +732,8 @@ static sci_iic_return_t sci_iic_control (sci_iic_info_t * p_sci_iic_info, sci_ii
 
             /* Wait the request generation has been completed */
             i = SCI_IIC_CFG_BUS_CHECK_COUNTER;
-
+            
+            /* WAIT_LOOP */
             while (1 != pregs->SIMR3.BIT.IICSTIF)
             {
                 /* Check Reply */
@@ -711,6 +752,7 @@ static sci_iic_return_t sci_iic_control (sci_iic_info_t * p_sci_iic_info, sci_ii
 
             pregs->SIMR3.BIT.IICSTIF = SCI_IIC_IICSTIF_CLEAR;
 
+            /* WAIT_LOOP */
             while (SCI_IIC_IICSTIF_CLEAR != pregs->SIMR3.BIT.IICSTIF)
             {
                 /* nothing to do */
@@ -733,7 +775,8 @@ static sci_iic_return_t sci_iic_control (sci_iic_info_t * p_sci_iic_info, sci_ii
 
             /* Wait the request generation has been completed */
             i = SCI_IIC_CFG_BUS_CHECK_COUNTER;
-
+    
+            /* WAIT_LOOP */
             while (1 != pregs->SIMR3.BIT.IICSTIF)
             {
                 /* Check Reply */
@@ -752,6 +795,7 @@ static sci_iic_return_t sci_iic_control (sci_iic_info_t * p_sci_iic_info, sci_ii
 
             pregs->SIMR3.BIT.IICSTIF = SCI_IIC_IICSTIF_CLEAR;
 
+            /* WAIT_LOOP */
             while (SCI_IIC_IICSTIF_CLEAR != pregs->SIMR3.BIT.IICSTIF)
             {
                 /* nothing to do */
@@ -783,6 +827,7 @@ static sci_iic_return_t sci_iic_control (sci_iic_info_t * p_sci_iic_info, sci_ii
              b5:b4  IICSDAS - SSDA Output Select - Place the SSDA pin in the high-impedance state. */
             pregs->SIMR3.BIT.IICSCLS = SCI_IIC_LOW_OUTPUT;
 
+            /* WAIT_LOOP */
             for (cnt = SCI_IIC_ONESHOT_WAIT; cnt > 0; cnt--)
             {
                 /* nothing to do */
@@ -792,6 +837,7 @@ static sci_iic_return_t sci_iic_control (sci_iic_info_t * p_sci_iic_info, sci_ii
              b7:b6  IICSCLS - SSCL Output Select - Place the SSCL pin in the high-impedance state.*/
             pregs->SIMR3.BIT.IICSCLS = SCI_IIC_HI_Z_OUTPUT; /* SSCLn output  Hi-z*/
 
+            /* WAIT_LOOP */
             for (cnt = SCI_IIC_ONESHOT_WAIT; cnt > 0; cnt--)
             {
                 /* nothing to do */
@@ -804,6 +850,9 @@ static sci_iic_return_t sci_iic_control (sci_iic_info_t * p_sci_iic_info, sci_ii
             && (0 == (ctrl_ptn & ((((SCI_IIC_GEN_START_CON | SCI_IIC_GEN_RESTART_CON) | SCI_IIC_GEN_STOP_CON) |
             SCI_IIC_GEN_SSDA_HI_Z) | SCI_IIC_GEN_SSCL_ONESHOT))))
     {
+        /* Reset setting */
+        sci_iic_reset_setting(p_sci_iic_info);
+
         /* ---- Generate Reset ---- */
         ret = sci_iic_open(p_sci_iic_info);
     }
@@ -888,7 +937,6 @@ static void sci_iic_close (sci_iic_info_t * p_sci_iic_info)
  * Arguments    : none
  * Return Value : version number
  **********************************************************************************************************************/
-R_BSP_PRAGMA_INLINE(R_SCI_IIC_GetVersion)
 uint32_t R_SCI_IIC_GetVersion (void)
 {
     uint32_t const version = (SCI_IIC_VERSION_MAJOR << 16) | SCI_IIC_VERSION_MINOR;
@@ -979,6 +1027,7 @@ static sci_iic_return_t sci_iic_advance (sci_iic_info_t * p_sci_iic_info)
                     pregs->SIMR3.BIT.IICSCLS = SCI_IIC_HI_Z_OUTPUT;
                     pregs->SIMR3.BIT.IICSDAS = SCI_IIC_HI_Z_OUTPUT;
 
+                    /* WAIT_LOOP */
                     while (SCI_IIC_IICSTIF_CLEAR != pregs->SIMR3.BIT.IICSTIF)
                     {
                         /* nothing to do */
@@ -1016,6 +1065,7 @@ static sci_iic_return_t sci_iic_advance (sci_iic_info_t * p_sci_iic_info)
                     pregs->SIMR3.BIT.IICSCLS = SCI_IIC_HI_Z_OUTPUT;
                     pregs->SIMR3.BIT.IICSDAS = SCI_IIC_HI_Z_OUTPUT;
 
+                    /* WAIT_LOOP */
                     while (SCI_IIC_IICSTIF_CLEAR != pregs->SIMR3.BIT.IICSTIF)
                     {
                         /* nothing to do */
@@ -1153,12 +1203,21 @@ static sci_iic_return_t sci_iic_init_driver (sci_iic_info_t * p_sci_iic_info)
 static sci_iic_return_t sci_iic_generate_start_cond (sci_iic_info_t * p_sci_iic_info)
 {
     sci_iic_return_t ret = SCI_IIC_SUCCESS;
-    volatile uint8_t __evenaccess * const ppidr = SCI_IIC_PRV_PIDR_BASE_REG;
-    volatile __evenaccess    const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
+    R_BSP_VOLATILE_EVENACCESS uint8_t * const ppidr = SCI_IIC_PRV_PIDR_BASE_REG;
+    R_BSP_VOLATILE_EVENACCESS const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
 
+    uint8_t sscl_port_gr;
+    uint8_t sscl_port_pin;
+    uint8_t ssda_port_gr;
+    uint8_t ssda_port_pin;
+    
     /* Check Bus busy(SSDA,SSCL pin level) */
-    if ((SCI_IIC_LOW == ((*(ppidr + prom->sscl_port_gr)) & (1U << prom->sscl_port_pin)))
-            || (SCI_IIC_LOW == ((*(ppidr + prom->ssda_port_gr)) & (1U << prom->ssda_port_pin))))
+    sscl_port_gr = prom->sscl_port_gr;
+    sscl_port_pin = prom->sscl_port_pin;
+    ssda_port_gr = prom->ssda_port_gr;
+    ssda_port_pin = prom->ssda_port_pin;
+    if ((SCI_IIC_LOW == ((*(ppidr + sscl_port_gr)) & (1U << sscl_port_pin)))
+            || (SCI_IIC_LOW == ((*(ppidr + ssda_port_gr)) & (1U << ssda_port_pin))))
     {
         return SCI_IIC_ERR_BUS_BUSY;
     }
@@ -1229,6 +1288,7 @@ static sci_iic_return_t sci_iic_after_gen_start_cond (sci_iic_info_t * p_sci_iic
                     pregs->SIMR3.BIT.IICSCLS = SCI_IIC_CLOCK_OUTPUT;
                     pregs->SIMR3.BIT.IICSDAS = SCI_IIC_CLOCK_OUTPUT;
 
+                    /* WAIT_LOOP */
                     while (SCI_IIC_IICSTIF_CLEAR != pregs->SIMR3.BIT.IICSTIF)
                     {
                         /* nothing to do */
@@ -1258,6 +1318,7 @@ static sci_iic_return_t sci_iic_after_gen_start_cond (sci_iic_info_t * p_sci_iic
                     pregs->SIMR3.BIT.IICSCLS = SCI_IIC_CLOCK_OUTPUT;
                     pregs->SIMR3.BIT.IICSDAS = SCI_IIC_CLOCK_OUTPUT;
 
+                    /* WAIT_LOOP */
                     while (SCI_IIC_IICSTIF_CLEAR != pregs->SIMR3.BIT.IICSTIF)
                     {
                         /* nothing to do */
@@ -1295,6 +1356,7 @@ static sci_iic_return_t sci_iic_after_gen_start_cond (sci_iic_info_t * p_sci_iic
             pregs->SIMR3.BIT.IICSCLS = SCI_IIC_CLOCK_OUTPUT;
             pregs->SIMR3.BIT.IICSDAS = SCI_IIC_CLOCK_OUTPUT;
 
+            /* WAIT_LOOP */
             while (SCI_IIC_IICSTIF_CLEAR != pregs->SIMR3.BIT.IICSTIF)
             {
                 /* nothing to do */
@@ -1959,7 +2021,7 @@ static bool sci_iic_stop_cond_wait (sci_iic_info_t * p_sci_iic_info)
             return boolret;
         }
         cnt--;
-    } while (0U != cnt);
+    } while (0U != cnt);/* WAIT_LOOP */
 
     /* Stop Condition generation error? */
     if (0U == cnt)
@@ -2143,14 +2205,23 @@ static void sci_iic_iic_disable (sci_iic_info_t * p_sci_iic_info)
 {
     sci_regs_t pregs = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom->regs;
 #if SCI_IIC_CFG_PORT_SETTING_PROCESSING
-    volatile __evenaccess    const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
+    R_BSP_VOLATILE_EVENACCESS const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
+    
+    uint8_t sscl_port_gr;
+    uint8_t sscl_port_pin;
+    uint8_t ssda_port_gr;
+    uint8_t ssda_port_pin;
 #endif
 
 #if SCI_IIC_CFG_PORT_SETTING_PROCESSING
     /* Disables SCI_IIC multi-function pin controller after setting SCL and SDA to Hi-z by Reset. */
     /* Includes I/O register read operation at the end of the following function. */
-    r_sci_iic_mpc_setting(prom->sscl_port_gr, prom->sscl_port_pin, SCI_IIC_MPC_SSCL_INIT);
-    r_sci_iic_mpc_setting(prom->ssda_port_gr, prom->ssda_port_pin, SCI_IIC_MPC_SSDA_INIT);
+    sscl_port_gr = prom->sscl_port_gr;
+    sscl_port_pin = prom->sscl_port_pin;
+    r_sci_iic_mpc_setting(sscl_port_gr, sscl_port_pin, SCI_IIC_MPC_SSCL_INIT);
+    ssda_port_gr = prom->ssda_port_gr;
+    ssda_port_pin = prom->ssda_port_pin;
+    r_sci_iic_mpc_setting(ssda_port_gr, ssda_port_pin, SCI_IIC_MPC_SSDA_INIT);
 #endif
 
     /* Resets SCI_IIC registers. */
@@ -2174,7 +2245,14 @@ static void sci_iic_iic_enable (sci_iic_info_t * p_sci_iic_info)
 {
     sci_regs_t pregs = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom->regs;
 #if SCI_IIC_CFG_PORT_SETTING_PROCESSING
-    volatile __evenaccess    const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
+    R_BSP_VOLATILE_EVENACCESS const sci_iic_ch_rom_t * prom = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom;
+    
+    uint8_t sscl_port_gr;
+    uint8_t sscl_port_pin;
+    uint8_t ssda_port_gr;
+    uint8_t ssda_port_pin;
+    uint8_t sscl_en_val;
+    uint8_t ssda_en_val;
 #endif
 
     /* Enables SCI_IIC.*/
@@ -2184,8 +2262,14 @@ static void sci_iic_iic_enable (sci_iic_info_t * p_sci_iic_info)
 #if SCI_IIC_CFG_PORT_SETTING_PROCESSING
     /* Enables SCI_IIC multi-function pin controller.*/
     /* Includes I/O register read operation at the end of the following function. */
-    r_sci_iic_mpc_setting(prom->sscl_port_gr, prom->sscl_port_pin, prom->sscl_en_val);
-    r_sci_iic_mpc_setting(prom->ssda_port_gr, prom->ssda_port_pin, prom->ssda_en_val);
+    sscl_port_gr = prom->sscl_port_gr;
+    sscl_port_pin = prom->sscl_port_pin;
+    sscl_en_val = prom->sscl_en_val;
+    r_sci_iic_mpc_setting(sscl_port_gr, sscl_port_pin, sscl_en_val);
+    ssda_port_gr = prom->ssda_port_gr;
+    ssda_port_pin = prom->ssda_port_pin;
+    ssda_en_val = prom->ssda_en_val;
+    r_sci_iic_mpc_setting(ssda_port_gr, ssda_port_pin, ssda_en_val);
 #endif
 } /* End of function sci_iic_iic_enable() */
 
@@ -2232,6 +2316,26 @@ static void sci_iic_register_init_setting (sci_iic_info_t * p_sci_iic_info)
      b0     SMIF  - Smart Card Interface Mode Select - Serial communications interface mode. */
     pregs->SCMR.BIT.SDIR = SCI_IIC_MSB_FIRST;
 } /* End of function sci_iic_register_init_setting() */
+
+/***********************************************************************************************************************
+ * Function Name: sci_iic_reset_setting
+ * Description  : SCI reset setting.
+ * Arguments    : sci_iic_info_t * p_sci_iic_info     ;   IIC Information
+ * Return Value : None
+ **********************************************************************************************************************/
+static void sci_iic_reset_setting (sci_iic_info_t * p_sci_iic_info)
+{
+    sci_regs_t pregs = g_sci_iic_handles[p_sci_iic_info->ch_no]->prom->regs;
+    volatile uint8_t dummy;
+
+    /* Initializes the IIC bus interrupt enable register. */
+    /* Serial Reception/Transmission is Disabled.*/
+    pregs->SCR.BYTE = SCI_IIC_SCR_INIT;
+
+    /* Dummy read RDR for clear SSR.RDRF */
+    dummy = pregs->RDR;
+
+ } /* End of function sci_iic_reset_setting() */
 
 /***********************************************************************************************************************
  * Function Name: r_sci_iic_txi_isr_processing
@@ -2333,11 +2437,13 @@ void r_sci_iic_tei_isr_processing (uint8_t ch_no)
     /* Clear IR flag */
     pregs->SIMR3.BIT.IICSTIF = SCI_IIC_IICSTIF_CLEAR;
 
+    /* WAIT_LOOP */
     while (SCI_IIC_IICSTIF_CLEAR != pregs->SIMR3.BIT.IICSTIF)
     {
         /* nothing to do */
     }
 
+    /* WAIT_LOOP */
     while (0 != ((*g_sci_iic_handles[ch_no]->prom->pir_tei) & (g_sci_iic_handles[ch_no]->prom->tei_ir_mask)))
     {
         /* nothing to do */

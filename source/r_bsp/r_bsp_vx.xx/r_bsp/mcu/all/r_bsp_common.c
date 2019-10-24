@@ -37,7 +37,7 @@
 *                               the delayWait() loop.
 *         : 27.07.2018 1.90     Changed the value of the following macro definition, because added RX66T.
 *                               - CPU_CYCLES_PER_LOOP
-*         : xx.xx.xxxx 2.00     Deleted the following definition. 
+*         : 28.02.2019 2.00     Deleted the following definition. 
 *                               (The following definition moved to the common file (mcu_info.h).)
 *                               - CPU_CYCLES_PER_LOOP
 *                               Added support for GNUC and ICCRX.
@@ -75,7 +75,6 @@ Exported global variables (to be accessed by other files)
 /***********************************************************************************************************************
 Private global variables and functions
 ***********************************************************************************************************************/
-extern uint32_t get_iclk_freq_hz(void);  // Get the board specific ICLK frequency
 
 /***********************************************************************************************************************
 * Function Name: R_BSP_GetVersion
@@ -105,7 +104,7 @@ void delay_wait (unsigned long loop_cnt)
 {
     R_BSP_ASM_INTERNAL_USED(loop_cnt)
     R_BSP_ASM_BEGIN
-    R_BSP_ASM(    BRA.B    R_BSP_ASM_LAB_NEXT(0)    )
+    R_BSP_ASM(    BRA.B   R_BSP_ASM_LAB_NEXT(0)     )
     R_BSP_ASM(    NOP                               )
     R_BSP_ASM_LAB(0:                                )
     R_BSP_ASM(    NOP                               )

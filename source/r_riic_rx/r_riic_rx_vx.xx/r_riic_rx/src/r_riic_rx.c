@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer 
  *
- * Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2013(2019) Renesas Electronics Corporation. All rights reserved.
  **********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_riic_rx.c
@@ -62,7 +62,12 @@
  *              : 01.10.2016 2.00     Fixed a program according to the Renesas coding rules.
  *              : 02.06.2017 2.10     Deleted interrupt functions of RIIC3.
  *                                    Fixed processing of the riic_bps_calc function.
- *              : xx.xx.xxxx x.xx     Added support for GNUC and ICCRX.
+ *              : 27.04.2018 2.30     Added "for", "while" and "do while" comment.
+ *              : 15.10.2018 2.40     Added RX72T support.
+ *              : 20.05.2019 2.41     Added support for GNUC and ICCRX.
+ *                                    Fixed coding style.
+ *              : 20.06.2019 2.42     Added RX23W support.
+ *              : 30.07.2019 2.43     Added RX72M support.
  **********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -468,6 +473,7 @@ riic_return_t R_RIIC_MasterSend (riic_info_t * p_riic_info)
 static riic_return_t riic_master_send (riic_info_t * p_riic_info)
 {
     riic_return_t ret;
+    riic_callback callbackfunc = NULL;
 
     /* Checks the channel status. */
     ret = riic_check_chstatus_start(p_riic_info);
@@ -487,7 +493,8 @@ static riic_return_t riic_master_send (riic_info_t * p_riic_info)
     priic_info_m[p_riic_info->ch_no] = p_riic_info;
 
     /* Sets the callback function. */
-    g_riic_callbackfunc_m[p_riic_info->ch_no] = p_riic_info->callbackfunc;
+    callbackfunc = p_riic_info->callbackfunc;
+    g_riic_callbackfunc_m[p_riic_info->ch_no] = callbackfunc;
 
     /* Generates the start condition.  */
     ret = riic_func_table(RIIC_EV_GEN_START_COND, p_riic_info);
@@ -577,6 +584,7 @@ riic_return_t R_RIIC_MasterReceive (riic_info_t * p_riic_info)
 static riic_return_t riic_master_receive (riic_info_t * p_riic_info)
 {
     riic_return_t ret;
+    riic_callback callbackfunc = NULL;
 
     /* Checks the channel status. */
     ret = riic_check_chstatus_start(p_riic_info);
@@ -596,7 +604,8 @@ static riic_return_t riic_master_receive (riic_info_t * p_riic_info)
     priic_info_m[p_riic_info->ch_no] = p_riic_info;
 
     /* Sets the callback function. */
-    g_riic_callbackfunc_m[p_riic_info->ch_no] = p_riic_info->callbackfunc;
+    callbackfunc = p_riic_info->callbackfunc;
+    g_riic_callbackfunc_m[p_riic_info->ch_no] = callbackfunc;
 
     /* Generates the start condition. */
     ret = riic_func_table(RIIC_EV_GEN_START_COND, p_riic_info);
@@ -635,6 +644,7 @@ static riic_return_t riic_master_receive (riic_info_t * p_riic_info)
 static riic_return_t riic_master_send_receive (riic_info_t * p_riic_info)
 {
     riic_return_t ret;
+    riic_callback callbackfunc = NULL;
 
     /* Checks the channel status. */
     ret = riic_check_chstatus_start(p_riic_info);
@@ -654,7 +664,8 @@ static riic_return_t riic_master_send_receive (riic_info_t * p_riic_info)
     priic_info_m[p_riic_info->ch_no] = p_riic_info;
 
     /* Sets the callback function. */
-    g_riic_callbackfunc_m[p_riic_info->ch_no] = p_riic_info->callbackfunc;
+    callbackfunc = p_riic_info->callbackfunc;
+    g_riic_callbackfunc_m[p_riic_info->ch_no] = callbackfunc;
 
     /* Generates the start condition. */
     ret = riic_func_table(RIIC_EV_GEN_START_COND, p_riic_info);
@@ -735,6 +746,7 @@ riic_return_t R_RIIC_SlaveTransfer (riic_info_t * p_riic_info)
 static riic_return_t riic_slave_transfer (riic_info_t * p_riic_info)
 {
     riic_return_t ret;
+    riic_callback callbackfunc = NULL;
 
     /* Checks the channel status. */
     ret = riic_check_chstatus_start(p_riic_info);
@@ -760,7 +772,8 @@ static riic_return_t riic_slave_transfer (riic_info_t * p_riic_info)
     priic_info_s[p_riic_info->ch_no] = p_riic_info;
 
     /* Sets the callback function. */
-    g_riic_callbackfunc_s[p_riic_info->ch_no] = p_riic_info->callbackfunc;
+    callbackfunc = p_riic_info->callbackfunc;
+    g_riic_callbackfunc_s[p_riic_info->ch_no] = callbackfunc;
 
     /* ---- Enables IIC bus interrupt enable register. ---- */
     if (((uint8_t *) FIT_NO_PTR != p_riic_info->p_data1st) && ((uint8_t *) FIT_NO_PTR != p_riic_info->p_data2nd))
@@ -1210,6 +1223,7 @@ static riic_return_t riic_control (riic_info_t * p_riic_info, uint8_t ctrl_ptn)
 
             /* Wait the request generation has been completed */
             cnt = RIIC_CFG_BUS_CHECK_COUNTER;
+            /* WAIT_LOOP */
             while (RIIC_ICSR2_START_SET != ((*picsr2_reg) & RIIC_ICSR2_START))
             {
                 /* Check Arbitration */
@@ -1253,6 +1267,7 @@ static riic_return_t riic_control (riic_info_t * p_riic_info, uint8_t ctrl_ptn)
 
             /* Wait the request generation has been completed*/
             cnt = RIIC_CFG_BUS_CHECK_COUNTER;
+            /* WAIT_LOOP */
             while (RIIC_ICSR2_START_SET != ((*picsr2_reg) & RIIC_ICSR2_START))
             {
                 /* Check Arbitration */
@@ -1296,6 +1311,7 @@ static riic_return_t riic_control (riic_info_t * p_riic_info, uint8_t ctrl_ptn)
 
             /* Wait the request generation has been completed*/
             cnt = RIIC_CFG_BUS_CHECK_COUNTER;
+            /* WAIT_LOOP */
             while (RIIC_ICSR2_STOP_SET != ((*picsr2_reg) & RIIC_ICSR2_STOP))
             {
                 /* Check Arbitration */
@@ -1343,6 +1359,7 @@ static riic_return_t riic_control (riic_info_t * p_riic_info, uint8_t ctrl_ptn)
 
             /* Wait output scl oneshot has been completed */
             cnt = RIIC_CFG_BUS_CHECK_COUNTER;
+            /* WAIT_LOOP */
             while (RIIC_ICCR1_CLO_SET == ((*piccr1_reg) & RIIC_ICCR1_CLO_SET))
             {
                 /* Check Reply */
@@ -1465,7 +1482,6 @@ static void riic_close (riic_info_t * p_riic_info)
  * Arguments    : none
  * Return Value : version number
  **********************************************************************************************************************/
-R_BSP_PRAGMA_INLINE(R_RIIC_GetVersion)
 uint32_t R_RIIC_GetVersion (void)
 {
     uint32_t const version = (RIIC_VERSION_MAJOR << 16) | RIIC_VERSION_MINOR;
@@ -1661,6 +1677,7 @@ static riic_return_t riic_advance (riic_info_t * p_riic_info)
 
                         /* Initializes ICIER register. */
                         *picier_reg = RIIC_ICIER_INIT;
+                        /* WAIT_LOOP */
                         while (RIIC_ICIER_INIT != (*picier_reg))
                         {
                             /* Do Nothing */
@@ -1780,6 +1797,7 @@ static riic_return_t riic_generate_start_cond (riic_info_t * p_riic_info)
     {
         /* Clears each status flag. */
         (*picsr2_reg) &= RIIC_ICSR2_STOP_CLR;
+        /* WAIT_LOOP */
         while (0x00 != (((*picsr2_reg) & RIIC_ICSR2_START) || ((*picsr2_reg) & RIIC_ICSR2_STOP)))
         {
             /* Do Nothing */
@@ -1909,6 +1927,7 @@ static riic_return_t riic_after_gen_start_cond (riic_info_t * p_riic_info)
 
                         /* check SCL line */
                         scl_low_chk = false;
+                        /* WAIT_LOOP */
                         for (cnt = RIIC_CFG_SCL_CHECK_COUNTER; (false == scl_low_chk) && (cnt > 0x00000000); cnt--)
                         {
                             if (RIIC_ICCR1_SCLI_SET != ((*piccr1_reg) & RIIC_ICCR1_SCLI)) /* SCL low ? */
@@ -2257,6 +2276,7 @@ static riic_return_t riic_after_receive_slvadr (riic_info_t * p_riic_info)
 
     /* Clears each status flag. */
     (*picsr2_reg) &= RIIC_ICSR2_STOP_CLR;
+    /* WAIT_LOOP */
     while (0x00 != ((*picsr2_reg) & RIIC_ICSR2_STOP))
     {
         /* Do Nothing */
@@ -2753,14 +2773,16 @@ static riic_return_t riic_enable_slave_transfer (riic_info_t * p_riic_info)
  **********************************************************************************************************************/
 static void riic_api_mode_event_init (riic_info_t * p_riic_info, riic_api_mode_t new_mode)
 {
+    uint8_t ch_no = p_riic_info->ch_no;
+    
     /* Clears the event flag. */
-    riic_api_event[p_riic_info->ch_no] = RIIC_EV_INIT;
+    riic_api_event[ch_no] = RIIC_EV_INIT;
 
     /* Sets the previous mode. */
-    riic_api_info[p_riic_info->ch_no].B_Mode = riic_api_info[p_riic_info->ch_no].N_Mode;
+    riic_api_info[ch_no].B_Mode = riic_api_info[ch_no].N_Mode;
 
     /* Sets the mode to RIIC_MODE_NONE. */
-    riic_api_info[p_riic_info->ch_no].N_Mode = new_mode;
+    riic_api_info[ch_no].N_Mode = new_mode;
 } /* End of function riic_api_mode_event_init() */
 
 /***********************************************************************************************************************
@@ -2773,11 +2795,13 @@ static void riic_api_mode_event_init (riic_info_t * p_riic_info, riic_api_mode_t
  **********************************************************************************************************************/
 static void riic_api_mode_set (riic_info_t * p_riic_info, riic_api_mode_t new_mode)
 {
+    uint8_t ch_no = p_riic_info->ch_no;
+    
     /* Sets the previous status. */
-    riic_api_info[p_riic_info->ch_no].B_Mode = riic_api_info[p_riic_info->ch_no].N_Mode;
+    riic_api_info[ch_no].B_Mode = riic_api_info[ch_no].N_Mode;
 
     /* Sets the now status. */
-    riic_api_info[p_riic_info->ch_no].N_Mode = new_mode;
+    riic_api_info[ch_no].N_Mode = new_mode;
 } /* End of function riic_api_mode_set() */
 
 /***********************************************************************************************************************
@@ -2790,11 +2814,13 @@ static void riic_api_mode_set (riic_info_t * p_riic_info, riic_api_mode_t new_mo
  **********************************************************************************************************************/
 static void riic_api_status_set (riic_info_t * p_riic_info, riic_api_status_t new_status)
 {
+    uint8_t ch_no = p_riic_info->ch_no;
+    
     /* Sets the previous status. */
-    riic_api_info[p_riic_info->ch_no].B_status = riic_api_info[p_riic_info->ch_no].N_status;
+    riic_api_info[ch_no].B_status = riic_api_info[ch_no].N_status;
 
     /* Sets the now status. */
-    riic_api_info[p_riic_info->ch_no].N_status = new_status;
+    riic_api_info[ch_no].N_status = new_status;
 } /* End of function riic_api_status_set() */
 
 /***********************************************************************************************************************
@@ -3297,6 +3323,7 @@ static bool riic_check_bus_busy (riic_info_t * p_riic_info)
     volatile uint8_t * const piccr2_reg = RIIC_ICCR2_ADR(p_riic_info->ch_no);
 
     /* Checks bus busy. */
+    /* WAIT_LOOP */
     for (cnt = RIIC_CFG_BUS_CHECK_COUNTER; cnt > 0x00000000; cnt--)
     {
         /* Bus busy? */
@@ -3590,11 +3617,13 @@ static void riic_clear_ir_flag (riic_info_t * p_riic_info)
 
             /* Clears ICCR1.ICE bit and sets ICCR1.IICRST bit. */
             (*piccr1_reg) |= RIIC_ICCR1_RIIC_RESET;
+            /* WAIT_LOOP */
             while (RIIC_ICCR1_RIIC_RESET != ((*piccr1_reg) & RIIC_ICCR1_RIIC_RESET))
             {
                 /* Do Nothing */
             }
             (*piccr1_reg) &= RIIC_ICCR1_ICE_CLR;
+            /* WAIT_LOOP */
             while (RIIC_ICCR1_NOT_DRIVEN != ((*piccr1_reg) & RIIC_ICCR1_ICE))
             {
                 /* Do Nothing */
@@ -3603,6 +3632,7 @@ static void riic_clear_ir_flag (riic_info_t * p_riic_info)
 
         /* Initializes ICIER register. */
         *picier_reg = RIIC_ICIER_INIT;
+        /* WAIT_LOOP */
         while (RIIC_ICIER_INIT != (*picier_reg))
         {
             /* Do Nothing */
@@ -3639,6 +3669,8 @@ static riic_return_t riic_bps_calc (riic_info_t * p_riic_info, uint16_t kbps)
     volatile uint8_t * const picmr1_reg = RIIC_ICMR1_ADR(p_riic_info->ch_no);
     volatile uint8_t * const picbrl_reg = RIIC_ICBRL_ADR(p_riic_info->ch_no);
     volatile uint8_t * const picbrh_reg = RIIC_ICBRH_ADR(p_riic_info->ch_no);
+    
+    uint8_t uctmp_tmp;
 
     const double scl100k_up_time = 1000E-9;
     const double scl100k_down_time = 300E-9;
@@ -3654,8 +3686,12 @@ static riic_return_t riic_bps_calc (riic_info_t * p_riic_info, uint16_t kbps)
     volatile double bps = (double) (kbps * 1000);
     volatile double L_time; /* H Width period */
     volatile double H_time; /* L Width period */
+    
+    double bps_tmp;
 
     volatile double calc_val; /* Using for calculation buffer */
+    
+    double calc_val_tmp;
 
     double scl_up_time;
     double scl_down_time;
@@ -3699,7 +3735,8 @@ static riic_return_t riic_bps_calc (riic_info_t * p_riic_info, uint16_t kbps)
             /* Wnen L width less than 0.5us */
             /* Subtract Rise up and down time for SCL from H/L width */
             L_time = 0.5E-6;
-            H_time = (((1 / bps) - L_time) - scl_up_time) - scl_down_time;
+            bps_tmp = bps;
+            H_time = (((1 / bps_tmp) - L_time) - scl_up_time) - scl_down_time;
         }
         else
         {
@@ -3717,7 +3754,8 @@ static riic_return_t riic_bps_calc (riic_info_t * p_riic_info, uint16_t kbps)
             /* Wnen L width less than 1.3us */
             /* Subtract Rise up and down time for SCL from H/L width */
             L_time = 1.3E-6;
-            H_time = (((1 / bps) - L_time) - scl_up_time) - scl_down_time;
+            bps_tmp = bps;
+            H_time = (((1 / bps_tmp) - L_time) - scl_up_time) - scl_down_time;
         }
         else
         {
@@ -3751,6 +3789,7 @@ static riic_return_t riic_bps_calc (riic_info_t * p_riic_info, uint16_t kbps)
 
     /*************** Calculation ICBRL value ***********************/
     /* Calculating until calc_val is less than 32 */
+    /* WAIT_LOOP */
     for (calc_val = 0xFF, cnt = 0; RIIC_ICBR_MAX < calc_val; cnt++)
     {
         calc_val = L_time; /* Set L width time */
@@ -3762,19 +3801,22 @@ static riic_return_t riic_bps_calc (riic_info_t * p_riic_info, uint16_t kbps)
             return RIIC_ERR_OTHER;
         }
 
-        calc_val = (calc_val / (d_cks[cnt] / pclk_val));/* Calculattion ICBRL value */
+        calc_val_tmp = calc_val;
+        calc_val = (calc_val_tmp / (d_cks[cnt] / pclk_val));/* Calculattion ICBRL value */
         calc_val = calc_val + 0.5; /* round off */
     }
 
      /* store ICMR1 value to avoid CKS bit. */
     uctmp = (uint8_t) ((uint8_t) (*picmr1_reg) & (((~BIT4) & (~BIT5)) & (~BIT6)));
+    uctmp_tmp = uctmp;
 
-    *picmr1_reg = (uint8_t) ((uctmp) | ((cnt - 1) << 4)); /* Set ICMR1.CKS bits.*/
+    *picmr1_reg = (uint8_t) ((uctmp_tmp) | ((cnt - 1) << 4)); /* Set ICMR1.CKS bits.*/
     *picbrl_reg = (uint8_t) ((((uint8_t) (calc_val - 1) | BIT7) | BIT6) | BIT5); /* Set value to ICBRL register */
 
     /*************** Calculation ICBRH value ***********************/
     calc_val = H_time; /* Set H width */
-    calc_val = (calc_val / (d_cks[cnt - 1] / pclk_val)); /* Calculattion ICBRH value */
+    calc_val_tmp = calc_val;
+    calc_val = (calc_val_tmp / (d_cks[cnt - 1] / pclk_val)); /* Calculattion ICBRH value */
     calc_val = (uint8_t) (calc_val + 0.5); /* round off */
 
     /* If the calculated value is less than 1, it rounded up to 1. */
@@ -3814,6 +3856,7 @@ void riic0_eei_sub (void)
     {
         /* all interrupt disable */
         RIIC0.ICIER.BIT.TMOIE = 0U;
+        /* WAIT_LOOP */
         while (0U != RIIC0.ICIER.BIT.TMOIE)
         {
             /* Do Nothing */
@@ -3825,6 +3868,7 @@ void riic0_eei_sub (void)
     if ((0U != RIIC0.ICSR2.BIT.AL) && (0U != RIIC0.ICIER.BIT.ALIE))
     {
         RIIC0.ICIER.BIT.ALIE = 0U;
+        /* WAIT_LOOP */
         while (0U != RIIC0.ICIER.BIT.ALIE)
         {
             /* Do Nothing */
@@ -3853,6 +3897,7 @@ void riic0_eei_sub (void)
         RIIC0.ICMR3.BIT.ACKWP = 1U; /* Refer to the technical update. */
         RIIC0.ICMR3.BIT.ACKBT = 0U; /* Refer to the technical update. */
         RIIC0.ICMR3.BIT.ACKWP = 0U; /* Refer to the technical update. */
+        /* WAIT_LOOP */
         while ((0U != RIIC0.ICMR3.BIT.RDRFS) || (0U != RIIC0.ICMR3.BIT.ACKBT))
         {
             /* Do Nothing */
@@ -3860,6 +3905,7 @@ void riic0_eei_sub (void)
 
         /* Clears each status flag. */
         RIIC0.ICSR2.BIT.STOP = 0U;
+        /* WAIT_LOOP */
         while (0U != RIIC0.ICSR2.BIT.STOP)
         {
             /* Do Nothing */
@@ -3880,6 +3926,7 @@ void riic0_eei_sub (void)
         RIIC0.ICIER.BIT.TEIE = 0U;
         RIIC0.ICIER.BIT.TIE = 0U;
         RIIC0.ICIER.BIT.RIE = 0U;
+        /* WAIT_LOOP */
         while (((0U != RIIC0.ICIER.BIT.TEIE) || (0U != RIIC0.ICIER.BIT.TIE)) || (0U != RIIC0.ICIER.BIT.RIE))
         {
             /* Do Nothing */
@@ -3901,6 +3948,7 @@ void riic0_eei_sub (void)
         /* Clears status flag. */
         RIIC0.ICIER.BIT.STIE = 0U;
         RIIC0.ICSR2.BIT.START = 0U;
+        /* WAIT_LOOP */
         while ((0U != RIIC0.ICSR2.BIT.START) || (0U != RIIC0.ICIER.BIT.STIE))
         {
             /* Do Nothing */
@@ -4091,6 +4139,7 @@ void riic0_tei_sub (void)
 
     /* Clears ICSR2.TEND. */
     RIIC0.ICSR2.BIT.TEND = 0U;
+    /* WAIT_LOOP */
     while (0U != RIIC0.ICSR2.BIT.TEND)
     {
         /* Do Nothing */
@@ -4148,6 +4197,7 @@ void riic1_eei_sub (void)
     {
         /* all interrupt disable */
         RIIC1.ICIER.BIT.TMOIE = 0U;
+        /* WAIT_LOOP */
         while (0U != RIIC1.ICIER.BIT.TMOIE)
         {
             /* Do Nothing */
@@ -4159,6 +4209,7 @@ void riic1_eei_sub (void)
     if ((0U != RIIC1.ICSR2.BIT.AL) && (0U != RIIC1.ICIER.BIT.ALIE))
     {
         RIIC1.ICIER.BIT.ALIE = 0U;
+        /* WAIT_LOOP */
         while (0U != RIIC1.ICIER.BIT.ALIE)
         {
             /* Do Nothing */
@@ -4187,6 +4238,7 @@ void riic1_eei_sub (void)
         RIIC1.ICMR3.BIT.ACKWP = 1U; /* Refer to the technical update. */
         RIIC1.ICMR3.BIT.ACKBT = 0U; /* Refer to the technical update. */
         RIIC1.ICMR3.BIT.ACKWP = 0U; /* Refer to the technical update. */
+        /* WAIT_LOOP */
         while ((0U != RIIC1.ICMR3.BIT.RDRFS) || (0U != RIIC1.ICMR3.BIT.ACKBT))
         {
             /* Do Nothing */
@@ -4194,6 +4246,7 @@ void riic1_eei_sub (void)
 
         /* Clears each status flag. */
         RIIC1.ICSR2.BIT.STOP = 0U;
+        /* WAIT_LOOP */
         while (0U != RIIC1.ICSR2.BIT.STOP)
         {
             /* Do Nothing */
@@ -4214,6 +4267,7 @@ void riic1_eei_sub (void)
         RIIC1.ICIER.BIT.TEIE = 0U;
         RIIC1.ICIER.BIT.TIE = 0U;
         RIIC1.ICIER.BIT.RIE = 0U;
+        /* WAIT_LOOP */
         while (((0U != RIIC1.ICIER.BIT.TEIE) || (0U != RIIC1.ICIER.BIT.TIE)) || (0U != RIIC1.ICIER.BIT.RIE) )
         {
             /* Do Nothing */
@@ -4235,6 +4289,7 @@ void riic1_eei_sub (void)
         /* Clears status flag. */
         RIIC1.ICIER.BIT.STIE = 0U;
         RIIC1.ICSR2.BIT.START = 0U;
+        /* WAIT_LOOP */
         while ((0U != RIIC1.ICSR2.BIT.START) || (0U != RIIC1.ICIER.BIT.STIE))
         {
             /* Do Nothing */
@@ -4427,6 +4482,7 @@ void riic1_tei_sub (void)
 
     /* Clears ICSR2.TEND. */
     RIIC1.ICSR2.BIT.TEND = 0U;
+    /* WAIT_LOOP */
     while (0U != RIIC1.ICSR2.BIT.TEND)
     {
         /* Do Nothing */
@@ -4484,6 +4540,7 @@ void riic2_eei_sub (void)
     {
         /* all interrupt disable */
         RIIC2.ICIER.BIT.TMOIE = 0U;
+        /* WAIT_LOOP */
         while (0U != RIIC2.ICIER.BIT.TMOIE)
         {
             /* Do Nothing */
@@ -4495,6 +4552,7 @@ void riic2_eei_sub (void)
     if ((0U != RIIC2.ICSR2.BIT.AL) && (0U != RIIC2.ICIER.BIT.ALIE))
     {
         RIIC2.ICIER.BIT.ALIE = 0U;
+        /* WAIT_LOOP */
         while (0U != RIIC2.ICIER.BIT.ALIE)
         {
             /* Do Nothing */
@@ -4523,6 +4581,7 @@ void riic2_eei_sub (void)
         RIIC2.ICMR3.BIT.ACKWP = 1U; /* Refer to the technical update. */
         RIIC2.ICMR3.BIT.ACKBT = 0U; /* Refer to the technical update. */
         RIIC2.ICMR3.BIT.ACKWP = 0U; /* Refer to the technical update. */
+        /* WAIT_LOOP */
         while ((0U != RIIC2.ICMR3.BIT.RDRFS) || (0U != RIIC2.ICMR3.BIT.ACKBT))
         {
             /* Do Nothing */
@@ -4530,6 +4589,7 @@ void riic2_eei_sub (void)
 
         /* Clears each status flag. */
         RIIC2.ICSR2.BIT.STOP = 0U;
+        /* WAIT_LOOP */
         while (0U != RIIC2.ICSR2.BIT.STOP)
         {
             /* Do Nothing */
@@ -4550,6 +4610,7 @@ void riic2_eei_sub (void)
         RIIC2.ICIER.BIT.TEIE = 0U;
         RIIC2.ICIER.BIT.TIE = 0U;
         RIIC2.ICIER.BIT.RIE = 0U;
+        /* WAIT_LOOP */
         while (((0U != RIIC2.ICIER.BIT.TEIE) || (0U != RIIC2.ICIER.BIT.TIE)) || (0U != RIIC2.ICIER.BIT.RIE) )
         {
             /* Do Nothing */
@@ -4571,6 +4632,7 @@ void riic2_eei_sub (void)
         /* Clears status flag. */
         RIIC2.ICIER.BIT.STIE = 0U;
         RIIC2.ICSR2.BIT.START = 0U;
+        /* WAIT_LOOP */
         while ((0U != RIIC2.ICSR2.BIT.START) || (0U != RIIC2.ICIER.BIT.STIE))
         {
             /* Do Nothing */
@@ -4763,6 +4825,7 @@ void riic2_tei_sub (void)
 
     /* Clears ICSR2.TEND. */
     RIIC2.ICSR2.BIT.TEND = 0U;
+    /* WAIT_LOOP */
     while (0U != RIIC2.ICSR2.BIT.TEND)
     {
         /* Do Nothing */

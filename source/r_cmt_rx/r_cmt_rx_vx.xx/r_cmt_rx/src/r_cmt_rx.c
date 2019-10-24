@@ -14,7 +14,7 @@
 * following link:
 * http://www.renesas.com/disclaimer 
 *
-* Copyright (C) 2013-2017 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) 2013-2019 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * File Name    : r_cmt_rx.c
@@ -35,8 +35,16 @@
 *         : 15.03.2016 3.00    Added support for RX65N.
 *         : 19.12.2016 3.10    Added support for RX24U, RX24T(512KB).
 *                              Fix to stop timer before callback function is executed.
-*         : 21.07.2017 3.20    Added support for RX65N-2M, RX130-512KB
-*         : xx.xx.xxxx x.xx    Added support for GNUC and ICCRX.
+*         : 21.07.2017 3.20    Added support for RX65N-2M, RX130-512KB.
+*         : 28.09.2018 3.30    Added support for RX66T.
+*                              Added support for RTOS.
+*                              Fixed GSCE coding rule.
+*         : 01.02.2019 3.40    Added support for RX72T, RX65N-64pin
+*                              Added new feature: get/set interrupt priority of CMT channel.
+*         : 20.05.2019 4.00    Added support for GNUC and ICCRX.
+*         : 28.06.2019 4.10    Added support for RX23W.
+*         : 15.08.2019 4.20    Added support for RX72M.
+*                              Fixed warnings in IAR.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -44,7 +52,7 @@ Includes   <System Includes> , "Project Includes"
 ***********************************************************************************************************************/
 #include "platform.h"
 #include "r_cmt_rx_config.h" /* Configuration header file */
-#include "r_cmt_rx_if.h"     /*  Interface header file */
+#include "r_cmt_rx_if.h"     /* Interface header file */
 
 /***********************************************************************************************************************
 Macro definitions
@@ -53,7 +61,8 @@ Macro definitions
 #if defined(BSP_MCU_RX62_ALL) || defined(BSP_MCU_RX63_ALL) || defined(BSP_MCU_RX21_ALL) || \
     defined(BSP_MCU_RX61_ALL) || defined(BSP_MCU_RX64_ALL) || defined(BSP_MCU_RX113)    || \
     defined(BSP_MCU_RX71_ALL) || defined(BSP_MCU_RX231)    || defined(BSP_MCU_RX23_ALL) || \
-    defined(BSP_MCU_RX24_ALL) || defined(BSP_MCU_RX65_ALL)
+    defined(BSP_MCU_RX24_ALL) || defined(BSP_MCU_RX65_ALL) || defined(BSP_MCU_RX66_ALL) || \
+    defined(BSP_MCU_RX72_ALL)
     #define CMT_RX_NUM_CHANNELS        (4)
 #elif defined(BSP_MCU_RX111)  || defined(BSP_MCU_RX110)    || defined(BSP_MCU_RX130)
     #define CMT_RX_NUM_CHANNELS        (2)
@@ -69,7 +78,8 @@ Macro definitions
    used for the CMT on RX210 MCUs too. */
 #if defined(BSP_MCU_RX63_ALL) || defined(BSP_MCU_RX21_ALL) || defined(BSP_MCU_RX11_ALL) || defined(BSP_MCU_RX64_ALL) || \
     defined(BSP_MCU_RX71_ALL) || defined(BSP_MCU_RX113)    || defined(BSP_MCU_RX231)    || defined(BSP_MCU_RX23_ALL) || \
-    defined(BSP_MCU_RX13_ALL) || defined(BSP_MCU_RX24_ALL) || defined(BSP_MCU_RX65_ALL)
+    defined(BSP_MCU_RX13_ALL) || defined(BSP_MCU_RX24_ALL) || defined(BSP_MCU_RX65_ALL) || defined(BSP_MCU_RX66_ALL) || \
+    defined(BSP_MCU_RX72_ALL)
     #define CMT_PCLK_HZ                 (BSP_PCLKB_HZ)
 #else
     #define CMT_PCLK_HZ                 (BSP_PCLK_HZ)
@@ -78,7 +88,7 @@ Macro definitions
 /* Which MCUs have register protection. */
 #if defined(BSP_MCU_RX21_ALL) || defined(BSP_MCU_RX63_ALL) || defined(BSP_MCU_RX11_ALL) || defined(BSP_MCU_RX64_ALL) || \
     defined(BSP_MCU_RX71_ALL) || defined(BSP_MCU_RX231)    || defined(BSP_MCU_RX23_ALL) || defined(BSP_MCU_RX13_ALL) || \
-    defined(BSP_MCU_RX24_ALL) || defined(BSP_MCU_RX65_ALL)
+    defined(BSP_MCU_RX24_ALL) || defined(BSP_MCU_RX65_ALL) || defined(BSP_MCU_RX66_ALL) || defined(BSP_MCU_RX72_ALL)
     #define CMT_REG_PROTECT             (1)
 #else
     #define CMT_REG_PROTECT             (0)
@@ -102,10 +112,11 @@ Private global variables and functions
 /* Used to prevent having duplicate code for each channel. This only works if the channels are identical (just at 
    different locations in memory). This is easy to tell by looking in iodefine.h and seeing if the same structure
    was used for all channels. */
-static volatile struct st_cmt0 __evenaccess * const g_cmt_channels[CMT_RX_NUM_CHANNELS] =
+static volatile struct st_cmt0 R_BSP_EVENACCESS_SFR * const g_cmt_channels[CMT_RX_NUM_CHANNELS] =
 {
 /* Currently all RX MCUs have either 2 or 4 CMT channels. */
 #if   CMT_RX_NUM_CHANNELS == 4
+    /* MCUs have 4 CMT channels. */
     &CMT0, &CMT1, &CMT2, &CMT3
 #elif CMT_RX_NUM_CHANNELS == 2
     &CMT0, &CMT1
@@ -115,7 +126,36 @@ static volatile struct st_cmt0 __evenaccess * const g_cmt_channels[CMT_RX_NUM_CH
 };
 
 /* Holds current mode of each CMT channel. */
+#if BSP_CFG_RTOS_USED == 0      /* Non-OS */
 static cmt_modes_t g_cmt_modes[CMT_RX_NUM_CHANNELS];
+#elif BSP_CFG_RTOS_USED == 1    /* FreeRTOS */
+#if   CMT_RX_NUM_CHANNELS == 4
+    #if BSP_CFG_RTOS_SYSTEM_TIMER == 0
+        static cmt_modes_t g_cmt_modes[CMT_RX_NUM_CHANNELS] = {CMT_RX_MODE_PERIODIC, CMT_RX_MODE_DISABLED, CMT_RX_MODE_DISABLED, CMT_RX_MODE_DISABLED };
+    #elif BSP_CFG_RTOS_SYSTEM_TIMER == 1
+        static cmt_modes_t g_cmt_modes[CMT_RX_NUM_CHANNELS] = {CMT_RX_MODE_DISABLED, CMT_RX_MODE_PERIODIC, CMT_RX_MODE_DISABLED, CMT_RX_MODE_DISABLED };
+    #elif BSP_CFG_RTOS_SYSTEM_TIMER == 2
+        static cmt_modes_t g_cmt_modes[CMT_RX_NUM_CHANNELS] = {CMT_RX_MODE_DISABLED, CMT_RX_MODE_DISABLED, CMT_RX_MODE_PERIODIC, CMT_RX_MODE_DISABLED };
+    #elif BSP_CFG_RTOS_SYSTEM_TIMER == 3
+        static cmt_modes_t g_cmt_modes[CMT_RX_NUM_CHANNELS] = {CMT_RX_MODE_DISABLED, CMT_RX_MODE_DISABLED, CMT_RX_MODE_DISABLED, CMT_RX_MODE_PERIODIC };
+    #else
+        #error "Error! Invalid channel"
+    #endif
+#elif CMT_RX_NUM_CHANNELS == 2
+    #if BSP_CFG_RTOS_SYSTEM_TIMER == 0
+        static cmt_modes_t g_cmt_modes[CMT_RX_NUM_CHANNELS] = {CMT_RX_MODE_PERIODIC, CMT_RX_MODE_DISABLED };
+    #elif BSP_CFG_RTOS_SYSTEM_TIMER == 1
+        static cmt_modes_t g_cmt_modes[CMT_RX_NUM_CHANNELS] = {CMT_RX_MODE_DISABLED, CMT_RX_MODE_PERIODIC };
+    #else
+        #error "Error! Invalid channel"
+    #endif
+#else
+    #error "Error! r_cmt_rx is not setup for this many CMT channels. Please refer to g_cmt_channels[] in r_cmt_rx.c"
+#endif
+#elif BSP_CFG_RTOS_USED == 2    /* SEGGER embOS */
+#elif BSP_CFG_RTOS_USED == 3    /* Micrium MicroC/OS */
+#elif BSP_CFG_RTOS_USED == 4    /* Renesas RI600V4 & RI600PX */
+#endif
 
 /* This array holds the available clock dividers. For example, if PCLK/8 is available, then '8' would be an entry.
    Note that the index of the divider in the array should correspond to the bit setting used for the CKS[1:0] bitfield.
@@ -133,10 +173,12 @@ static bool cmt_find_channel(uint32_t * channel);
 static void power_on(uint32_t channel);
 static void power_off(uint32_t channel);
 static void cmt_counter_start(uint32_t channel);
+static void cmt_counter_start_priority(uint32_t channel, cmt_priority_t priority);
 static void cmt_counter_stop(uint32_t channel);
 static bool cmt_setup_channel(uint32_t channel, uint32_t frequency_hz);
 static void cmt_isr_common(uint32_t channel);
 static bool cmt_create(uint32_t frequency_hz, void (* callback)(void * pdata), cmt_modes_t mode, uint32_t * channel);
+static bool cmt_create_priority(uint32_t frequency_hz, void (* callback)(void * pdata), cmt_modes_t mode, uint32_t channel, cmt_priority_t priority);
 
 /***********************************************************************************************************************
 * Function Name: R_CMT_CreatePeriodic
@@ -157,6 +199,30 @@ bool R_CMT_CreatePeriodic (uint32_t frequency_hz, void (* callback)(void * pdata
 {
     return cmt_create(frequency_hz, callback, CMT_RX_MODE_PERIODIC, channel);
 } 
+/* End of function R_CMT_CreatePeriodic */
+
+/***********************************************************************************************************************
+* Function Name: R_CMT_CreatePeriodicAssignChannelPriority
+* Description  : Sets up a CMT channel and calls a callback function at a set frequency.
+* Arguments    : frequency_hz -
+*                    Frequency in Hz of how often to call the callback function.
+*                callback -
+*                    Which function to call when timer expires. If you wish to use R_CMT_Control() to check the status
+*                    of a channel instead of using a callback then use FIT_NO_FUNC for this parameter.
+*                channel -
+*                    Which channel is used to create.
+*                priority -
+*                    Which interrupt priority is used to assign.
+* Return Value : true -
+*                    Channel initialized successfully.
+*                false -
+*                    Invalid channel, invalid priority, channel was in used, or frequency could not be used.
+***********************************************************************************************************************/
+bool R_CMT_CreatePeriodicAssignChannelPriority (uint32_t frequency_hz, void (* callback)(void * pdata), uint32_t channel, cmt_priority_t priority)
+{
+    return cmt_create_priority(frequency_hz, callback, CMT_RX_MODE_PERIODIC, channel, priority);
+}
+/* End of function R_CMT_CreatePeriodicAssignChannelPriority */
 
 /***********************************************************************************************************************
 * Function Name: R_CMT_CreateOneShot
@@ -177,6 +243,30 @@ bool R_CMT_CreateOneShot (uint32_t period_us, void (* callback)(void * pdata), u
 {    
     return cmt_create((1000000/period_us), callback, CMT_RX_MODE_ONE_SHOT, channel);
 }
+/* End of function R_CMT_CreateOneShot */
+
+/***********************************************************************************************************************
+* Function Name: R_CMT_CreateOneShotAssignChannelPriority
+* Description  : Sets up a CMT channel and calls a callback function once after a user-defined amount of time.
+* Arguments    : period_us -
+*                    How long until compare match occurs. Unit is microseconds.
+*                callback -
+*                    Which function to call when timer expires. If you wish to use R_CMT_Control() to check the status
+*                    of a channel instead of using a callback then use FIT_NO_FUNC for this parameter.
+*                channel -
+*                    Which channel is used to create.
+*                priority -
+*                    Which interrupt priority is used to assign.
+* Return Value : true -
+*                    Channel initialized successfully.
+*                false -
+*                    Invalid channel, invalid priority, channel was in used, or period could not be used.
+***********************************************************************************************************************/
+bool R_CMT_CreateOneShotAssignChannelPriority (uint32_t period_us, void (* callback)(void * pdata), uint32_t channel, cmt_priority_t priority)
+{
+    return cmt_create_priority((1000000/period_us), callback, CMT_RX_MODE_ONE_SHOT, channel, priority);
+}
+/* End of function R_CMT_CreateOneShotAssignChannelPriority */
 
 /***********************************************************************************************************************
 * Function Name: R_CMT_Stop
@@ -191,13 +281,13 @@ bool R_CMT_CreateOneShot (uint32_t period_us, void (* callback)(void * pdata), u
 bool R_CMT_Stop (uint32_t channel)
 {
     /* Make sure valid channel number was input. */
-#if BSP_CFG_RTOS_USED == 0      //Non-OS
+#if BSP_CFG_RTOS_USED == 0      /* Non-OS */
     if (channel >= CMT_RX_NUM_CHANNELS)
-#elif BSP_CFG_RTOS_USED == 1        // FreeRTOS
+#elif BSP_CFG_RTOS_USED == 1        /* FreeRTOS */
     if ((channel >= CMT_RX_NUM_CHANNELS) || (BSP_CFG_RTOS_SYSTEM_TIMER == channel))
-#elif BSP_CFG_RTOS_USED == 2    // SEGGER embOS
-#elif BSP_CFG_RTOS_USED == 3    // Micrium MicroC/OS
-#elif BSP_CFG_RTOS_USED == 4    // Renesas RI600V4 & RI600PX
+#elif BSP_CFG_RTOS_USED == 2    /* SEGGER embOS */
+#elif BSP_CFG_RTOS_USED == 3    /* Micrium MicroC/OS */
+#elif BSP_CFG_RTOS_USED == 4    /* Renesas RI600V4 & RI600PX */
 #endif
     {
         /* Invalid channel number was used. */
@@ -217,7 +307,7 @@ bool R_CMT_Stop (uint32_t channel)
     R_BSP_HardwareUnlock((mcu_lock_t)(BSP_LOCK_CMT0 + channel));
 
     return true;
-} 
+} /* End of function R_CMT_Stop */
 
 /***********************************************************************************************************************
 * Function Name: R_CMT_Control
@@ -236,9 +326,10 @@ bool R_CMT_Stop (uint32_t channel)
 bool R_CMT_Control (uint32_t channel, cmt_commands_t command, void * pdata)
 {
     bool ret = true;
+    cmt_priority_t priority;
 
-#if BSP_CFG_RTOS_USED == 0      // Non-OS
-#elif BSP_CFG_RTOS_USED == 1    // FreeRTOS
+#if BSP_CFG_RTOS_USED == 0      /* Non-OS */
+#elif BSP_CFG_RTOS_USED == 1    /* FreeRTOS */
     if (CMT_RX_CMD_GET_NUM_CHANNELS == command)
     {
         /* Return the number of CMT channels on this MCU. */
@@ -253,26 +344,32 @@ bool R_CMT_Control (uint32_t channel, cmt_commands_t command, void * pdata)
         ret = false;
         return ret;
     }
-#elif BSP_CFG_RTOS_USED == 2    // SEGGER embOS
-#elif BSP_CFG_RTOS_USED == 3    // Micrium MicroC/OS
-#elif BSP_CFG_RTOS_USED == 4    // Renesas RI600V4 & RI600PX
+    else
+    {
+        /* Do nothing. */
+    }
+#elif BSP_CFG_RTOS_USED == 2    /* SEGGER embOS */
+#elif BSP_CFG_RTOS_USED == 3    /* Micrium MicroC/OS */
+#elif BSP_CFG_RTOS_USED == 4    /* Renesas RI600V4 & RI600PX */
 #endif
 
     /* Process command that was input. */
     switch (command)
     {
         case CMT_RX_CMD_IS_CHANNEL_COUNTING:
-
+        {
             /* Check input channel. */
             if (channel < CMT_RX_NUM_CHANNELS)
             {
                 /* Valid channel input. Is this channel currently counting? */
                 if (CMT_RX_MODE_DISABLED == g_cmt_modes[channel])
                 {
+                    /* pdata = false*/
                     *(bool *)pdata = false;
                 }
                 else
                 {
+                    /* pdata = true*/
                     *(bool *)pdata = true;
                 }
             }
@@ -281,13 +378,17 @@ bool R_CMT_Control (uint32_t channel, cmt_commands_t command, void * pdata)
                 ret = false;
             }
         break;
+        }
 #if BSP_CFG_RTOS_USED == 0   /* Unreachable code because of checks above */
         case CMT_RX_CMD_GET_NUM_CHANNELS:
+        {
+            /* number of CMT channels */
             *(uint32_t *)pdata = CMT_RX_NUM_CHANNELS;
         break;
+        }
 #endif
         case CMT_RX_CMD_PAUSE:
-
+        {
             if (channel < CMT_RX_NUM_CHANNELS)
             {
                 /* Valid channel input. Is this channel currently counting? */
@@ -297,53 +398,85 @@ bool R_CMT_Control (uint32_t channel, cmt_commands_t command, void * pdata)
                     switch (channel)
                     {
                         case 0:
+                        {
+                            /*CMT0.CMCNT count is stopped*/
                             CMT.CMSTR0.BIT.STR0 = 0;
                         break;
+                        }
                         case 1:
+                        {
+                            /*CMT1.CMCNT count is stopped*/
                             CMT.CMSTR0.BIT.STR1 = 0;
                         break;
-
+                        }
                         #if   CMT_RX_NUM_CHANNELS == 4
                         case 2:
+                        {
+                            /*CMT2.CMCNT count is stopped*/
                             CMT.CMSTR1.BIT.STR2 = 0;
                         break;
+                        }
                         case 3:
+                        {
+                            /*CMT3.CMCNT count is stopped*/
                             CMT.CMSTR1.BIT.STR3 = 0;
                         break;
+                        }
                         #endif
 
                         default:
+                        {
                         break;
+                        }
                     }
                 }
             }
+            else
+            {
+                ret = false;
+            }
             break;
-
+        }
 
         /* Both restart and resume do the same thing, except restart zeros the counter first */ 
         case CMT_RX_CMD_RESTART:
         case CMT_RX_CMD_RESUME:
+        {
             if (channel < CMT_RX_NUM_CHANNELS)
             {
                 /* Stop the timer once to prevent an interrupt from occurring */
                 switch (channel)
                 {
                     case 0:
+                    {
+                        /*CMT0.CMCNT count is stopped*/
                         CMT.CMSTR0.BIT.STR0 = 0;
                     break;
+                    }
                     case 1:
+                    {
+                        /*CMT1.CMCNT count is stopped*/
                         CMT.CMSTR0.BIT.STR1 = 0;
                     break;
+                    }
 #if   CMT_RX_NUM_CHANNELS == 4
                     case 2:
+                    {
+                        /*CMT2.CMCNT count is stopped*/
                         CMT.CMSTR1.BIT.STR2 = 0;
                     break;
+                    }
                     case 3:
+                    {
+                        /*CMT3.CMCNT count is stopped*/
                         CMT.CMSTR1.BIT.STR3 = 0;
                     break;
+                    }
 #endif
                     default:
+                    {
                     break;
+                    }
                 }
 
                 /* Valid channel input. Is this channel currently counting? */
@@ -359,33 +492,192 @@ bool R_CMT_Control (uint32_t channel, cmt_commands_t command, void * pdata)
                     switch (channel)
                     {
                         case 0:
+                        {
+                            /*CMT0.CMCNT count is started*/
                             CMT.CMSTR0.BIT.STR0 = 1;
                         break;
+                        }
                         case 1:
+                        {
+                            /*CMT1.CMCNT count is started*/
                             CMT.CMSTR0.BIT.STR1 = 1;
                         break;
+                        }
 #if   CMT_RX_NUM_CHANNELS == 4
                         case 2:
+                        {
+                            /*CMT2.CMCNT count is started*/
                             CMT.CMSTR1.BIT.STR2 = 1;
                         break;
+                        }
                         case 3:
+                        {
+                            /*CMT3.CMCNT count is started*/
                             CMT.CMSTR1.BIT.STR3 = 1;
                         break;
+                        }
 #endif
                         default:
+                        {
                         break;
+                        }
                     }
                 }
             }
-            break;
+            else
+            {
+                ret = false;
+            }
+        break;
+        }
+        case CMT_RX_CMD_SET_PRIORITY:
+        {
+            /* Make sure that pdata is NOT NULL */
+            if (NULL == pdata)
+            {
+                ret = false;
+            }
+            else
+            {
+                /* Get input priority value from pdata */
+                priority = *(cmt_priority_t *)pdata;
+            }
+
+            /* Check if interrupt priority and channel are correct or not */
+            if (true == ret)
+            {
+                if ((CMT_PRIORITY_0 > (int8_t)priority)
+                 || (CMT_PRIORITY_MAX < priority)
+                 || (CMT_RX_NUM_CHANNELS <= channel))
+                {
+                    ret = false;
+                }
+            }
+
+            if (true == ret)
+            {
+                /* Acquire lock on input channel to check if it was created or not */
+                if (true == R_BSP_HardwareLock((mcu_lock_t)(BSP_LOCK_CMT0 + channel)))
+                {
+                    /* Channel is NOT created yet, release lock on channel */
+                    R_BSP_HardwareUnlock((mcu_lock_t)(BSP_LOCK_CMT0 + channel));
+
+                    /* Set return value to false */
+                    ret = false;
+                }
+                else
+                {
+                    switch (channel)
+                    {
+                        case 0:
+                        {
+                            /* Set interrupt priority using ICU register. */
+                            IPR(CMT0, CMI0) = priority;
+                        break;
+                        }
+
+                        case 1:
+                        {
+                            /* Set interrupt priority using ICU register. */
+                            IPR(CMT1, CMI1) = priority;
+                        break;
+                        }
+
+#if CMT_RX_NUM_CHANNELS == 4
+                        case 2:
+                        {
+                            /* Set interrupt priority using ICU register. */
+                            IPR(CMT2, CMI2) = priority;
+                        break;
+                        }
+
+                        case 3:
+                        {
+                            /* Set interrupt priority using ICU register. */
+                            IPR(CMT3, CMI3) = priority;
+                        break;
+                        }
+
+#endif
+                        default:
+                        {
+                            /* Should never get here. */
+                            R_BSP_NOP();
+                        break;
+                        }
+                    }
+                }
+            }
+        }
+        break;
+        
+        case CMT_RX_CMD_GET_PRIORITY:
+        {
+            /* Make sure that CMT channel is correct, pdata is NOT NULL */
+            if ((CMT_RX_NUM_CHANNELS <= channel) || (NULL == pdata))
+            {
+                ret = false;
+            }
+            else
+            {
+                switch(channel)
+                {
+                    case 0:
+                    {
+                        /* Get priority of CMT channel 0 from IPR register */
+                        priority = (cmt_priority_t)IPR(CMT0, CMI0);
+                    break;
+                    }
+
+                    case 1:
+                    {
+                        /* Get priority of CMT channel 1 from IPR register */
+                        priority = (cmt_priority_t)IPR(CMT1, CMI1);
+                    break;
+                    }
+
+#if CMT_RX_NUM_CHANNELS == 4
+                    case 2:
+                    {
+                        /* Get priority of CMT channel 2 from IPR register */
+                        priority = (cmt_priority_t)IPR(CMT2, CMI2);
+                    break;
+                    }
+
+                    case 3:
+                    {
+                        /* Get priority of CMT channel 3 from IPR register */
+                        priority = (cmt_priority_t)IPR(CMT3, CMI3);
+                    break;
+                    }
+                    
+                    default:
+                    {
+                        /* Should never get here. */
+                        ret = false;
+                    break;
+                    }
+#endif
+                }
+
+                /* Update pdata value with priority for output */
+                *(cmt_priority_t *)pdata = priority;
+            }
+        break;
+        }
 
         default:
+        {
             ret = false;
         break;
+        }
     }
 
     return ret;
-} 
+}
+/***********************************************************************************************************************
+* End of function R_CMT_Control
+***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * Function Name: cmt_create
@@ -450,6 +742,75 @@ static bool cmt_create (uint32_t frequency_hz, void (* callback)(void * pdata), 
 
     return ret;
 }
+/* End of function cmt_create */
+
+/***********************************************************************************************************************
+* Function Name: cmt_create_priority
+* Description  : Sets up a CMT channel based on user input options with interrupt priority.
+* Arguments    : frequency_hz -
+*                    Frequency in Hz of how often to call the callback function.
+*                callback -
+*                    Which function to call when timer expires.
+*                mode -
+*                    Current mode of CMT channel
+*                channel -
+*                    Which channel is used to create.
+*                priority -
+*                    Which interrupt priority is used to assign.
+* Return Value : true -
+*                    Channel initialized successfully.
+*                false -
+*                    Invalid channel, invalid priority, channel was in used, or frequency could not be used.
+***********************************************************************************************************************/
+static bool cmt_create_priority (uint32_t frequency_hz, void (* callback)(void * pdata), cmt_modes_t mode, uint32_t channel, cmt_priority_t priority)
+{
+    /* Return value. */
+    bool     ret = false;
+
+    /* Check if interrupt priority and channel are correct or not. */
+    if ((CMT_PRIORITY_0 > (int8_t)priority) || (CMT_PRIORITY_MAX < priority) || (CMT_RX_NUM_CHANNELS <= channel))
+    {
+        return false;
+    }
+
+    /* Grab state to make sure we do not interfere with another operation. */
+    if (cmt_lock_state() != true)
+    {
+        /* Another operation is already in progress. */
+        return false;
+    }
+
+    /* Acquire lock on input channel. If return value is true then this channel is NOT in use. */
+    if (true == R_BSP_HardwareLock((mcu_lock_t)(BSP_LOCK_CMT0 + channel)))
+    {
+        /* Look to see if we can support this frequency. */
+        ret = cmt_setup_channel(channel, frequency_hz);
+
+        /* Set up ICU registers, save callback function, and start counter if valid divider was found. */
+        if (true == ret)
+        {
+            /* Set mode of operation. */
+            g_cmt_modes[channel] = mode;
+
+            /* Save callback function to be used. */
+            g_cmt_callbacks[channel] = callback;
+
+            /* Start channel counting. */
+            cmt_counter_start_priority(channel, priority);
+        }
+        else
+        {
+            /* Could not support input frequency. Release lock on channel. */
+            R_BSP_HardwareUnlock((mcu_lock_t)(BSP_LOCK_CMT0 + (channel)));
+        }
+    }
+
+    /* Release state so other operations can be performed. */
+    cmt_unlock_state();
+
+    return ret;
+}
+/* End of function cmt_create_priority */
 
 /***********************************************************************************************************************
 * Function Name: cmt_lock_state
@@ -469,6 +830,7 @@ static bool cmt_lock_state (void)
 
     return ret;
 }
+/* End of function cmt_lock_state */
 
 /***********************************************************************************************************************
 * Function Name: cmt_unlock_state
@@ -481,6 +843,7 @@ static void cmt_unlock_state (void)
     /* Release lock. */
     R_BSP_HardwareUnlock(BSP_LOCK_CMT);
 }
+/* End of function cmt_unlock_state */
 
 /***********************************************************************************************************************
 * Function Name: cmt_find_channel
@@ -498,19 +861,21 @@ static bool cmt_find_channel (uint32_t * channel)
     uint32_t i;
 
     /* Look for an available channel. */
+    /* WAIT_LOOP */
     for (i = 0; i < CMT_RX_NUM_CHANNELS; i++)
     {
-#if BSP_CFG_RTOS_USED == 0      // Non-OS
-#elif BSP_CFG_RTOS_USED == 1    // FreeRTOS
+#if BSP_CFG_RTOS_USED == 0      /* Non-OS */
+#elif BSP_CFG_RTOS_USED == 1    /* FreeRTOS */
         if (i == BSP_CFG_RTOS_SYSTEM_TIMER)
         {
             /* Found CMT channel is being used for RTOS. */
             continue;
         }
-#elif BSP_CFG_RTOS_USED == 2    // SEGGER embOS
-#elif BSP_CFG_RTOS_USED == 3    // Micrium MicroC/OS
-#elif BSP_CFG_RTOS_USED == 4    // Renesas RI600V4 & RI600PX
+#elif BSP_CFG_RTOS_USED == 2    /* SEGGER embOS */
+#elif BSP_CFG_RTOS_USED == 3    /* Micrium MicroC/OS */
+#elif BSP_CFG_RTOS_USED == 4    /* Renesas RI600V4 & RI600PX */
 #endif
+        /* Look for an available channel. */
         if (true == R_BSP_HardwareLock((mcu_lock_t)(BSP_LOCK_CMT0 + i)))
         {
             /* Channel found. */
@@ -523,6 +888,7 @@ static bool cmt_find_channel (uint32_t * channel)
 
     return channel_found;
 }
+/* End of function cmt_find_channel */
 
 /***********************************************************************************************************************
 * Function Name: power_on
@@ -542,43 +908,48 @@ static void power_on (uint32_t channel)
     switch (channel)
     {
         case 0:
-
+            {
             /* Bring module out of stop state. */
             MSTP(CMT0) = 0;
 
             /* Stop counter. */
             CMT.CMSTR0.BIT.STR0 = 0;
-        break;   
+            break;
+            }
         case 1:
-
+            {
             /* Bring module out of stop state. */
             MSTP(CMT1) = 0;
 
             /* Stop counter. */
             CMT.CMSTR0.BIT.STR1 = 0;        
-        break;
+            break;
+            }
 #if   CMT_RX_NUM_CHANNELS == 4
         case 2:
-
+            {
             /* Bring module out of stop state. */
             MSTP(CMT2) = 0;
 
             /* Stop counter. */
             CMT.CMSTR1.BIT.STR2 = 0;        
-        break;
+            break;
+            }
         case 3:
-
+            {
             /* Bring module out of stop state. */
             MSTP(CMT3) = 0;
 
             /* Stop counter. */
             CMT.CMSTR1.BIT.STR3 = 0;       
-        break;
+            break;
+            }
 #endif
         default:
-
+            {
             /* Should never get here. Valid channel number is checked above. */
-        break;
+            break;
+            }
     }    
 
 #if CMT_REG_PROTECT == 1
@@ -587,6 +958,9 @@ static void power_on (uint32_t channel)
     R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);
 #endif
 }
+/***********************************************************************************************************************
+* End of function power_on
+***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * Function Name: power_off
@@ -608,60 +982,65 @@ static void power_off (uint32_t channel)
     switch (channel)
     {
         case 0:
-
+            {
             /* Stop counter. */
             CMT.CMSTR0.BIT.STR0 = 0;
 
             /* Only turn off CMT unit if both channels are off. */
-            if (g_cmt_modes[1] == CMT_RX_MODE_DISABLED)
+            if (CMT_RX_MODE_DISABLED == g_cmt_modes[1])
             {
                 /* Put module in stop state. */
                 MSTP(CMT0) = 1;
             }
-        break;   
+            break;
+            }
         case 1:
-
+            {
             /* Stop counter. */
             CMT.CMSTR0.BIT.STR1 = 0;        
 
             /* Only turn off CMT unit if both channels are off. */
-            if (g_cmt_modes[0] == CMT_RX_MODE_DISABLED)
+            if (CMT_RX_MODE_DISABLED == g_cmt_modes[0])
             {
                 /* Put module in stop state. */
                 MSTP(CMT1) = 1;
             }
-        break;
+            break;
+            }
 #if   CMT_RX_NUM_CHANNELS == 4
         case 2:
-        
+            {
             /* Stop counter. */
             CMT.CMSTR1.BIT.STR2 = 0;        
 
             /* Only turn off CMT unit if both channels are off. */
-            if (g_cmt_modes[3] == CMT_RX_MODE_DISABLED)
+            if (CMT_RX_MODE_DISABLED == g_cmt_modes[3])
             {
                 /* Put module in stop state. */
                 MSTP(CMT2) = 1;
             }
-        break;
+            break;
+            }
         case 3:
-
+            {
             /* Stop counter. */
             CMT.CMSTR1.BIT.STR3 = 0;       
 
             /* Only turn off CMT unit if both channels are off. */
-            if (g_cmt_modes[2] == CMT_RX_MODE_DISABLED)
+            if (CMT_RX_MODE_DISABLED == g_cmt_modes[2])
             {
 
                 /* Put module in stop state. */
                 MSTP(CMT3) = 1;
             }
-        break;
+            break;
+            }
 #endif
         default:
-
+            {
             /* Should never get here. Valid channel number is checked above. */
-        break;
+            break;
+            }
     }    
 
 #if CMT_REG_PROTECT == 1
@@ -669,17 +1048,20 @@ static void power_off (uint32_t channel)
     R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);
 #endif
 }
+/***********************************************************************************************************************
+* End of function power_off
+***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * Function Name: cmt_counter_start
 * Description  : Starts a CMT channel counting.
-* Arguments    : channel - 
+* Arguments    : channel -
 *                    Channel number to use.
 * Return Value : none
 ***********************************************************************************************************************/
 static void cmt_counter_start (uint32_t channel)
 {
-    /* Enable compare match interurpt. */
+    /* Enable compare match interrupt. */
     (*g_cmt_channels[channel]).CMCR.BIT.CMIE = 1;
 
     /* Clear counter. */
@@ -689,58 +1071,143 @@ static void cmt_counter_start (uint32_t channel)
     switch (channel)
     {
         case 0:
-
+            {
             /* Setup ICU registers. */
             IR(CMT0, CMI0)  = 0;                /* Clear any previously pending interrupts */
             IPR(CMT0, CMI0) = CMT_RX_CFG_IPR;   /* Set interrupt priority */
-            IEN(CMT0, CMI0) = 1;                /* Enable compare match interrupt */
+            R_BSP_InterruptRequestEnable(VECT(CMT0, CMI0));                /* Enable compare match interrupt */
 
             /* Start counter. */
             CMT.CMSTR0.BIT.STR0 = 1;
-        break;   
+            break;
+            }
         case 1:
-
+            {
             /* Setup ICU registers. */
             IR(CMT1, CMI1)  = 0;                /* Clear any previously pending interrupts */
             IPR(CMT1, CMI1) = CMT_RX_CFG_IPR;   /* Set interrupt priority */
-            IEN(CMT1, CMI1) = 1;                /* Enable compare match interrupt */
+            R_BSP_InterruptRequestEnable(VECT(CMT1, CMI1));                /* Enable compare match interrupt */
 
             /* Start counter. */
-            CMT.CMSTR0.BIT.STR1 = 1;        
-        break;
+            CMT.CMSTR0.BIT.STR1 = 1;
+            break;
+            }
 #if   CMT_RX_NUM_CHANNELS == 4
         case 2:
-
+            {
             /* Setup ICU registers. */
             IR(CMT2, CMI2)  = 0;                /* Clear any previously pending interrupts */
             IPR(CMT2, CMI2) = CMT_RX_CFG_IPR;   /* Set interrupt priority */
-            IEN(CMT2, CMI2) = 1;                /* Enable compare match interrupt */
+            R_BSP_InterruptRequestEnable(VECT(CMT2, CMI2));                /* Enable compare match interrupt */
 
             /* Start counter. */
-            CMT.CMSTR1.BIT.STR2 = 1;        
-        break;
+            CMT.CMSTR1.BIT.STR2 = 1;
+            break;
+            }
         case 3:
-
+            {
             /* Setup ICU registers. */
             IR(CMT3, CMI3)  = 0;                /* Clear any previously pending interrupts */
             IPR(CMT3, CMI3) = CMT_RX_CFG_IPR;   /* Set interrupt priority */
-            IEN(CMT3, CMI3) = 1;                /* Enable compare match interrupt */
+            R_BSP_InterruptRequestEnable(VECT(CMT3, CMI3));                /* Enable compare match interrupt */
 
             /* Start counter. */
-            CMT.CMSTR1.BIT.STR3 = 1;       
-        break;
+            CMT.CMSTR1.BIT.STR3 = 1;
+            break;
+            }
 #endif
         default:
-
+        {
             /* Should never get here. Valid channel number is checked above. */
         break;
-    }    
+        }
+    }
 }
+/***********************************************************************************************************************
+* End of function cmt_counter_start
+***********************************************************************************************************************/
+
+/***********************************************************************************************************************
+* Function Name: cmt_counter_start_priority
+* Description  : Starts a CMT channel counting with interrupt priority.
+* Arguments    : channel -
+*                    Channel number to use.
+*                priority -
+*                    Which interrupt priority is used to assign.
+* Return Value : none
+***********************************************************************************************************************/
+static void cmt_counter_start_priority (uint32_t channel, cmt_priority_t priority)
+{
+    /* Enable compare match interrupt. */
+    (*g_cmt_channels[channel]).CMCR.BIT.CMIE = 1;
+
+    /* Clear counter. */
+    (*g_cmt_channels[channel]).CMCNT = 0;
+
+    /* Start counter channel. */
+    switch (channel)
+    {
+        case 0:
+            {
+            /* Setup ICU registers. */
+            IR(CMT0, CMI0)  = 0;                /* Clear any previously pending interrupts */
+            IPR(CMT0, CMI0) = priority;         /* Set interrupt priority */
+            R_BSP_InterruptRequestEnable(VECT(CMT0, CMI0));                /* Enable compare match interrupt */
+
+            /* Start counter. */
+            CMT.CMSTR0.BIT.STR0 = 1;
+            break;
+            }
+        case 1:
+            {
+            /* Setup ICU registers. */
+            IR(CMT1, CMI1)  = 0;                /* Clear any previously pending interrupts */
+            IPR(CMT1, CMI1) = priority;         /* Set interrupt priority */
+            R_BSP_InterruptRequestEnable(VECT(CMT1, CMI1));                /* Enable compare match interrupt */
+
+            /* Start counter. */
+            CMT.CMSTR0.BIT.STR1 = 1;
+            break;
+            }
+#if   CMT_RX_NUM_CHANNELS == 4
+        case 2:
+            {
+            /* Setup ICU registers. */
+            IR(CMT2, CMI2)  = 0;                /* Clear any previously pending interrupts */
+            IPR(CMT2, CMI2) = priority;         /* Set interrupt priority */
+            R_BSP_InterruptRequestEnable(VECT(CMT2, CMI2));                /* Enable compare match interrupt */
+
+            /* Start counter. */
+            CMT.CMSTR1.BIT.STR2 = 1;
+            break;
+            }
+        case 3:
+            {
+            /* Setup ICU registers. */
+            IR(CMT3, CMI3)  = 0;                /* Clear any previously pending interrupts */
+            IPR(CMT3, CMI3) = priority;         /* Set interrupt priority */
+            R_BSP_InterruptRequestEnable(VECT(CMT3, CMI3));                /* Enable compare match interrupt */
+
+            /* Start counter. */
+            CMT.CMSTR1.BIT.STR3 = 1;
+            break;
+            }
+#endif
+        default:
+        {
+            /* Should never get here. Valid channel number is checked above. */
+        break;
+        }
+    }
+}
+/***********************************************************************************************************************
+* End of function cmt_counter_start_priority
+***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * Function Name: cmt_counter_stop
 * Description  : Stops a CMT channel counting.
-* Arguments    : channel - 
+* Arguments    : channel -
 *                    Channel number to use.
 * Return Value : none
 ***********************************************************************************************************************/
@@ -750,54 +1217,62 @@ static void cmt_counter_stop (uint32_t channel)
     switch (channel)
     {
         case 0:
-
+            {
             /* Stop counter. */
             CMT.CMSTR0.BIT.STR0 = 0;
 
             /* Set ICU registers. */
-            IEN(CMT0, CMI0) = 0;            /* Disable compare match interrupt */
+            R_BSP_InterruptRequestDisable(VECT(CMT0, CMI0));            /* Disable compare match interrupt */
             IPR(CMT0, CMI0) = 0;            /* Set interrupt priority */
             IR(CMT0, CMI0)  = 0;            /* Clear any previously pending interrupts */
-        break;   
+            break;
+            }
         case 1:
-
+            {
             /* Stop counter. */
-            CMT.CMSTR0.BIT.STR1 = 0;        
+            CMT.CMSTR0.BIT.STR1 = 0;
 
             /* Set ICU registers. */
-            IEN(CMT1, CMI1) = 0;            /* Disable compare match interrupt */
+            R_BSP_InterruptRequestDisable(VECT(CMT1, CMI1));            /* Disable compare match interrupt */
             IPR(CMT1, CMI1) = 0;            /* Set interrupt priority */
             IR(CMT1, CMI1)  = 0;            /* Clear any previously pending interrupts */
-        break;
+            break;
+            }
 #if   CMT_RX_NUM_CHANNELS == 4
         case 2:
-
+            {
             /* Stop counter. */
-            CMT.CMSTR1.BIT.STR2 = 0;        
+            CMT.CMSTR1.BIT.STR2 = 0;
 
             /* Set ICU registers. */
-            IEN(CMT2, CMI2) = 0;            /* Disable compare match interrupt */
+            R_BSP_InterruptRequestDisable(VECT(CMT2, CMI2));            /* Disable compare match interrupt */
             IPR(CMT2, CMI2) = 0;            /* Set interrupt priority */
             IR(CMT2, CMI2)  = 0;            /* Clear any previously pending interrupts */
-        break;
+            break;
+            }
         case 3:
-
+            {
             /* Stop counter. */
-            CMT.CMSTR1.BIT.STR3 = 0;       
+            CMT.CMSTR1.BIT.STR3 = 0;
 
             /* Set ICU registers. */
-            IEN(CMT3, CMI3) = 0;            /* Disable compare match interrupt */
+            R_BSP_InterruptRequestDisable(VECT(CMT3, CMI3));            /* Disable compare match interrupt */
             IPR(CMT3, CMI3) = 0;            /* Set interrupt priority */
             IR(CMT3, CMI3)  = 0;            /* Clear any previously pending interrupts */
-
-        break;
+            break;
+            }
 #endif
         default:
-
+            {
             /* Should never get here. Valid channel number is checked above. */
-        break;
-    }    
+            break;
+            }
+    }
 }
+/***********************************************************************************************************************
+* End of function cmt_counter_stop
+***********************************************************************************************************************/
+
 
 /***********************************************************************************************************************
 * Function Name: cmt_setup_channel
@@ -816,11 +1291,12 @@ static bool cmt_setup_channel (uint32_t channel, uint32_t frequency_hz)
     uint32_t i;
     bool     ret = false;
 
-
-    if (((uint32_t)CMT_PCLK_HZ / 8) >= frequency_hz) /* Requested frequency must not be higher than PCLK. */
+    /* Requested frequency must not be higher than PCLK. */
+    if (((uint32_t)CMT_PCLK_HZ / 8) >= frequency_hz)
     {
         /* Choose clock. This is done by looking through the available dividers to see if we can match the frequency
            input by the user. */
+        /* WAIT_LOOP */   
         for (i = 0; i < ((sizeof(g_cmt_clock_dividers))/(sizeof(g_cmt_clock_dividers[0]))); i++)
         {
             /* Determine minimum frequency this divider can hit. For example, if a PCLK/8 is used and PCLK is 48MHz, then
@@ -851,21 +1327,24 @@ static bool cmt_setup_channel (uint32_t channel, uint32_t frequency_hz)
 
     return ret;
 }
+/***********************************************************************************************************************
+* End of function cmt_setup_channel
+***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 * Function Name: R_CMT_GetVersion
 * Description  : Returns the current version of this module. The version number is encoded where the top 2 bytes are the
-*                major version number and the bottom 2 bytes are the minor version number. For example, Version 4.25 
+*                major version number and the bottom 2 bytes are the minor version number. For example, Version 4.25
 *                would be returned as 0x00040019.
 * Arguments    : none
 * Return Value : Version of this module.
 ***********************************************************************************************************************/
-R_BSP_PRAGMA_INLINE(R_CMT_GetVersion)
 uint32_t R_CMT_GetVersion (void)
 {
     /* These version macros are defined in r_cmt_rx_if.h. */
     return ((((uint32_t)CMT_RX_VERSION_MAJOR) << 16) | (uint32_t)CMT_RX_VERSION_MINOR);
-} 
+}
+/* End of function R_CMT_GetVersion */
 
 /***********************************************************************************************************************
 * Function Name: cmt_isr_common
@@ -890,6 +1369,7 @@ void cmt_isr_common (uint32_t channel)
         g_cmt_callbacks[channel]((void *)&channel);
     }
 }
+/* End of function cmt_isr_common */
 
 /***********************************************************************************************************************
 * Function Name: cmt0_isr
@@ -897,24 +1377,25 @@ void cmt_isr_common (uint32_t channel)
 * Arguments    : none
 * Return Value : none
 ***********************************************************************************************************************/
-#if BSP_CFG_RTOS_USED == 0      // Non-OS
-R_BSP_PRAGMA_STATIC_INTERRUPT(cmt0_isr, VECT(CMT0, CMI0))
+#if BSP_CFG_RTOS_USED == 0      /* Non-OS */
+R_BSP_PRAGMA_STATIC_INTERRUPT (cmt0_isr,VECT(CMT0, CMI0))
 R_BSP_ATTRIB_STATIC_INTERRUPT void cmt0_isr (void)
 {
     cmt_isr_common(0);
 }
-#elif BSP_CFG_RTOS_USED == 1    // FreeRTOS
+#elif BSP_CFG_RTOS_USED == 1    /* FreeRTOS */
     #if (BSP_CFG_RTOS_SYSTEM_TIMER != 0)
-        R_BSP_PRAGMA_STATIC_INTERRUPT(cmt0_isr, VECT(CMT0, CMI0))
-        static void cmt0_isr (void)
+        R_BSP_PRAGMA_STATIC_INTERRUPT (cmt0_isr,VECT(CMT0, CMI0))
+        R_BSP_ATTRIB_STATIC_INTERRUPT void cmt0_isr (void)
         {
             cmt_isr_common(0);
         }
     #endif /* (BSP_CFG_RTOS_SYSTEM_TIMER != 0) */
-#elif BSP_CFG_RTOS_USED == 2    // SEGGER embOS
-#elif BSP_CFG_RTOS_USED == 3    // Micrium MicroC/OS
-#elif BSP_CFG_RTOS_USED == 4    // Renesas RI600V4 & RI600PX
+#elif BSP_CFG_RTOS_USED == 2    /* SEGGER embOS */
+#elif BSP_CFG_RTOS_USED == 3    /* Micrium MicroC/OS */
+#elif BSP_CFG_RTOS_USED == 4    /* Renesas RI600V4 & RI600PX */
 #endif
+/* End of function cmt0_isr */
 
 /***********************************************************************************************************************
 * Function Name: cmt1_isr
@@ -922,50 +1403,53 @@ R_BSP_ATTRIB_STATIC_INTERRUPT void cmt0_isr (void)
 * Arguments    : none
 * Return Value : none
 ***********************************************************************************************************************/
-#if BSP_CFG_RTOS_USED == 0      // Non-OS
-R_BSP_PRAGMA_STATIC_INTERRUPT(cmt1_isr, VECT(CMT1, CMI1))
+#if BSP_CFG_RTOS_USED == 0      /* Non-OS */
+R_BSP_PRAGMA_STATIC_INTERRUPT (cmt1_isr,VECT(CMT1, CMI1))
 R_BSP_ATTRIB_STATIC_INTERRUPT void cmt1_isr (void)
 {
     cmt_isr_common(1);
 }
-#elif BSP_CFG_RTOS_USED == 1    // FreeRTOS
+#elif BSP_CFG_RTOS_USED == 1    /* FreeRTOS */
     #if (BSP_CFG_RTOS_SYSTEM_TIMER != 1)
-        R_BSP_PRAGMA_STATIC_INTERRUPT(cmt1_isr, VECT(CMT1, CMI1))
-        static void cmt1_isr (void)
+        R_BSP_PRAGMA_STATIC_INTERRUPT (cmt1_isr,VECT(CMT1, CMI1))
+        R_BSP_ATTRIB_STATIC_INTERRUPT void cmt1_isr (void)
         {
             cmt_isr_common(1);
         }
     #endif /* (BSP_CFG_RTOS_SYSTEM_TIMER != 1) */
-#elif BSP_CFG_RTOS_USED == 2    // SEGGER embOS
-#elif BSP_CFG_RTOS_USED == 3    // Micrium MicroC/OS
-#elif BSP_CFG_RTOS_USED == 4    // Renesas RI600V4 & RI600PX
+#elif BSP_CFG_RTOS_USED == 2    /* SEGGER embOS */
+#elif BSP_CFG_RTOS_USED == 3    /* Micrium MicroC/OS */
+#elif BSP_CFG_RTOS_USED == 4    /* Renesas RI600V4 & RI600PX */
 #endif
+/* End of function cmt1_isr */
 
 #if   CMT_RX_NUM_CHANNELS == 4
+
 /***********************************************************************************************************************
 * Function Name: cmt2_isr
 * Description  : Interrupt when compare match for this channel occurs.
 * Arguments    : none
 * Return Value : none
 ***********************************************************************************************************************/
-#if BSP_CFG_RTOS_USED == 0      // Non-OS
-R_BSP_PRAGMA_STATIC_INTERRUPT(cmt2_isr, VECT(CMT2, CMI2))
+#if BSP_CFG_RTOS_USED == 0      /* Non-OS */
+R_BSP_PRAGMA_STATIC_INTERRUPT(cmt2_isr,VECT(CMT2, CMI2))
 R_BSP_ATTRIB_STATIC_INTERRUPT void cmt2_isr (void)
 {
     cmt_isr_common(2);
 }
-#elif BSP_CFG_RTOS_USED == 1    // FreeRTOS
+#elif BSP_CFG_RTOS_USED == 1    /* FreeRTOS */
     #if (BSP_CFG_RTOS_SYSTEM_TIMER != 2)
-        R_BSP_PRAGMA_STATIC_INTERRUPT(cmt2_isr, VECT(CMT2, CMI2))
-        static void cmt2_isr (void)
+        R_BSP_PRAGMA_STATIC_INTERRUPT(cmt2_isr,VECT(CMT2, CMI2))
+        R_BSP_ATTRIB_STATIC_INTERRUPT void cmt2_isr (void)
         {
             cmt_isr_common(2);
         }
     #endif /* (BSP_CFG_RTOS_SYSTEM_TIMER != 2) */
-#elif BSP_CFG_RTOS_USED == 2    // SEGGER embOS
-#elif BSP_CFG_RTOS_USED == 3    // Micrium MicroC/OS
-#elif BSP_CFG_RTOS_USED == 4    // Renesas RI600V4 & RI600PX
+#elif BSP_CFG_RTOS_USED == 2    /* SEGGER embOS */
+#elif BSP_CFG_RTOS_USED == 3    /* Micrium MicroC/OS */
+#elif BSP_CFG_RTOS_USED == 4    /* Renesas RI600V4 & RI600PX */
 #endif
+/* End of function cmt2_isr */
 
 /***********************************************************************************************************************
 * Function Name: cmt3_isr
@@ -973,24 +1457,23 @@ R_BSP_ATTRIB_STATIC_INTERRUPT void cmt2_isr (void)
 * Arguments    : none
 * Return Value : none
 ***********************************************************************************************************************/
-#if BSP_CFG_RTOS_USED == 0      // Non-OS
-R_BSP_PRAGMA_STATIC_INTERRUPT(cmt3_isr, VECT(CMT3, CMI3))
+#if BSP_CFG_RTOS_USED == 0      /* Non-OS */
+R_BSP_PRAGMA_STATIC_INTERRUPT( cmt3_isr,VECT(CMT3, CMI3))
 R_BSP_ATTRIB_STATIC_INTERRUPT void cmt3_isr (void)
 {
     cmt_isr_common(3);
 }
-#elif BSP_CFG_RTOS_USED == 1    // FreeRTOS
+#elif BSP_CFG_RTOS_USED == 1    /* FreeRTOS */
     #if (BSP_CFG_RTOS_SYSTEM_TIMER != 3)
-        R_BSP_PRAGMA_STATIC_INTERRUPT(cmt3_isr, VECT(CMT3, CMI3))
-        static void cmt3_isr (void)
+        R_BSP_PRAGMA_STATIC_INTERRUPT (cmt3_isr,VECT(CMT3, CMI3))
+        R_BSP_ATTRIB_STATIC_INTERRUPT void cmt3_isr (void)
         {
             cmt_isr_common(3);
         }
     #endif /* (BSP_CFG_RTOS_SYSTEM_TIMER != 3) */
-#elif BSP_CFG_RTOS_USED == 2    // SEGGER embOS
-#elif BSP_CFG_RTOS_USED == 3    // Micrium MicroC/OS
-#elif BSP_CFG_RTOS_USED == 4    // Renesas RI600V4 & RI600PX
+#elif BSP_CFG_RTOS_USED == 2    /* SEGGER embOS */
+#elif BSP_CFG_RTOS_USED == 3    /* Micrium MicroC/OS */
+#elif BSP_CFG_RTOS_USED == 4    /* Renesas RI600V4 & RI600PX */
 #endif
-
-#endif
-
+/* End of function cmt3_isr */
+#endif /* End of #if CMT_RX_NUM_CHANNELS == 4 */

@@ -68,19 +68,17 @@ Private global variables and functions
 * Description  :
 * Arguments    : channel -
 *                    Ethernet channel number
-*                    This is not used in this source file for this MCU group.
 * Return Value : none
 ***********************************************************************************************************************/
 void ether_enable_icu(uint32_t channel)
 {
-    volatile uint32_t   dummy; /* FIXME: Replace this line and last two lines to one "INTERNAL_NOT_USED(channel);". */
+    volatile uint32_t   dummy;
 
     ICU.IPR[IPR_ETHER_EINT].BIT.IPR = ETHER_CFG_EINT_INT_PRIORITY;
 
     ICU.IER[IER_ETHER_EINT].BIT.IEN0 = 1;
 
     dummy = channel;
-    INTERNAL_NOT_USED(&dummy); /* The '&' is for the volatile declaration of the "dummy". */
 } /* End of function ether_enable_icu() */
 
 /***********************************************************************************************************************
@@ -88,17 +86,15 @@ void ether_enable_icu(uint32_t channel)
 * Description  :
 * Arguments    : channel -
 *                    Ethernet channel number
-*                    This is not used in this source file for this MCU group.
 * Return Value : none
 ***********************************************************************************************************************/
 void ether_disable_icu(uint32_t channel)
 {
-    volatile uint32_t   dummy; /* FIXME: Replace this line and last two lines to one "INTERNAL_NOT_USED(channel);". */
+    volatile uint32_t   dummy;
 
     ICU.IER[IER_ETHER_EINT].BIT.IEN0 = 0;
 
     dummy = channel;
-    INTERNAL_NOT_USED(&dummy); /* The '&' is for the volatile declaration of the "dummy". */
 } /* End of function ether_disable_icu() */
 
 /***********************************************************************************************************************

@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer 
  *
- * Copyright (C) 2016 Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2016(2019) Renesas Electronics Corporation. All rights reserved.
  **********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_riic_rx65n.c
@@ -28,6 +28,8 @@
  *                               Changed about the calculation processing for address of PFS, PCR, 
  *                               PDR and PMR register.
  *         : 31.08.2017 2.20     Changed definitions of Channel 1 for RX65N ROM 2M.
+ *         : 20.05.2019 2.41     Added support for GNUC and ICCRX.
+ *                               Fixed coding style.
  **********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -146,8 +148,8 @@ const uint8_t g_riic_icfer_init[] =
 void riic_mcu_io_open (uint8_t channel)
 {
     volatile uint8_t uctmp = 0x00;
-    volatile uint8_t __evenaccess * ppcr = NULL;
-    volatile uint8_t __evenaccess * ppdr = NULL;
+    R_BSP_VOLATILE_EVENACCESS uint8_t * ppcr = NULL;
+    R_BSP_VOLATILE_EVENACCESS uint8_t * ppdr = NULL;
     uint8_t port_gr = 0;
     uint8_t pin_num = 0;
 
@@ -236,8 +238,8 @@ void riic_mcu_io_open (uint8_t channel)
 void riic_mcu_mpc_enable (uint8_t channel)
 {
     volatile uint8_t uctmp = 0x00;
-    volatile uint8_t __evenaccess * ppmr = NULL;
-    volatile uint8_t __evenaccess * ppfs = NULL;
+    R_BSP_VOLATILE_EVENACCESS uint8_t * ppmr = NULL;
+    R_BSP_VOLATILE_EVENACCESS uint8_t * ppfs = NULL;
     uint8_t port_gr = 0;
     uint8_t pin_num = 0;
 
@@ -396,8 +398,8 @@ void riic_mcu_mpc_enable (uint8_t channel)
 void riic_mcu_mpc_disable (uint8_t channel)
 {
     volatile uint8_t uctmp = 0x00;
-    volatile uint8_t __evenaccess * ppmr = NULL;
-    volatile uint8_t __evenaccess * ppfs = NULL;
+    R_BSP_VOLATILE_EVENACCESS uint8_t * ppmr = NULL;
+    R_BSP_VOLATILE_EVENACCESS uint8_t * ppfs = NULL;
     uint8_t port_gr = 0;
     uint8_t pin_num = 0;
 
@@ -1248,7 +1250,7 @@ void riic1_eei_isr (void * vect)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_BSP_PRAGMA_STATIC_INTERRUPT(riic1_txi_isr, VECT(RIIC1, TXI1))
+R_BSP_PRAGMA_STATIC_INTERRUPT(riic1_txi_isr, VECT(RIIC1,TXI1))
 R_BSP_ATTRIB_STATIC_INTERRUPT void riic1_txi_isr (void)
 {
     riic1_txi_sub();
@@ -1261,7 +1263,7 @@ R_BSP_ATTRIB_STATIC_INTERRUPT void riic1_txi_isr (void)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_BSP_PRAGMA_STATIC_INTERRUPT(riic1_rxi_isr, VECT(RIIC1, RXI1))
+R_BSP_PRAGMA_STATIC_INTERRUPT(riic1_rxi_isr, VECT(RIIC1,RXI1))
 R_BSP_ATTRIB_STATIC_INTERRUPT void riic1_rxi_isr (void)
 {
     riic1_rxi_sub();
@@ -1302,8 +1304,8 @@ void riic2_eei_isr(void * vect)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_BSP_PRAGMA_STATIC_INTERRUPT(riic2_txi_isr, VECT(RIIC2, TXI2))
-R_BSP_ATTRIB_STATIC_INTERRUPT void riic2_txi_isr(void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(riic2_txi_isr, VECT(RIIC2,TXI2))
+R_BSP_ATTRIB_STATIC_INTERRUPT void riic2_txi_isr (void)
 {
     riic2_txi_sub();
 } /* End of function riic2_txi_isr() */
@@ -1315,8 +1317,8 @@ R_BSP_ATTRIB_STATIC_INTERRUPT void riic2_txi_isr(void)
  * Arguments    : None
  * Return Value : None
  **********************************************************************************************************************/
-R_BSP_PRAGMA_STATIC_INTERRUPT(riic2_rxi_isr, VECT(RIIC2, RXI2))
-R_BSP_ATTRIB_STATIC_INTERRUPT void riic2_rxi_isr(void)
+R_BSP_PRAGMA_STATIC_INTERRUPT(riic2_rxi_isr, VECT(RIIC2,RXI2))
+R_BSP_ATTRIB_STATIC_INTERRUPT void riic2_rxi_isr (void)
 {
     riic2_rxi_sub();
 } /* End of function riic2_rxi_isr() */

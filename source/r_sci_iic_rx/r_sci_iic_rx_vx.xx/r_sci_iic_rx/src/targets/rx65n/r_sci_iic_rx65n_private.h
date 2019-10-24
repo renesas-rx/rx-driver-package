@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer 
  *
- * Copyright (C) 2016 Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2016(2019) Renesas Electronics Corporation. All rights reserved.
  **********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_sci_iic_rx65n_private.h
@@ -26,6 +26,8 @@
  *         : 31.08.2017 2.20     Deleted definitions of PORT_PFS_OFFSET, PORT_ODR0_OFFSET, PORT_ODR1_OFFSET
  *                                and PORT_DSCR_OFFSET.
  *                               Added macro definition SCI_IIC_PRV_DSCR_BASE_REG.
+ *         : 20.05.2019 2.41     Added support for GNUC and ICCRX.
+ *                               Fixed coding style.
  **********************************************************************************************************************/
 /* Guards against multiple inclusion */
 #ifndef SCI_IIC_RX65N_PRIVATE_H
@@ -192,7 +194,7 @@
  Typedef definitions
  **********************************************************************************************************************/
 /* define sci register type */
-typedef volatile __evenaccess struct st_sci0 * sci_regs_t;
+typedef volatile struct st_sci0 R_BSP_EVENACCESS_SFR * sci_regs_t;
 
 /*----------------------------------------------------------------------------*/
 /*   Define internal sci_iic information structure type.                      */
@@ -202,15 +204,15 @@ typedef struct st_sci_iic_ch_rom /* SCI ROM info for channel control block */
 {
     mcu_lock_t                       hd_lock; /* Hardware Lock number */
     sci_regs_t                       regs; /* base ptr to ch registers */
-    volatile __evenaccess uint32_t * pmstp; /* ptr to mstp register */
+    volatile uint32_t R_BSP_EVENACCESS_SFR * pmstp; /* ptr to mstp register */
     uint32_t                         stop_mask; /* mstp mask to disable ch */
-    volatile __evenaccess uint8_t  * pipr; /* ptr to IPR register */
-    volatile __evenaccess uint8_t  * pir_txi; /* ptr to TXI IR register */
-    volatile __evenaccess uint32_t * pir_tei; /* ptr to TEI IR register */
+    volatile uint8_t R_BSP_EVENACCESS_SFR * pipr; /* ptr to IPR register */
+    volatile uint8_t R_BSP_EVENACCESS_SFR * pir_txi; /* ptr to TXI IR register */
+    volatile uint32_t R_BSP_EVENACCESS_SFR * pir_tei; /* ptr to TEI IR register */
     uint32_t                         tei_ir_mask; /* bit mask to enable/disable txi INT in ICU */
-    volatile __evenaccess uint8_t  * picu_txi;
+    volatile uint8_t R_BSP_EVENACCESS_SFR * picu_txi;
     uint8_t                          txi_en_mask; /* bit mask to enable/disable txi INT in ICU */
-    volatile __evenaccess uint32_t * picu_tei;
+    volatile uint32_t R_BSP_EVENACCESS_SFR * picu_tei;
     uint32_t                         tei_en_mask; /* bit mask to enable/disable tei INT in ICU */
     bsp_int_src_t                    grp_tei_def;
     void                           (*grp_tei_func) (void);

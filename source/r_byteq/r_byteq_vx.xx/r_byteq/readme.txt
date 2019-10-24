@@ -30,7 +30,11 @@ r_byteq
 |   r_byteq_if.h
 |
 +---doc
-|       r01an1683jj{VERSION_NUMBER}_rx.pdf
+|    +---en
+|    |      r01an1683ej{VERSION_NUMBER}-rx.pdf
+|    |
+|    +---ja
+|           r01an1683jj{VERSION_NUMBER}-rx.pdf
 |
 +---ref
 |       r_byteq_config_reference.h

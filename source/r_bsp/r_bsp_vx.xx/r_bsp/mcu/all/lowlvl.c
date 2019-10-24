@@ -22,51 +22,49 @@
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * History : DD.MM.YYYY Version  Description
-*         : xx.xx.xxxx 3.00     Merged processing of all devices.
+*         : 28.02.2019 3.00     Merged processing of all devices.
 *                               Fixed coding style.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 Includes   <System Includes> , "Project Includes"
 ***********************************************************************************************************************/
-/* r_bsp access. */
 #include "platform.h"
 
 /* When using the user startup program, disable the following code. */
-#if (BSP_CFG_STARTUP_DISABLE == 0)
-
-#if BSP_CFG_USER_CHARPUT_ENABLED != 0
-/* If user has indicated they want to provide their own charput function then this is the prototype. */
-void BSP_CFG_USER_CHARPUT_FUNCTION(uint32_t output_char);
-#endif
-
-#if BSP_CFG_USER_CHARGET_ENABLED != 0
-/* If user has indicated they want to provide their own charget function then this is the prototype. */
-uint32_t BSP_CFG_USER_CHARGET_FUNCTION(void);
-#endif
+#if BSP_CFG_STARTUP_DISABLE == 0
 
 /***********************************************************************************************************************
 Macro definitions
 ***********************************************************************************************************************/
-#define E1_DBG_PORT (*(volatile struct st_dbg     __evenaccess *)0x84080)
-#define TXFL0EN     (0x00000100)          /* debug tx flow control bit */
-#define RXFL0EN     (0x00001000)          /* debug RX flow control bit */
+#define BSP_PRV_E1_DBG_PORT (*(volatile st_dbg_t     R_BSP_EVENACCESS_SFR *)0x84080)
+#define BSP_PRV_TXFL0EN     (0x00000100)          /* debug tx flow control bit */
+#define BSP_PRV_RXFL0EN     (0x00001000)          /* debug RX flow control bit */
 
 /***********************************************************************************************************************
 Typedef definitions
 ***********************************************************************************************************************/
-struct st_dbg
+typedef struct
 {
-    uint32_t   TX_DATA;     /* Debug Virtual Console TX data */
+    uint32_t   tx_data;     /* Debug Virtual Console TX data */
     char       wk1[12];     /* spacer */
-    uint32_t   RX_DATA;     /* Debug Virtual Console RX data */
+    uint32_t   rx_data;     /* Debug Virtual Console RX data */
     char       wk2[44];     /* spacer */
-    uint32_t   DBGSTAT;     /* Debug Virtual Console Status */
-};
+    uint32_t   dbgstat;     /* Debug Virtual Console Status */
+} st_dbg_t;
 
 /***********************************************************************************************************************
 Exported global variables (to be accessed by other files)
 ***********************************************************************************************************************/
+#if BSP_CFG_USER_CHARPUT_ENABLED != 0
+/* If user has indicated they want to provide their own charput function then this is the prototype. */
+void BSP_CFG_USER_CHARPUT_FUNCTION(char output_char);
+#endif
+
+#if BSP_CFG_USER_CHARGET_ENABLED != 0
+/* If user has indicated they want to provide their own charget function then this is the prototype. */
+char BSP_CFG_USER_CHARGET_FUNCTION(void);
+#endif
 
 /***********************************************************************************************************************
 Private global variables and functions
@@ -78,7 +76,7 @@ Private global variables and functions
 * Arguments    : character to output
 * Return Value : none
 ***********************************************************************************************************************/
-void charput (uint32_t output_char)
+void charput (char output_char)
 {
     /* If user has provided their own charput() function, then call it. */
 #if BSP_CFG_USER_CHARPUT_ENABLED == 1
@@ -86,13 +84,15 @@ void charput (uint32_t output_char)
 #else
     /* Wait for transmit buffer to be empty */
     /* WAIT_LOOP */
-    while(0 != (E1_DBG_PORT.DBGSTAT & TXFL0EN))
+    while(0 != (BSP_PRV_E1_DBG_PORT.dbgstat & BSP_PRV_TXFL0EN))
     {
         /* do nothing */
+        R_BSP_NOP();
     }
 
     /* Write the character out */
-    E1_DBG_PORT.TX_DATA = output_char;
+    /* Casting is valid because it matches the type to the right side or argument. */
+    BSP_PRV_E1_DBG_PORT.tx_data = (int32_t)output_char;
 #endif
 } /* End of function charput() */
 
@@ -102,7 +102,7 @@ void charput (uint32_t output_char)
 * Arguments    : none
 * Return Value : received character
 ***********************************************************************************************************************/
-uint32_t charget (void)
+char charget (void)
 {
     /* If user has provided their own charget() function, then call it. */
 #if BSP_CFG_USER_CHARGET_ENABLED == 1
@@ -110,13 +110,15 @@ uint32_t charget (void)
 #else
     /* Wait for rx buffer buffer to be ready */
     /* WAIT_LOOP */
-    while(0 == (E1_DBG_PORT.DBGSTAT & RXFL0EN))
+    while(0 == (BSP_PRV_E1_DBG_PORT.dbgstat & BSP_PRV_RXFL0EN))
     {
         /* do nothing */
+        R_BSP_NOP();
     }
 
     /* Read data, send back up */
-    return E1_DBG_PORT.RX_DATA;
+    /* Casting is valid because it matches the type to the retern value. */
+    return (char)BSP_PRV_E1_DBG_PORT.rx_data;
 #endif
 } /* End of function charget() */
 

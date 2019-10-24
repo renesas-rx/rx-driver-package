@@ -1,14 +1,22 @@
-/********************************************************************************/
-/*                                                                              */
-/* Device     : RX/RX700/RX71M                                                  */
-/* File Name  : iodefine.h                                                      */
-/* Abstract   : Definition of I/O Register.                                     */
-/* History    : V1.0 (2014-12-08)  [Hardware Manual Revision : 1.00]            */
-/* History    : V1.0A(2017-04-24)  [Hardware Manual Revision : 1.00]            */
-/* Note       : This is a typical example.                                      */
-/*                                                                              */
-/*  Copyright(C) 2014 Renesas Electronics Corporation.                          */
-/*                                                                              */
+/* IAR file generator: v1.0 */
+
+/********************************************************************************
+*
+* Device     : RX/RX700/RX71M
+*
+* File Name  : iodefine.h
+*
+* Abstract   : Definition of I/O Register
+*
+* History    : 0.10  (2014-03-22)  [Hardware Manual Revision : 0.10]
+*            : 1.00  (2014-12-08)  [Hardware Manual Revision : 1.00]
+*            : 1.0A  (2017-04-24)  [Hardware Manual Revision : 1.00]
+*
+* Note       : THIS IS A TYPICAL EXAMPLE.
+*
+* Copyright (C) 2017 (2014) Renesas Electronics Corporation.
+*
+*********************************************************************************/
 /********************************************************************************/
 /*                                                                              */
 /*  DESCRIPTION : Definition of ICU Register                                    */
@@ -55,8 +63,32 @@
 /********************************************************************************/
 #ifndef __RX71MIODEFINE_HEADER__
 #define __RX71MIODEFINE_HEADER__
-#pragma bitfields=reversed_disjoint_types
-#pragma pack(4)
+
+#ifdef __IAR_SYSTEMS_ICC__
+#pragma language=save
+#pragma language=extended
+#ifndef _SYSTEM_BUILD
+#pragma system_include
+#endif
+#endif
+
+#ifdef __IAR_SYSTEMS_ICC__
+#define __evenaccess
+#else
+#define __sfr
+#endif
+
+
+#ifdef __IAR_SYSTEMS_ICC__
+#pragma bitfields=reversed
+#else
+#pragma bit_order left
+#endif
+
+#ifndef __IAR_SYSTEMS_ICC__
+#pragma unpack
+#endif
+
 struct st_bsc {
 	union {
 		unsigned char BYTE;
@@ -17639,142 +17671,150 @@ IPR_PERIA_INTA253=253,IPR_PERIA_INTA254=254,IPR_PERIA_INTA255=255
 #define	 _CLR( x )		__CLR( x )
 #define	  CLR( x , y )	_CLR( _ ## x ## _ ## y )
 
-#define	BSC			(*(volatile struct st_bsc      __sfr *)0x81300)
-#define	CAC			(*(volatile struct st_cac      __sfr *)0x8B000)
-#define	CAN0		(*(volatile struct st_can      __sfr *)0x90200)
-#define	CAN1		(*(volatile struct st_can      __sfr *)0x91200)
-#define	CAN2		(*(volatile struct st_can      __sfr *)0x92200)
-#define	CMT			(*(volatile struct st_cmt      __sfr *)0x88000)
-#define	CMT0		(*(volatile struct st_cmt0     __sfr *)0x88002)
-#define	CMT1		(*(volatile struct st_cmt0     __sfr *)0x88008)
-#define	CMT2		(*(volatile struct st_cmt0     __sfr *)0x88012)
-#define	CMT3		(*(volatile struct st_cmt0     __sfr *)0x88018)
-#define	CMTW0		(*(volatile struct st_cmtw     __sfr *)0x94200)
-#define	CMTW1		(*(volatile struct st_cmtw     __sfr *)0x94280)
-#define	CRC			(*(volatile struct st_crc      __sfr *)0x88280)
-#define	DA			(*(volatile struct st_da       __sfr *)0x88040)
-#define	DMAC		(*(volatile struct st_dmac     __sfr *)0x82200)
-#define	DMAC0		(*(volatile struct st_dmac0    __sfr *)0x82000)
-#define	DMAC1		(*(volatile struct st_dmac1    __sfr *)0x82040)
-#define	DMAC2		(*(volatile struct st_dmac1    __sfr *)0x82080)
-#define	DMAC3		(*(volatile struct st_dmac1    __sfr *)0x820C0)
-#define	DMAC4		(*(volatile struct st_dmac1    __sfr *)0x82100)
-#define	DMAC5		(*(volatile struct st_dmac1    __sfr *)0x82140)
-#define	DMAC6		(*(volatile struct st_dmac1    __sfr *)0x82180)
-#define	DMAC7		(*(volatile struct st_dmac1    __sfr *)0x821C0)
-#define	DOC			(*(volatile struct st_doc      __sfr *)0x8B080)
-#define	DTC			(*(volatile struct st_dtc      __sfr *)0x82400)
-#define	ECCRAM		(*(volatile struct st_eccram   __sfr *)0x812C0)
-#define	EDMAC0		(*(volatile struct st_edmac    __sfr *)0xC0000)
-#define	EDMAC1		(*(volatile struct st_edmac    __sfr *)0xC0200)
-#define	ELC			(*(volatile struct st_elc      __sfr *)0x8B100)
-#define	EPTPC		(*(volatile struct st_eptpc    __sfr *)0xC0500)
-#define	EPTPC0		(*(volatile struct st_eptpc0   __sfr *)0xC4800)
-#define	EPTPC1		(*(volatile struct st_eptpc0   __sfr *)0xC4C00)
-#define	ETHERC0		(*(volatile struct st_etherc   __sfr *)0xC0100)
-#define	ETHERC1		(*(volatile struct st_etherc   __sfr *)0xC0300)
-#define	EXDMAC		(*(volatile struct st_exdmac   __sfr *)0x82A00)
-#define	EXDMAC0		(*(volatile struct st_exdmac0  __sfr *)0x82800)
-#define	EXDMAC1		(*(volatile struct st_exdmac1  __sfr *)0x82840)
-#define	FLASH		(*(volatile struct st_flash    __sfr *)0x8C294)
-#define	GPT			(*(volatile struct st_gpt      __sfr *)0xC2000)
-#define	GPT0		(*(volatile struct st_gpt0     __sfr *)0xC2100)
-#define	GPT1		(*(volatile struct st_gpt0     __sfr *)0xC2180)
-#define	GPT2		(*(volatile struct st_gpt0     __sfr *)0xC2200)
-#define	GPT3		(*(volatile struct st_gpt0     __sfr *)0xC2280)
-#define	ICU			(*(volatile struct st_icu      __sfr *)0x87000)
-#define	IWDT		(*(volatile struct st_iwdt     __sfr *)0x88030)
-#define	MMCIF		(*(volatile struct st_mmcif    __sfr *)0x88500)
-#define	MPC			(*(volatile struct st_mpc      __sfr *)0x8C100)
-#define	MPU			(*(volatile struct st_mpu      __sfr *)0x86400)
-#define	MTU			(*(volatile struct st_mtu      __sfr *)0xC120A)
-#define	MTU0		(*(volatile struct st_mtu0     __sfr *)0xC1290)
-#define	MTU1		(*(volatile struct st_mtu1     __sfr *)0xC1290)
-#define	MTU2		(*(volatile struct st_mtu2     __sfr *)0xC1292)
-#define	MTU3		(*(volatile struct st_mtu3     __sfr *)0xC1200)
-#define	MTU4		(*(volatile struct st_mtu4     __sfr *)0xC1200)
-#define	MTU5		(*(volatile struct st_mtu5     __sfr *)0xC1A94)
-#define	MTU6		(*(volatile struct st_mtu6     __sfr *)0xC1A00)
-#define	MTU7		(*(volatile struct st_mtu7     __sfr *)0xC1A00)
-#define	MTU8		(*(volatile struct st_mtu8     __sfr *)0xC1298)
-#define	PDC			(*(volatile struct st_pdc      __sfr *)0xA0500)
-#define	POE3		(*(volatile struct st_poe      __sfr *)0x8C4C0)
-#define	PORT0		(*(volatile struct st_port0    __sfr *)0x8C000)
-#define	PORT1		(*(volatile struct st_port1    __sfr *)0x8C001)
-#define	PORT2		(*(volatile struct st_port2    __sfr *)0x8C002)
-#define	PORT3		(*(volatile struct st_port3    __sfr *)0x8C003)
-#define	PORT4		(*(volatile struct st_port4    __sfr *)0x8C004)
-#define	PORT5		(*(volatile struct st_port5    __sfr *)0x8C005)
-#define	PORT6		(*(volatile struct st_port6    __sfr *)0x8C006)
-#define	PORT7		(*(volatile struct st_port7    __sfr *)0x8C007)
-#define	PORT8		(*(volatile struct st_port8    __sfr *)0x8C008)
-#define	PORT9		(*(volatile struct st_port9    __sfr *)0x8C009)
-#define	PORTA		(*(volatile struct st_porta    __sfr *)0x8C00A)
-#define	PORTB		(*(volatile struct st_portb    __sfr *)0x8C00B)
-#define	PORTC		(*(volatile struct st_portc    __sfr *)0x8C00C)
-#define	PORTD		(*(volatile struct st_portd    __sfr *)0x8C00D)
-#define	PORTE		(*(volatile struct st_porte    __sfr *)0x8C00E)
-#define	PORTF		(*(volatile struct st_portf    __sfr *)0x8C00F)
-#define	PORTG		(*(volatile struct st_portg    __sfr *)0x8C010)
-#define	PORTJ		(*(volatile struct st_portj    __sfr *)0x8C012)
-#define	PPG0		(*(volatile struct st_ppg0     __sfr *)0x881E6)
-#define	PPG1		(*(volatile struct st_ppg1     __sfr *)0x881F0)
-#define	PTPEDMAC	(*(volatile struct st_ptpedmac __sfr *)0xC0400)
-#define	QSPI		(*(volatile struct st_qspi     __sfr *)0x89E00)
-#define	RAM			(*(volatile struct st_ram      __sfr *)0x81200)
-#define	RIIC0		(*(volatile struct st_riic     __sfr *)0x88300)
-#define	RIIC2		(*(volatile struct st_riic     __sfr *)0x88340)
-#define	RSPI0		(*(volatile struct st_rspi     __sfr *)0xD0100)
-#define	RSPI1		(*(volatile struct st_rspi     __sfr *)0xD0120)
-#define	RTC			(*(volatile struct st_rtc      __sfr *)0x8C400)
-#define	S12AD		(*(volatile struct st_s12ad    __sfr *)0x89000)
-#define	S12AD1		(*(volatile struct st_s12ad1   __sfr *)0x89100)
-#define	SCI0		(*(volatile struct st_sci0     __sfr *)0x8A000)
-#define	SCI1		(*(volatile struct st_sci0     __sfr *)0x8A020)
-#define	SCI2		(*(volatile struct st_sci0     __sfr *)0x8A040)
-#define	SCI3		(*(volatile struct st_sci0     __sfr *)0x8A060)
-#define	SCI4		(*(volatile struct st_sci0     __sfr *)0x8A080)
-#define	SCI5		(*(volatile struct st_sci0     __sfr *)0x8A0A0)
-#define	SCI6		(*(volatile struct st_sci0     __sfr *)0x8A0C0)
-#define	SCI7		(*(volatile struct st_sci0     __sfr *)0x8A0E0)
-#define	SCI12		(*(volatile struct st_sci12    __sfr *)0x8B300)
-#define	SCIFA8		(*(volatile struct st_scifa    __sfr *)0xD0000)
-#define	SCIFA9		(*(volatile struct st_scifa    __sfr *)0xD0020)
-#define	SCIFA10		(*(volatile struct st_scifa    __sfr *)0xD0040)
-#define	SCIFA11		(*(volatile struct st_scifa    __sfr *)0xD0060)
-#define	SDHI		(*(volatile struct st_sdhi     __sfr *)0x8AC00)
-#define	SMCI0		(*(volatile struct st_smci0    __sfr *)0x8A000)
-#define	SMCI1		(*(volatile struct st_smci0    __sfr *)0x8A020)
-#define	SMCI2		(*(volatile struct st_smci0    __sfr *)0x8A040)
-#define	SMCI3		(*(volatile struct st_smci0    __sfr *)0x8A060)
-#define	SMCI4		(*(volatile struct st_smci0    __sfr *)0x8A080)
-#define	SMCI5		(*(volatile struct st_smci0    __sfr *)0x8A0A0)
-#define	SMCI6		(*(volatile struct st_smci0    __sfr *)0x8A0C0)
-#define	SMCI7		(*(volatile struct st_smci0    __sfr *)0x8A0E0)
-#define	SMCI12		(*(volatile struct st_smci0    __sfr *)0x8B300)
-#define	SRC			(*(volatile struct st_src      __sfr *)0x98000)
-#define	SSI0		(*(volatile struct st_ssi      __sfr *)0x8A500)
-#define	SSI1		(*(volatile struct st_ssi      __sfr *)0x8A540)
-#define	SYSTEM		(*(volatile struct st_system   __sfr *)0x80000)
-#define	TEMPS		(*(volatile struct st_temps    __sfr *)0x8C500)
-#define	TMR0		(*(volatile struct st_tmr0     __sfr *)0x88200)
-#define	TMR1		(*(volatile struct st_tmr1     __sfr *)0x88201)
-#define	TMR2		(*(volatile struct st_tmr0     __sfr *)0x88210)
-#define	TMR3		(*(volatile struct st_tmr1     __sfr *)0x88211)
-#define	TMR01		(*(volatile struct st_tmr01    __sfr *)0x88204)
-#define	TMR23		(*(volatile struct st_tmr01    __sfr *)0x88214)
-#define	TPU0		(*(volatile struct st_tpu0     __sfr *)0x88108)
-#define	TPU1		(*(volatile struct st_tpu1     __sfr *)0x88108)
-#define	TPU2		(*(volatile struct st_tpu2     __sfr *)0x8810A)
-#define	TPU3		(*(volatile struct st_tpu3     __sfr *)0x8810A)
-#define	TPU4		(*(volatile struct st_tpu4     __sfr *)0x8810C)
-#define	TPU5		(*(volatile struct st_tpu5     __sfr *)0x8810C)
-#define	TPUA		(*(volatile struct st_tpua     __sfr *)0x88100)
-#define	USB			(*(volatile struct st_usb      __sfr *)0xA0400)
-#define	USB0		(*(volatile struct st_usb0     __sfr *)0xA0000)
-#define	USBA		(*(volatile struct st_usba     __sfr *)0xD0400)
-#define	WDT			(*(volatile struct st_wdt      __sfr *)0x88020)
+#define	BSC			(*(volatile struct st_bsc      __sfr __evenaccess *)0x81300)
+#define	CAC			(*(volatile struct st_cac      __sfr __evenaccess *)0x8B000)
+#define	CAN0		(*(volatile struct st_can      __sfr __evenaccess *)0x90200)
+#define	CAN1		(*(volatile struct st_can      __sfr __evenaccess *)0x91200)
+#define	CAN2		(*(volatile struct st_can      __sfr __evenaccess *)0x92200)
+#define	CMT			(*(volatile struct st_cmt      __sfr __evenaccess *)0x88000)
+#define	CMT0		(*(volatile struct st_cmt0     __sfr __evenaccess *)0x88002)
+#define	CMT1		(*(volatile struct st_cmt0     __sfr __evenaccess *)0x88008)
+#define	CMT2		(*(volatile struct st_cmt0     __sfr __evenaccess *)0x88012)
+#define	CMT3		(*(volatile struct st_cmt0     __sfr __evenaccess *)0x88018)
+#define	CMTW0		(*(volatile struct st_cmtw     __sfr __evenaccess *)0x94200)
+#define	CMTW1		(*(volatile struct st_cmtw     __sfr __evenaccess *)0x94280)
+#define	CRC			(*(volatile struct st_crc      __sfr __evenaccess *)0x88280)
+#define	DA			(*(volatile struct st_da       __sfr __evenaccess *)0x88040)
+#define	DMAC		(*(volatile struct st_dmac     __sfr __evenaccess *)0x82200)
+#define	DMAC0		(*(volatile struct st_dmac0    __sfr __evenaccess *)0x82000)
+#define	DMAC1		(*(volatile struct st_dmac1    __sfr __evenaccess *)0x82040)
+#define	DMAC2		(*(volatile struct st_dmac1    __sfr __evenaccess *)0x82080)
+#define	DMAC3		(*(volatile struct st_dmac1    __sfr __evenaccess *)0x820C0)
+#define	DMAC4		(*(volatile struct st_dmac1    __sfr __evenaccess *)0x82100)
+#define	DMAC5		(*(volatile struct st_dmac1    __sfr __evenaccess *)0x82140)
+#define	DMAC6		(*(volatile struct st_dmac1    __sfr __evenaccess *)0x82180)
+#define	DMAC7		(*(volatile struct st_dmac1    __sfr __evenaccess *)0x821C0)
+#define	DOC			(*(volatile struct st_doc      __sfr __evenaccess *)0x8B080)
+#define	DTC			(*(volatile struct st_dtc      __sfr __evenaccess *)0x82400)
+#define	ECCRAM		(*(volatile struct st_eccram   __sfr __evenaccess *)0x812C0)
+#define	EDMAC0		(*(volatile struct st_edmac    __sfr __evenaccess *)0xC0000)
+#define	EDMAC1		(*(volatile struct st_edmac    __sfr __evenaccess *)0xC0200)
+#define	ELC			(*(volatile struct st_elc      __sfr __evenaccess *)0x8B100)
+#define	EPTPC		(*(volatile struct st_eptpc    __sfr __evenaccess *)0xC0500)
+#define	EPTPC0		(*(volatile struct st_eptpc0   __sfr __evenaccess *)0xC4800)
+#define	EPTPC1		(*(volatile struct st_eptpc0   __sfr __evenaccess *)0xC4C00)
+#define	ETHERC0		(*(volatile struct st_etherc   __sfr __evenaccess *)0xC0100)
+#define	ETHERC1		(*(volatile struct st_etherc   __sfr __evenaccess *)0xC0300)
+#define	EXDMAC		(*(volatile struct st_exdmac   __sfr __evenaccess *)0x82A00)
+#define	EXDMAC0		(*(volatile struct st_exdmac0  __sfr __evenaccess *)0x82800)
+#define	EXDMAC1		(*(volatile struct st_exdmac1  __sfr __evenaccess *)0x82840)
+#define	FLASH		(*(volatile struct st_flash    __sfr __evenaccess *)0x8C294)
+#define	GPT			(*(volatile struct st_gpt      __sfr __evenaccess *)0xC2000)
+#define	GPT0		(*(volatile struct st_gpt0     __sfr __evenaccess *)0xC2100)
+#define	GPT1		(*(volatile struct st_gpt0     __sfr __evenaccess *)0xC2180)
+#define	GPT2		(*(volatile struct st_gpt0     __sfr __evenaccess *)0xC2200)
+#define	GPT3		(*(volatile struct st_gpt0     __sfr __evenaccess *)0xC2280)
+#define	ICU			(*(volatile struct st_icu      __sfr __evenaccess *)0x87000)
+#define	IWDT		(*(volatile struct st_iwdt     __sfr __evenaccess *)0x88030)
+#define	MMCIF		(*(volatile struct st_mmcif    __sfr __evenaccess *)0x88500)
+#define	MPC			(*(volatile struct st_mpc      __sfr __evenaccess *)0x8C100)
+#define	MPU			(*(volatile struct st_mpu      __sfr __evenaccess *)0x86400)
+#define	MTU			(*(volatile struct st_mtu      __sfr __evenaccess *)0xC120A)
+#define	MTU0		(*(volatile struct st_mtu0     __sfr __evenaccess *)0xC1290)
+#define	MTU1		(*(volatile struct st_mtu1     __sfr __evenaccess *)0xC1290)
+#define	MTU2		(*(volatile struct st_mtu2     __sfr __evenaccess *)0xC1292)
+#define	MTU3		(*(volatile struct st_mtu3     __sfr __evenaccess *)0xC1200)
+#define	MTU4		(*(volatile struct st_mtu4     __sfr __evenaccess *)0xC1200)
+#define	MTU5		(*(volatile struct st_mtu5     __sfr __evenaccess *)0xC1A94)
+#define	MTU6		(*(volatile struct st_mtu6     __sfr __evenaccess *)0xC1A00)
+#define	MTU7		(*(volatile struct st_mtu7     __sfr __evenaccess *)0xC1A00)
+#define	MTU8		(*(volatile struct st_mtu8     __sfr __evenaccess *)0xC1298)
+#define	PDC			(*(volatile struct st_pdc      __sfr __evenaccess *)0xA0500)
+#define	POE3		(*(volatile struct st_poe      __sfr __evenaccess *)0x8C4C0)
+#define	PORT0		(*(volatile struct st_port0    __sfr __evenaccess *)0x8C000)
+#define	PORT1		(*(volatile struct st_port1    __sfr __evenaccess *)0x8C001)
+#define	PORT2		(*(volatile struct st_port2    __sfr __evenaccess *)0x8C002)
+#define	PORT3		(*(volatile struct st_port3    __sfr __evenaccess *)0x8C003)
+#define	PORT4		(*(volatile struct st_port4    __sfr __evenaccess *)0x8C004)
+#define	PORT5		(*(volatile struct st_port5    __sfr __evenaccess *)0x8C005)
+#define	PORT6		(*(volatile struct st_port6    __sfr __evenaccess *)0x8C006)
+#define	PORT7		(*(volatile struct st_port7    __sfr __evenaccess *)0x8C007)
+#define	PORT8		(*(volatile struct st_port8    __sfr __evenaccess *)0x8C008)
+#define	PORT9		(*(volatile struct st_port9    __sfr __evenaccess *)0x8C009)
+#define	PORTA		(*(volatile struct st_porta    __sfr __evenaccess *)0x8C00A)
+#define	PORTB		(*(volatile struct st_portb    __sfr __evenaccess *)0x8C00B)
+#define	PORTC		(*(volatile struct st_portc    __sfr __evenaccess *)0x8C00C)
+#define	PORTD		(*(volatile struct st_portd    __sfr __evenaccess *)0x8C00D)
+#define	PORTE		(*(volatile struct st_porte    __sfr __evenaccess *)0x8C00E)
+#define	PORTF		(*(volatile struct st_portf    __sfr __evenaccess *)0x8C00F)
+#define	PORTG		(*(volatile struct st_portg    __sfr __evenaccess *)0x8C010)
+#define	PORTJ		(*(volatile struct st_portj    __sfr __evenaccess *)0x8C012)
+#define	PPG0		(*(volatile struct st_ppg0     __sfr __evenaccess *)0x881E6)
+#define	PPG1		(*(volatile struct st_ppg1     __sfr __evenaccess *)0x881F0)
+#define	PTPEDMAC	(*(volatile struct st_ptpedmac __sfr __evenaccess *)0xC0400)
+#define	QSPI		(*(volatile struct st_qspi     __sfr __evenaccess *)0x89E00)
+#define	RAM			(*(volatile struct st_ram      __sfr __evenaccess *)0x81200)
+#define	RIIC0		(*(volatile struct st_riic     __sfr __evenaccess *)0x88300)
+#define	RIIC2		(*(volatile struct st_riic     __sfr __evenaccess *)0x88340)
+#define	RSPI0		(*(volatile struct st_rspi     __sfr __evenaccess *)0xD0100)
+#define	RSPI1		(*(volatile struct st_rspi     __sfr __evenaccess *)0xD0120)
+#define	RTC			(*(volatile struct st_rtc      __sfr __evenaccess *)0x8C400)
+#define	S12AD		(*(volatile struct st_s12ad    __sfr __evenaccess *)0x89000)
+#define	S12AD1		(*(volatile struct st_s12ad1   __sfr __evenaccess *)0x89100)
+#define	SCI0		(*(volatile struct st_sci0     __sfr __evenaccess *)0x8A000)
+#define	SCI1		(*(volatile struct st_sci0     __sfr __evenaccess *)0x8A020)
+#define	SCI2		(*(volatile struct st_sci0     __sfr __evenaccess *)0x8A040)
+#define	SCI3		(*(volatile struct st_sci0     __sfr __evenaccess *)0x8A060)
+#define	SCI4		(*(volatile struct st_sci0     __sfr __evenaccess *)0x8A080)
+#define	SCI5		(*(volatile struct st_sci0     __sfr __evenaccess *)0x8A0A0)
+#define	SCI6		(*(volatile struct st_sci0     __sfr __evenaccess *)0x8A0C0)
+#define	SCI7		(*(volatile struct st_sci0     __sfr __evenaccess *)0x8A0E0)
+#define	SCI12		(*(volatile struct st_sci12    __sfr __evenaccess *)0x8B300)
+#define	SCIFA8		(*(volatile struct st_scifa    __sfr __evenaccess *)0xD0000)
+#define	SCIFA9		(*(volatile struct st_scifa    __sfr __evenaccess *)0xD0020)
+#define	SCIFA10		(*(volatile struct st_scifa    __sfr __evenaccess *)0xD0040)
+#define	SCIFA11		(*(volatile struct st_scifa    __sfr __evenaccess *)0xD0060)
+#define	SDHI		(*(volatile struct st_sdhi     __sfr __evenaccess *)0x8AC00)
+#define	SMCI0		(*(volatile struct st_smci0    __sfr __evenaccess *)0x8A000)
+#define	SMCI1		(*(volatile struct st_smci0    __sfr __evenaccess *)0x8A020)
+#define	SMCI2		(*(volatile struct st_smci0    __sfr __evenaccess *)0x8A040)
+#define	SMCI3		(*(volatile struct st_smci0    __sfr __evenaccess *)0x8A060)
+#define	SMCI4		(*(volatile struct st_smci0    __sfr __evenaccess *)0x8A080)
+#define	SMCI5		(*(volatile struct st_smci0    __sfr __evenaccess *)0x8A0A0)
+#define	SMCI6		(*(volatile struct st_smci0    __sfr __evenaccess *)0x8A0C0)
+#define	SMCI7		(*(volatile struct st_smci0    __sfr __evenaccess *)0x8A0E0)
+#define	SMCI12		(*(volatile struct st_smci0    __sfr __evenaccess *)0x8B300)
+#define	SRC			(*(volatile struct st_src      __sfr __evenaccess *)0x98000)
+#define	SSI0		(*(volatile struct st_ssi      __sfr __evenaccess *)0x8A500)
+#define	SSI1		(*(volatile struct st_ssi      __sfr __evenaccess *)0x8A540)
+#define	SYSTEM		(*(volatile struct st_system   __sfr __evenaccess *)0x80000)
+#define	TEMPS		(*(volatile struct st_temps    __sfr __evenaccess *)0x8C500)
+#define	TMR0		(*(volatile struct st_tmr0     __sfr __evenaccess *)0x88200)
+#define	TMR1		(*(volatile struct st_tmr1     __sfr __evenaccess *)0x88201)
+#define	TMR2		(*(volatile struct st_tmr0     __sfr __evenaccess *)0x88210)
+#define	TMR3		(*(volatile struct st_tmr1     __sfr __evenaccess *)0x88211)
+#define	TMR01		(*(volatile struct st_tmr01    __sfr __evenaccess *)0x88204)
+#define	TMR23		(*(volatile struct st_tmr01    __sfr __evenaccess *)0x88214)
+#define	TPU0		(*(volatile struct st_tpu0     __sfr __evenaccess *)0x88108)
+#define	TPU1		(*(volatile struct st_tpu1     __sfr __evenaccess *)0x88108)
+#define	TPU2		(*(volatile struct st_tpu2     __sfr __evenaccess *)0x8810A)
+#define	TPU3		(*(volatile struct st_tpu3     __sfr __evenaccess *)0x8810A)
+#define	TPU4		(*(volatile struct st_tpu4     __sfr __evenaccess *)0x8810C)
+#define	TPU5		(*(volatile struct st_tpu5     __sfr __evenaccess *)0x8810C)
+#define	TPUA		(*(volatile struct st_tpua     __sfr __evenaccess *)0x88100)
+#define	USB			(*(volatile struct st_usb      __sfr __evenaccess *)0xA0400)
+#define	USB0		(*(volatile struct st_usb0     __sfr __evenaccess *)0xA0000)
+#define	USBA		(*(volatile struct st_usba     __sfr __evenaccess *)0xD0400)
+#define	WDT			(*(volatile struct st_wdt      __sfr __evenaccess *)0x88020)
+#ifdef __IAR_SYSTEMS_ICC__
 #pragma bitfields=default
-#pragma pack()
+#pragma language=restore
+#else
+#pragma bit_order
+#endif
+
+#ifndef __IAR_SYSTEMS_ICC__
+#pragma packoption
+#endif
 
 #endif

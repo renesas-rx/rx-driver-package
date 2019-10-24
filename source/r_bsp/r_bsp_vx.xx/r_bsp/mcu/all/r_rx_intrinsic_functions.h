@@ -22,7 +22,7 @@
 ***********************************************************************************************************************/
 /**********************************************************************************************************************
 * History : DD.MM.YYYY Version  Description
-*         : xx.xx.xxxx 1.00     First Release
+*         : 28.02.2019 1.00     First Release
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -74,7 +74,7 @@ Macro definitions
 /* uint32_t __builtin_bswap32(uint32_t x) */
 #define R_BSP_REVL(x)    __builtin_bswap32((uint32_t)(x))
 /* int __builtin_rx_revw(int) */
-#define R_BSP_REVW(x)    __builtin_rx_revw((int)(x))
+#define R_BSP_REVW(x)    (unsigned long)__builtin_rx_revw((int)(x))
 
 #elif defined(__ICCRX__)
 
@@ -98,8 +98,8 @@ Macro definitions
 
 #elif defined(__ICCRX__)
 
-/* unsigned long __exchange(unsigned long src, unsigned long * dst) */
-#define R_BSP_EXCHANGE(x, y)    __exchange((unsigned long)(x), (unsigned long *)(y))
+/* void _builtin_xchg(signed long *, signed long *) */
+#define R_BSP_EXCHANGE(x, y)    _builtin_xchg((signed long *)(x), (signed long *)(y))
 
 #endif
 
@@ -221,14 +221,14 @@ Macro definitions
 /* void __builtin_rx_mvtipl (int) */
 #define R_BSP_SET_IPL(x)    __builtin_rx_mvtipl((int)(x))
 /* uint32_t R_BSP_CpuInterruptLevelRead (void) (This macro uses API function of BSP.) */
-#define R_BSP_GET_IPL()     R_BSP_CpuInterruptLevelRead()
+#define R_BSP_GET_IPL()     (unsigned char)R_BSP_CpuInterruptLevelRead()
 
 #elif defined(__ICCRX__)
 
 /* void __set_interrupt_level(__ilevel_t) */
 #define R_BSP_SET_IPL(x)    __set_interrupt_level((__ilevel_t)(x))
 /* __ilevel_t __get_interrupt_level(void) */
-#define R_BSP_GET_IPL()     __get_interrupt_level()
+#define R_BSP_GET_IPL()     (unsigned char)__get_interrupt_level()
 
 #endif
 
@@ -245,7 +245,7 @@ Macro definitions
 /* void __builtin_rx_mvtc (int reg, int val) */
 #define R_BSP_SET_PSW(x)    __builtin_rx_mvtc(0x0, (int)(x))
 /* int __builtin_rx_mvfc (int) */
-#define R_BSP_GET_PSW()     __builtin_rx_mvfc(0x0)
+#define R_BSP_GET_PSW()     (unsigned long)__builtin_rx_mvfc(0x0)
 
 #elif defined(__ICCRX__)
 
@@ -257,6 +257,7 @@ Macro definitions
 #endif
 
 /* ---------- Floating-point status word (FPSW) ---------- */
+#ifdef __FPU
 #if defined(__CCRX__)
 
 /* void set_fpsw(unsigned long data) */
@@ -269,7 +270,7 @@ Macro definitions
 /* void __builtin_rx_mvtc (int reg, int val) */
 #define R_BSP_SET_FPSW(x)    __builtin_rx_mvtc(0x3, (int)(x))
 /* int __builtin_rx_mvfc (int) */
-#define R_BSP_GET_FPSW()     __builtin_rx_mvfc(0x3)
+#define R_BSP_GET_FPSW()    (unsigned long)__builtin_rx_mvfc(0x3)
 
 #elif defined(__ICCRX__)
 
@@ -278,6 +279,7 @@ Macro definitions
 /* unsigned long __get_FPSW_register(void) */
 #define R_BSP_GET_FPSW()     __get_FPSW_register()
 
+#endif
 #endif
 
 /* ---------- User Stack Pointer (USP) ---------- */
@@ -293,23 +295,23 @@ Macro definitions
 /* void __builtin_rx_mvtc (int reg, int val) */
 #define R_BSP_SET_USP(x)    __builtin_rx_mvtc(0x2, (int)(x))
 /* int __builtin_rx_mvfc (int) */
-#define R_BSP_GET_USP()     __builtin_rx_mvfc(0x2)
+#define R_BSP_GET_USP()     (void *)__builtin_rx_mvfc(0x2)
 
 #elif defined(__ICCRX__)
 
 /* void __set_USP_register(unsigned long) */
 #define R_BSP_SET_USP(x)    __set_USP_register((unsigned long)(x))
 /* unsigned long __get_USP_register(void) */
-#define R_BSP_GET_USP()     __get_USP_register()
+#define R_BSP_GET_USP()     (void *)__get_USP_register()
 
 #endif
 
 /* ---------- Interrupt Stack Pointer (ISP) ---------- */
 #if defined(__CCRX__)
 
-/* void set_fpsw(void *data) */
+/* void set_isp(void *data) */
 #define R_BSP_SET_ISP(x)    set_isp((void *)(x))
-/* void *get_fpsw(void) */
+/* void *get_isp(void) */
 #define R_BSP_GET_ISP()     get_isp()
 
 #elif defined(__GNUC__)
@@ -317,14 +319,14 @@ Macro definitions
 /* void __builtin_rx_mvtc (int reg, int val) */
 #define R_BSP_SET_ISP(x)    __builtin_rx_mvtc(0xA, (int)(x))
 /* int __builtin_rx_mvfc (int) */
-#define R_BSP_GET_ISP()     __builtin_rx_mvfc(0xA)
+#define R_BSP_GET_ISP()     (void *)__builtin_rx_mvfc(0xA)
 
 #elif defined(__ICCRX__)
 
 /* void __set_ISP_register(unsigned long) */
 #define R_BSP_SET_ISP(x)    __set_ISP_register((unsigned long)(x))
 /* unsigned long __get_ISP_register(void) */
-#define R_BSP_GET_ISP()     __get_ISP_register()
+#define R_BSP_GET_ISP()     (void *)__get_ISP_register()
 
 #endif
 
@@ -341,14 +343,14 @@ Macro definitions
 /* void __builtin_rx_mvtc (int reg, int val) */
 #define R_BSP_SET_INTB(x)    __builtin_rx_mvtc(0xC, (int)(x))
 /* int __builtin_rx_mvfc (int) */
-#define R_BSP_GET_INTB()     __builtin_rx_mvfc(0xC)
+#define R_BSP_GET_INTB()     (void *)__builtin_rx_mvfc(0xC)
 
 #elif defined(__ICCRX__)
 
 /* void __set_interrupt_table(unsigned long address) */
 #define R_BSP_SET_INTB(x)    __set_interrupt_table((unsigned long)(x))
 /* unsigned long __get_interrupt_table(void); */
-#define R_BSP_GET_INTB()     __get_interrupt_table()
+#define R_BSP_GET_INTB()     (void *)__get_interrupt_table()
 
 #endif
 
@@ -365,12 +367,12 @@ Macro definitions
 /* void __builtin_rx_mvtc (int reg, int val) */
 #define R_BSP_SET_BPSW(x)    __builtin_rx_mvtc(0x8, (int)(x))
 /* int __builtin_rx_mvfc (int) */
-#define R_BSP_GET_BPSW()     __builtin_rx_mvfc(0x8)
+#define R_BSP_GET_BPSW()     (unsigned long)__builtin_rx_mvfc(0x8)
 
 #elif defined(__ICCRX__)
 
 /* void R_BSP_SetBPSW(uint32_t data) (This macro uses API function of BSP.) */
-#define R_BSP_SET_BPSW(x)    R_BSP_SetBPSW((unsigned long)(x))
+#define R_BSP_SET_BPSW(x)    R_BSP_SetBPSW((uint32_t)(x))
 /* uint32_t R_BSP_GetBPSW(void) (This macro uses API function of BSP.) */
 #define R_BSP_GET_BPSW()     R_BSP_GetBPSW()
 
@@ -389,7 +391,7 @@ Macro definitions
 /* void __builtin_rx_mvtc (int reg, int val) */
 #define R_BSP_SET_BPC(x)    __builtin_rx_mvtc(0x9, (int)(x))
 /* int __builtin_rx_mvfc (int) */
-#define R_BSP_GET_BPC()     __builtin_rx_mvfc(0x9)
+#define R_BSP_GET_BPC()     (void *)__builtin_rx_mvfc(0x9)
 
 #elif defined(__ICCRX__)
 
@@ -413,14 +415,14 @@ Macro definitions
 /* void __builtin_rx_mvtc (int reg, int val) */
 #define R_BSP_SET_FINTV(x)    __builtin_rx_mvtc(0xB, (int)(x))
 /* int __builtin_rx_mvfc (int) */
-#define R_BSP_GET_FINTV()     __builtin_rx_mvfc(0xB)
+#define R_BSP_GET_FINTV()     (void *)__builtin_rx_mvfc(0xB)
 
 #elif defined(__ICCRX__)
 
 /* void __set_FINTV_register(__fast_int_f) */
 #define R_BSP_SET_FINTV(x)    __set_FINTV_register((__fast_int_f)(x))
 /* __fast_int_f __get_FINTV_register(void) */
-#define R_BSP_GET_FINTV()     __get_FINTV_register()
+#define R_BSP_GET_FINTV()     (void *)__get_FINTV_register()
 
 #endif
 
@@ -460,13 +462,13 @@ Macro definitions
 
 #elif defined(__GNUC__)
 
-/* void R_BSP_ChangeToUserMode(uint8_t dummy1, uint8_t dummy2) (This macro uses API function of BSP.) */
-#define R_BSP_CHG_PMUSR()    R_BSP_ChangeToUserMode(0, 0)
+/* void R_BSP_ChangeToUserMode(void) (This macro uses API function of BSP.) */
+#define R_BSP_CHG_PMUSR()    R_BSP_ChangeToUserMode()
 
 #elif defined(__ICCRX__)
 
-/* void R_BSP_ChangeToUserMode(uint8_t dummy1, uint8_t dummy2) (This macro uses API function of BSP.) */
-#define R_BSP_CHG_PMUSR()    R_BSP_ChangeToUserMode(0, 0)
+/* void R_BSP_ChangeToUserMode(void) (This macro uses API function of BSP.) */
+#define R_BSP_CHG_PMUSR()    R_BSP_ChangeToUserMode()
 
 #endif
 
@@ -542,7 +544,7 @@ Macro definitions
 
 #elif defined(__ICCRX__)
 
-/* __macl(short * data1, short * data2, unsigned long count) */
+/* long __macl(short * data1, short * data2, unsigned long count) */
 #define R_BSP_MACL(x, y, z)     __macl((short *)(x), (short *)(y), (unsigned long)(z))
 /* short __macw1(short * data1, short * data2, unsigned long count) */
 #define R_BSP_MACW1(x, y, z)    __macw1((short *)(x), (short *)(y), (unsigned long)(z))
@@ -565,7 +567,7 @@ Macro definitions
 /* void __builtin_rx_mvtc (int reg, int val) */
 #define R_BSP_SET_EXTB(x)    __builtin_rx_mvtc(0xD, (int)(x))
 /* int __builtin_rx_mvfc (int) */
-#define R_BSP_GET_EXTB()     __builtin_rx_mvfc(0xD)
+#define R_BSP_GET_EXTB()     (void *)__builtin_rx_mvfc(0xD)
 
 #elif defined(__ICCRX__)
 
@@ -589,12 +591,12 @@ Macro definitions
 
 #elif defined(__GNUC__)
 
-/* int __builtin_rx_bclr (int, int) */
-#define R_BSP_BIT_CLEAR(x, y)      __builtin_rx_bclr((int)(x), (int)(y))
-/* int __builtin_rx_bset (int, int) */
-#define R_BSP_BIT_SET(x, y)        __builtin_rx_bset((int)(x), (int)(y))
-/* int __builtin_rx_bnot (int, int) */
-#define R_BSP_BIT_REVERSE(x, y)    __builtin_rx_bnot((int)(x), (int)(y))
+/* void R_BSP_BitClear(uint8_t *data, uint32_t bit) (This macro uses API function of BSP.) */
+#define R_BSP_BIT_CLEAR(x, y)      R_BSP_BitClear((uint8_t *)(x), (uint32_t)(y))
+/* void R_BSP_BitSet(uint8_t *data, uint32_t bit) (This macro uses API function of BSP.) */
+#define R_BSP_BIT_SET(x, y)        R_BSP_BitSet((uint8_t *)(x), (uint32_t)(y))
+/* void R_BSP_BitReverse(uint8_t *data, uint32_t bit) (This macro uses API function of BSP.) */
+#define R_BSP_BIT_REVERSE(x, y)    R_BSP_BitReverse((uint8_t *)(x), (uint32_t)(y))
 
 #elif defined(__ICCRX__)
 
@@ -605,6 +607,96 @@ Macro definitions
 /* void R_BSP_BitReverse(uint8_t *data, uint32_t bit) (This macro uses API function of BSP.) */
 #define R_BSP_BIT_REVERSE(x, y)    R_BSP_BitReverse((uint8_t *)(x), (uint32_t)(y))
 
+#endif
+
+#ifdef BSP_MCU_DOUBLE_PRECISION_FLOATING_POINT
+#ifdef __DPFPU
+/* ---------- Double-Precision Floating-Point Status Word (DPSW) ---------- */
+#if defined(__CCRX__)
+
+/* void set_dpsw(unsigned long data) */
+#define R_BSP_SET_DPSW(x)    __set_dpsw((unsigned long)(x))
+/* unsigned long get_dpsw(void) */
+#define R_BSP_GET_DPSW()     __get_dpsw()
+
+#elif defined(__GNUC__)
+
+/* void R_BSP_SetDPSW(uint32_t data) (This macro uses API function of BSP.) */
+#define R_BSP_SET_DPSW(x)    R_BSP_SetDPSW((uint32_t)(x))
+/* uint32_t R_BSP_GetDPSW(void) (This macro uses API function of BSP.) */
+#define R_BSP_GET_DPSW()     R_BSP_GetDPSW()
+
+#elif defined(__ICCRX__)
+
+/* void R_BSP_SetDPSW(uint32_t data) (This macro uses API function of BSP.) */
+#define R_BSP_SET_DPSW(x)    R_BSP_SetDPSW((uint32_t)(x))
+/* uint32_t R_BSP_GetDPSW(void) (This macro uses API function of BSP.) */
+#define R_BSP_GET_DPSW()     R_BSP_GetDPSW()
+
+#endif
+
+/* ---------- Double-precision floating-point exception handling operation control register (DECNT) ---------- */
+#if defined(__CCRX__)
+
+/* void __set_decnt(unsigned long data) */
+#define R_BSP_SET_DECNT(x)    __set_decnt((unsigned long)(x))
+/* unsigned long __get_decnt(void) */
+#define R_BSP_GET_DECNT()     __get_decnt()
+
+#elif defined(__GNUC__)
+
+/* void R_BSP_SetDECNT(uint32_t data) (This macro uses API function of BSP.) */
+#define R_BSP_SET_DECNT(x)    R_BSP_SetDECNT((uint32_t)(x))
+/* uint32_t R_BSP_GetDECNT(void) (This macro uses API function of BSP.) */
+#define R_BSP_GET_DECNT()     R_BSP_GetDECNT()
+
+#elif defined(__ICCRX__)
+
+/* void R_BSP_SetDECNT(uint32_t data) (This macro uses API function of BSP.) */
+#define R_BSP_SET_DECNT(x)    R_BSP_SetDECNT((uint32_t)(x))
+/* uint32_t R_BSP_GetDECNT(void) (This macro uses API function of BSP.) */
+#define R_BSP_GET_DECNT()     R_BSP_GetDECNT()
+
+#endif
+
+/* ---------- Double-precision floating-point exception program counter (DEPC) ---------- */
+#if defined(__CCRX__)
+
+/* void *__get_depc(void) */
+#define R_BSP_GET_DEPC()     __get_depc()
+
+#elif defined(__GNUC__)
+
+/* void *R_BSP_GetDEPC(void) (This macro uses API function of BSP.) */
+#define R_BSP_GET_DEPC()     R_BSP_GetDEPC()
+
+#elif defined(__ICCRX__)
+
+/* void *R_BSP_GetDEPC(void) (This macro uses API function of BSP.) */
+#define R_BSP_GET_DEPC()     R_BSP_GetDEPC()
+
+#endif
+#endif /* __DPFPU */
+#endif /* BSP_MCU_DOUBLE_PRECISION_FLOATING_POINT */
+
+/* ---------- Initializing Arithmetic Unit for Trigonometric Functions ---------- */
+#ifdef BSP_MCU_TRIGONOMETRIC
+#if defined(__CCRX__)
+
+/* void __init_tfu(void) */
+#define R_BSP_INIT_TFU()      __init_tfu()
+
+#elif defined(__GNUC__)
+
+/* void R_BSP_InitTFU(void) (This macro uses API function of BSP.) */
+#define R_BSP_INIT_TFU()      R_BSP_InitTFU()
+
+#elif defined(__ICCRX__)
+
+/* void R_BSP_InitTFU(void) (This macro uses API function of BSP.) */
+#define R_BSP_INIT_TFU()      R_BSP_InitTFU()
+
+#endif
 #endif
 
 /***********************************************************************************************************************
@@ -636,22 +728,34 @@ void R_BSP_SetACC(signed long long data);
 signed long long R_BSP_GetACC(void);
 #endif /* defined(__GNUC__) || defined(__ICCRX__)  */
 
-R_BSP_ATTRIB_INLINE_ASM void R_BSP_ChangeToUserMode(uint8_t dummy1, uint8_t dummy2);
+R_BSP_ATTRIB_INLINE_ASM void R_BSP_ChangeToUserMode(void);
 R_BSP_ATTRIB_INLINE_ASM void R_BSP_SetBPSW(uint32_t data);
-R_BSP_ATTRIB_INLINE_ASM uint32_t R_BSP_GetBPSW(void);
+uint32_t R_BSP_GetBPSW(void);
 R_BSP_ATTRIB_INLINE_ASM void R_BSP_SetBPC(void * data);
-R_BSP_ATTRIB_INLINE_ASM void *R_BSP_GetBPC(void);
+void *R_BSP_GetBPC(void);
 #ifdef BSP_MCU_EXCEPTION_TABLE
 R_BSP_ATTRIB_INLINE_ASM void R_BSP_SetEXTB(void * data);
-R_BSP_ATTRIB_INLINE_ASM void *R_BSP_GetEXTB(void);
+void *R_BSP_GetEXTB(void);
 #endif /* BSP_MCU_EXCEPTION_TABLE */
 R_BSP_ATTRIB_INLINE_ASM void R_BSP_BitSet(uint8_t *data, uint32_t bit);
 R_BSP_ATTRIB_INLINE_ASM void R_BSP_BitClear(uint8_t *data, uint32_t bit);
 R_BSP_ATTRIB_INLINE_ASM void R_BSP_BitReverse(uint8_t *data, uint32_t bit);
 R_BSP_ATTRIB_INLINE_ASM void R_BSP_MoveToAccHiLong(int32_t data);
 R_BSP_ATTRIB_INLINE_ASM void R_BSP_MoveToAccLoLong(int32_t data);
-R_BSP_ATTRIB_INLINE_ASM int32_t R_BSP_MoveFromAccHiLong(void);
-R_BSP_ATTRIB_INLINE_ASM int32_t R_BSP_MoveFromAccMiLong(void);
+int32_t R_BSP_MoveFromAccHiLong(void);
+int32_t R_BSP_MoveFromAccMiLong(void);
+#ifdef BSP_MCU_DOUBLE_PRECISION_FLOATING_POINT
+#ifdef __DPFPU
+R_BSP_ATTRIB_INLINE_ASM void R_BSP_SetDPSW(uint32_t data);
+uint32_t R_BSP_GetDPSW(void);
+R_BSP_ATTRIB_INLINE_ASM void R_BSP_SetDECNT(uint32_t data);
+uint32_t R_BSP_GetDECNT(void);
+void *R_BSP_GetDEPC(void);
+#endif
+#endif
+#ifdef BSP_MCU_TRIGONOMETRIC
+R_BSP_ATTRIB_INLINE_ASM void R_BSP_InitTFU(void);
+#endif
 
 /* End of multiple inclusion prevention macro */
 #endif  /* R_RX_INTRINSIC_FUNCTIONS_H */

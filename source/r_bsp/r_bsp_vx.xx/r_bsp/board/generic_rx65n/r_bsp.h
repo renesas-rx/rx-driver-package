@@ -12,9 +12,9 @@
 * Renesas reserves the right, without notice, to make changes to this software and to discontinue the availability of 
 * this software. By using this software, you agree to the additional terms and conditions found by accessing the 
 * following link:
-* http://www.renesas.com/disclaimer 
+* http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2017 Renesas Electronics Corporation. All rights reserved.    
+* Copyright (C) 2017 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * File Name    : r_bsp.h
@@ -25,21 +25,19 @@
 * History : DD.MM.YYYY Version  Description
 *         : 15.05.2017 1.00     First Release
 *         : 01.07.2018 1.01     Additional RTOS header file.
-*         : xx.xx.xxxx 2.00     Added the following include path.
+*         : 28.02.2019 2.00     Added the following include path.
 *                                - r_rx_compiler.h
 *                                - r_rtos.h
-*                                - interrupts.h
+*                                - r_bsp_interrupts.h
 *                                - mcu_clocks.h
 *                                - r_rx_intrinsic_functions.h
 *                               Modified the following include path.
 *                                - lowsrc.h
-*                                - mcu_startup.h
+*                                - r_bsp_mcu_startup.h
 *                                - vecttbl.h
 *                               Added support for GNUC and ICCRX.
-**********************************************************************************************************************/
-
-#ifndef BSP_BOARD_GENERIC_RX65N
-#define BSP_BOARD_GENERIC_RX65N
+*                               Fixed coding style.
+***********************************************************************************************************************/
 
 /* Make sure that no other platforms have already been defined. Do not touch this! */
 #ifdef  PLATFORM_DEFINED
@@ -61,8 +59,9 @@ INCLUDE APPROPRIATE MCU AND BOARD FILES
 #include    "r_bsp_config.h"
 #include    "r_bsp_interrupt_config.h"
 
+#include    "mcu/all/lowlvl.h"
 #include    "mcu/all/lowsrc.h"
-#include    "mcu/all/mcu_startup.h"
+#include    "mcu/all/r_bsp_mcu_startup.h"
 
 #if defined(__CCRX__)
 #include    "mcu/rx65n/register_access/ccrx/iodefine.h"
@@ -71,8 +70,8 @@ INCLUDE APPROPRIATE MCU AND BOARD FILES
 #elif defined(__ICCRX__)
 #include    "mcu/rx65n/register_access/iccrx/iodefine.h"
 #endif /* defined(__CCRX__), defined(__GNUC__), defined(__ICCRX__) */
-#include    "mcu/rx65n/cpu.h"
-#include    "mcu/rx65n/locking.h"
+#include    "mcu/rx65n/r_bsp_cpu.h"
+#include    "mcu/rx65n/r_bsp_locking.h"
 #include    "mcu/rx65n/mcu_clocks.h"
 #include    "mcu/rx65n/mcu_info.h"
 #include    "mcu/rx65n/mcu_init.h"
@@ -84,13 +83,16 @@ INCLUDE APPROPRIATE MCU AND BOARD FILES
 
 #include    "board/generic_rx65n/hwsetup.h"
 
-#include    "mcu/all/interrupts.h"
+#include    "mcu/all/r_bsp_interrupts.h"
 #include    "mcu/all/r_rx_intrinsic_functions.h"
 #include    "mcu/all/r_rtos.h"
 
 #ifdef __cplusplus
 }
 #endif
+
+#ifndef BSP_BOARD_GENERIC_RX65N
+#define BSP_BOARD_GENERIC_RX65N
 
 #endif /* BSP_BOARD_GENERIC_RX65N */
 

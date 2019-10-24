@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer 
  *
- * Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2013(2019) Renesas Electronics Corporation. All rights reserved.
  **********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_sci_iic_private.h
@@ -36,6 +36,13 @@
  *                               Added macro definition SCI_IIC_PRV_PCR_BASE_REG, SCI_IIC_PRV_PDR_BASE_REG,
  *                                SCI_IIC_PRV_PMR_BASE_REG, SCI_IIC_PRV_ODR0_BASE_REG, SCI_IIC_PRV_ODR1_BASE_REG,
  *                                SCI_IIC_PRV_PFS_BASE_REG and SCI_IIC_PRV_PIDR_BASE_REG.
+ *         : 26.10.2017 2.30     RX66T support added.
+ *                               Port K is added.
+ *         : 21.09.2018 2.40     RX72T support added.
+ *         : 20.05.2019 2.41     Added support for GNUC and ICCRX.
+ *                               Fixed coding style.
+ *         : 20.06.2019 2.42     RX23W support added.
+ *         : 30.07.2019 2.43     RX72M support added.
  **********************************************************************************************************************/
 /* Guards against multiple inclusion */
 #ifndef SCI_IIC_PRIVATE_H
@@ -64,8 +71,10 @@
         #define SCI_IIC_CFG_CH0_SSCL_GP (R_SCI_IIC_CFG_SCI0_SSCL0_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI0_SSCL0_PORT) && (('H') >= R_SCI_IIC_CFG_SCI0_SSCL0_PORT))
         #define SCI_IIC_CFG_CH0_SSCL_GP (R_SCI_IIC_CFG_SCI0_SSCL0_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI0_SSCL0_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI0_SSCL0_PORT) && (('N') >= R_SCI_IIC_CFG_SCI0_SSCL0_PORT))
         #define SCI_IIC_CFG_CH0_SSCL_GP (R_SCI_IIC_CFG_SCI0_SSCL0_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI0_SSCL0_PORT)
+        #define SCI_IIC_CFG_CH0_SSCL_GP (R_SCI_IIC_CFG_SCI0_SSCL0_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI0_SSCL0_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -79,8 +88,10 @@
         #define SCI_IIC_CFG_CH0_SSDA_GP (R_SCI_IIC_CFG_SCI0_SSDA0_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI0_SSDA0_PORT) && (('H') >= R_SCI_IIC_CFG_SCI0_SSDA0_PORT))
         #define SCI_IIC_CFG_CH0_SSDA_GP (R_SCI_IIC_CFG_SCI0_SSDA0_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI0_SSDA0_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI0_SSDA0_PORT) && (('N') >= R_SCI_IIC_CFG_SCI0_SSDA0_PORT))
         #define SCI_IIC_CFG_CH0_SSDA_GP (R_SCI_IIC_CFG_SCI0_SSDA0_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI0_SSDA0_PORT)
+        #define SCI_IIC_CFG_CH0_SSDA_GP (R_SCI_IIC_CFG_SCI0_SSDA0_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI0_SSDA0_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -95,8 +106,10 @@
         #define SCI_IIC_CFG_CH1_SSCL_GP (R_SCI_IIC_CFG_SCI1_SSCL1_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI1_SSCL1_PORT) && (('H') >= R_SCI_IIC_CFG_SCI1_SSCL1_PORT))
         #define SCI_IIC_CFG_CH1_SSCL_GP (R_SCI_IIC_CFG_SCI1_SSCL1_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI1_SSCL1_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI1_SSCL1_PORT) && (('N') >= R_SCI_IIC_CFG_SCI1_SSCL1_PORT))
         #define SCI_IIC_CFG_CH1_SSCL_GP (R_SCI_IIC_CFG_SCI1_SSCL1_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI1_SSCL1_PORT)
+        #define SCI_IIC_CFG_CH1_SSCL_GP (R_SCI_IIC_CFG_SCI1_SSCL1_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI1_SSCL1_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -110,8 +123,10 @@
         #define SCI_IIC_CFG_CH1_SSDA_GP (R_SCI_IIC_CFG_SCI1_SSDA1_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI1_SSDA1_PORT) && (('H') >= R_SCI_IIC_CFG_SCI1_SSDA1_PORT))
         #define SCI_IIC_CFG_CH1_SSDA_GP (R_SCI_IIC_CFG_SCI1_SSDA1_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI1_SSDA1_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI1_SSDA1_PORT) && (('N') >= R_SCI_IIC_CFG_SCI1_SSDA1_PORT))
         #define SCI_IIC_CFG_CH1_SSDA_GP (R_SCI_IIC_CFG_SCI1_SSDA1_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI1_SSDA1_PORT)
+        #define SCI_IIC_CFG_CH1_SSDA_GP (R_SCI_IIC_CFG_SCI1_SSDA1_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI1_SSDA1_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -126,8 +141,10 @@
         #define SCI_IIC_CFG_CH2_SSCL_GP (R_SCI_IIC_CFG_SCI2_SSCL2_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI2_SSCL2_PORT) && (('H') >= R_SCI_IIC_CFG_SCI2_SSCL2_PORT))
         #define SCI_IIC_CFG_CH2_SSCL_GP (R_SCI_IIC_CFG_SCI2_SSCL2_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI2_SSCL2_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI2_SSCL2_PORT) && (('N') >= R_SCI_IIC_CFG_SCI2_SSCL2_PORT))
         #define SCI_IIC_CFG_CH2_SSCL_GP (R_SCI_IIC_CFG_SCI2_SSCL2_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI2_SSCL2_PORT)
+        #define SCI_IIC_CFG_CH2_SSCL_GP (R_SCI_IIC_CFG_SCI2_SSCL2_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI2_SSCL2_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -141,8 +158,10 @@
         #define SCI_IIC_CFG_CH2_SSDA_GP (R_SCI_IIC_CFG_SCI2_SSDA2_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI2_SSDA2_PORT) && (('H') >= R_SCI_IIC_CFG_SCI2_SSDA2_PORT))
         #define SCI_IIC_CFG_CH2_SSDA_GP (R_SCI_IIC_CFG_SCI2_SSDA2_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI2_SSDA2_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI2_SSDA2_PORT) && (('N') >= R_SCI_IIC_CFG_SCI2_SSDA2_PORT))
         #define SCI_IIC_CFG_CH2_SSDA_GP (R_SCI_IIC_CFG_SCI2_SSDA2_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI2_SSDA2_PORT)
+        #define SCI_IIC_CFG_CH2_SSDA_GP (R_SCI_IIC_CFG_SCI2_SSDA2_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI2_SSDA2_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -157,8 +176,10 @@
         #define SCI_IIC_CFG_CH3_SSCL_GP (R_SCI_IIC_CFG_SCI3_SSCL3_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI3_SSCL3_PORT) && (('H') >= R_SCI_IIC_CFG_SCI3_SSCL3_PORT))
         #define SCI_IIC_CFG_CH3_SSCL_GP (R_SCI_IIC_CFG_SCI3_SSCL3_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI3_SSCL3_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI3_SSCL3_PORT) && (('N') >= R_SCI_IIC_CFG_SCI3_SSCL3_PORT))
         #define SCI_IIC_CFG_CH3_SSCL_GP (R_SCI_IIC_CFG_SCI3_SSCL3_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI3_SSCL3_PORT)
+        #define SCI_IIC_CFG_CH3_SSCL_GP (R_SCI_IIC_CFG_SCI3_SSCL3_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI3_SSCL3_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -172,8 +193,10 @@
         #define SCI_IIC_CFG_CH3_SSDA_GP (R_SCI_IIC_CFG_SCI3_SSDA3_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI3_SSDA3_PORT) && (('H') >= R_SCI_IIC_CFG_SCI3_SSDA3_PORT))
         #define SCI_IIC_CFG_CH3_SSDA_GP (R_SCI_IIC_CFG_SCI3_SSDA3_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI3_SSDA3_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI3_SSDA3_PORT) && (('N') >= R_SCI_IIC_CFG_SCI3_SSDA3_PORT))
         #define SCI_IIC_CFG_CH3_SSDA_GP (R_SCI_IIC_CFG_SCI3_SSDA3_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI3_SSDA3_PORT)
+        #define SCI_IIC_CFG_CH3_SSDA_GP (R_SCI_IIC_CFG_SCI3_SSDA3_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI3_SSDA3_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -188,8 +211,10 @@
         #define SCI_IIC_CFG_CH4_SSCL_GP (R_SCI_IIC_CFG_SCI4_SSCL4_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI4_SSCL4_PORT) && (('H') >= R_SCI_IIC_CFG_SCI4_SSCL4_PORT))
         #define SCI_IIC_CFG_CH4_SSCL_GP (R_SCI_IIC_CFG_SCI4_SSCL4_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI4_SSCL4_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI4_SSCL4_PORT) && (('N') >= R_SCI_IIC_CFG_SCI4_SSCL4_PORT))
         #define SCI_IIC_CFG_CH4_SSCL_GP (R_SCI_IIC_CFG_SCI4_SSCL4_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI4_SSCL4_PORT)
+        #define SCI_IIC_CFG_CH4_SSCL_GP (R_SCI_IIC_CFG_SCI4_SSCL4_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI4_SSCL4_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -203,8 +228,10 @@
         #define SCI_IIC_CFG_CH4_SSDA_GP (R_SCI_IIC_CFG_SCI4_SSDA4_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI4_SSDA4_PORT) && (('H') >= R_SCI_IIC_CFG_SCI4_SSDA4_PORT))
         #define SCI_IIC_CFG_CH4_SSDA_GP (R_SCI_IIC_CFG_SCI4_SSDA4_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI4_SSDA4_PORT)
-        #define SCI_IIC_CFG_CH4_SSCL_GP (R_SCI_IIC_CFG_SCI4_SSDA4_PORT - 0x38)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI4_SSDA4_PORT) && (('N') >= R_SCI_IIC_CFG_SCI4_SSDA4_PORT))
+        #define SCI_IIC_CFG_CH4_SSDA_GP (R_SCI_IIC_CFG_SCI4_SSDA4_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI4_SSDA4_PORT)
+        #define SCI_IIC_CFG_CH4_SSDA_GP (R_SCI_IIC_CFG_SCI4_SSDA4_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI4_SSDA4_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -219,8 +246,10 @@
         #define SCI_IIC_CFG_CH5_SSCL_GP (R_SCI_IIC_CFG_SCI5_SSCL5_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI5_SSCL5_PORT) && (('H') >= R_SCI_IIC_CFG_SCI5_SSCL5_PORT))
         #define SCI_IIC_CFG_CH5_SSCL_GP (R_SCI_IIC_CFG_SCI5_SSCL5_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI5_SSCL5_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI5_SSCL5_PORT) && (('N') >= R_SCI_IIC_CFG_SCI5_SSCL5_PORT))
         #define SCI_IIC_CFG_CH5_SSCL_GP (R_SCI_IIC_CFG_SCI5_SSCL5_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI5_SSCL5_PORT)
+        #define SCI_IIC_CFG_CH5_SSCL_GP (R_SCI_IIC_CFG_SCI5_SSCL5_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI5_SSCL5_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -234,8 +263,10 @@
         #define SCI_IIC_CFG_CH5_SSDA_GP (R_SCI_IIC_CFG_SCI5_SSDA5_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI5_SSDA5_PORT) && (('H') >= R_SCI_IIC_CFG_SCI5_SSDA5_PORT))
         #define SCI_IIC_CFG_CH5_SSDA_GP (R_SCI_IIC_CFG_SCI5_SSDA5_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI5_SSDA5_PORT)
-        #define SCI_IIC_CFG_CH5_SSDAL_GP (R_SCI_IIC_CFG_SCI5_SSDA5_PORT - 0x38)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI5_SSDA5_PORT) && (('N') >= R_SCI_IIC_CFG_SCI5_SSDA5_PORT))
+        #define SCI_IIC_CFG_CH5_SSDA_GP (R_SCI_IIC_CFG_SCI5_SSDA5_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI5_SSDA5_PORT)
+        #define SCI_IIC_CFG_CH5_SSDA_GP (R_SCI_IIC_CFG_SCI5_SSDA5_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI5_SSDA5_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -250,8 +281,10 @@
         #define SCI_IIC_CFG_CH6_SSCL_GP (R_SCI_IIC_CFG_SCI6_SSCL6_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI6_SSCL6_PORT) && (('H') >= R_SCI_IIC_CFG_SCI6_SSCL6_PORT))
         #define SCI_IIC_CFG_CH6_SSCL_GP (R_SCI_IIC_CFG_SCI6_SSCL6_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI6_SSCL6_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI6_SSCL6_PORT) && (('N') >= R_SCI_IIC_CFG_SCI6_SSCL6_PORT))
         #define SCI_IIC_CFG_CH6_SSCL_GP (R_SCI_IIC_CFG_SCI6_SSCL6_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI6_SSCL6_PORT)
+        #define SCI_IIC_CFG_CH6_SSCL_GP (R_SCI_IIC_CFG_SCI6_SSCL6_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI6_SSCL6_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -265,8 +298,10 @@
         #define SCI_IIC_CFG_CH6_SSDA_GP (R_SCI_IIC_CFG_SCI6_SSDA6_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI6_SSDA6_PORT) && (('H') >= R_SCI_IIC_CFG_SCI6_SSDA6_PORT))
         #define SCI_IIC_CFG_CH6_SSDA_GP (R_SCI_IIC_CFG_SCI6_SSDA6_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI6_SSDA6_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI6_SSDA6_PORT) && (('N') >= R_SCI_IIC_CFG_SCI6_SSDA6_PORT))
         #define SCI_IIC_CFG_CH6_SSDA_GP (R_SCI_IIC_CFG_SCI6_SSDA6_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI6_SSDA6_PORT)
+        #define SCI_IIC_CFG_CH6_SSDA_GP (R_SCI_IIC_CFG_SCI6_SSDA6_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI6_SSDA6_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -281,8 +316,10 @@
         #define SCI_IIC_CFG_CH7_SSCL_GP (R_SCI_IIC_CFG_SCI7_SSCL7_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI7_SSCL7_PORT) && (('H') >= R_SCI_IIC_CFG_SCI7_SSCL7_PORT))
         #define SCI_IIC_CFG_CH7_SSCL_GP (R_SCI_IIC_CFG_SCI7_SSCL7_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI7_SSCL7_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI7_SSCL7_PORT) && (('N') >= R_SCI_IIC_CFG_SCI7_SSCL7_PORT))
         #define SCI_IIC_CFG_CH7_SSCL_GP (R_SCI_IIC_CFG_SCI7_SSCL7_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI7_SSCL7_PORT)
+        #define SCI_IIC_CFG_CH7_SSCL_GP (R_SCI_IIC_CFG_SCI7_SSCL7_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI7_SSCL7_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -296,8 +333,10 @@
         #define SCI_IIC_CFG_CH7_SSDA_GP (R_SCI_IIC_CFG_SCI7_SSDA7_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI7_SSDA7_PORT) && (('H') >= R_SCI_IIC_CFG_SCI7_SSDA7_PORT))
         #define SCI_IIC_CFG_CH7_SSDA_GP (R_SCI_IIC_CFG_SCI7_SSDA7_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI7_SSDA7_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI7_SSDA7_PORT) && (('N') >= R_SCI_IIC_CFG_SCI7_SSDA7_PORT))
         #define SCI_IIC_CFG_CH7_SSDA_GP (R_SCI_IIC_CFG_SCI7_SSDA7_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI7_SSDA7_PORT)
+        #define SCI_IIC_CFG_CH7_SSDA_GP (R_SCI_IIC_CFG_SCI7_SSDA7_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI7_SSDA7_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -312,8 +351,10 @@
         #define SCI_IIC_CFG_CH8_SSCL_GP (R_SCI_IIC_CFG_SCI8_SSCL8_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI8_SSCL8_PORT) && (('H') >= R_SCI_IIC_CFG_SCI8_SSCL8_PORT))
         #define SCI_IIC_CFG_CH8_SSCL_GP (R_SCI_IIC_CFG_SCI8_SSCL8_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI8_SSCL8_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI8_SSCL8_PORT) && (('N') >= R_SCI_IIC_CFG_SCI8_SSCL8_PORT))
         #define SCI_IIC_CFG_CH8_SSCL_GP (R_SCI_IIC_CFG_SCI8_SSCL8_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI8_SSCL8_PORT)
+        #define SCI_IIC_CFG_CH8_SSCL_GP (R_SCI_IIC_CFG_SCI8_SSCL8_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI8_SSCL8_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -327,8 +368,10 @@
         #define SCI_IIC_CFG_CH8_SSDA_GP (R_SCI_IIC_CFG_SCI8_SSDA8_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI8_SSDA8_PORT) && (('H') >= R_SCI_IIC_CFG_SCI8_SSDA8_PORT))
         #define SCI_IIC_CFG_CH8_SSDA_GP (R_SCI_IIC_CFG_SCI8_SSDA8_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI8_SSDA8_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI8_SSDA8_PORT) && (('N') >= R_SCI_IIC_CFG_SCI8_SSDA8_PORT))
         #define SCI_IIC_CFG_CH8_SSDA_GP (R_SCI_IIC_CFG_SCI8_SSDA8_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI8_SSDA8_PORT)
+        #define SCI_IIC_CFG_CH8_SSDA_GP (R_SCI_IIC_CFG_SCI8_SSDA8_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI8_SSDA8_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -343,8 +386,10 @@
         #define SCI_IIC_CFG_CH9_SSCL_GP (R_SCI_IIC_CFG_SCI9_SSCL9_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI9_SSCL9_PORT) && (('H') >= R_SCI_IIC_CFG_SCI9_SSCL9_PORT))
         #define SCI_IIC_CFG_CH9_SSCL_GP (R_SCI_IIC_CFG_SCI9_SSCL9_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI9_SSCL9_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI9_SSCL9_PORT) && (('N') >= R_SCI_IIC_CFG_SCI9_SSCL9_PORT))
         #define SCI_IIC_CFG_CH9_SSCL_GP (R_SCI_IIC_CFG_SCI9_SSCL9_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI9_SSCL9_PORT)
+        #define SCI_IIC_CFG_CH9_SSCL_GP (R_SCI_IIC_CFG_SCI9_SSCL9_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI9_SSCL9_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -358,8 +403,10 @@
         #define SCI_IIC_CFG_CH9_SSDA_GP (R_SCI_IIC_CFG_SCI9_SSDA9_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI9_SSDA9_PORT) && (('H') >= R_SCI_IIC_CFG_SCI9_SSDA9_PORT))
         #define SCI_IIC_CFG_CH9_SSDA_GP (R_SCI_IIC_CFG_SCI9_SSDA9_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI9_SSDA9_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI9_SSDA9_PORT) && (('N') >= R_SCI_IIC_CFG_SCI9_SSDA9_PORT))
         #define SCI_IIC_CFG_CH9_SSDA_GP (R_SCI_IIC_CFG_SCI9_SSDA9_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI9_SSDA9_PORT)
+        #define SCI_IIC_CFG_CH9_SSDA_GP (R_SCI_IIC_CFG_SCI9_SSDA9_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI9_SSDA9_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -374,8 +421,10 @@
         #define SCI_IIC_CFG_CH10_SSCL_GP (R_SCI_IIC_CFG_SCI10_SSCL10_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI10_SSCL10_PORT) && (('H') >= R_SCI_IIC_CFG_SCI10_SSCL10_PORT))
         #define SCI_IIC_CFG_CH10_SSCL_GP (R_SCI_IIC_CFG_SCI10_SSCL10_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI10_SSCL10_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI10_SSCL10_PORT) && (('N') >= R_SCI_IIC_CFG_SCI10_SSCL10_PORT))
         #define SCI_IIC_CFG_CH10_SSCL_GP (R_SCI_IIC_CFG_SCI10_SSCL10_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI10_SSCL10_PORT)
+        #define SCI_IIC_CFG_CH10_SSCL_GP (R_SCI_IIC_CFG_SCI10_SSCL10_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI10_SSCL10_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -389,8 +438,10 @@
         #define SCI_IIC_CFG_CH10_SSDA_GP (R_SCI_IIC_CFG_SCI10_SSDA10_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI10_SSDA10_PORT) && (('H') >= R_SCI_IIC_CFG_SCI10_SSDA10_PORT))
         #define SCI_IIC_CFG_CH10_SSDA_GP (R_SCI_IIC_CFG_SCI10_SSDA10_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI10_SSDA10_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI10_SSDA10_PORT) && (('N') >= R_SCI_IIC_CFG_SCI10_SSDA10_PORT))
         #define SCI_IIC_CFG_CH10_SSDA_GP (R_SCI_IIC_CFG_SCI10_SSDA10_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI10_SSDA10_PORT)
+        #define SCI_IIC_CFG_CH10_SSDA_GP (R_SCI_IIC_CFG_SCI10_SSDA10_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI10_SSDA10_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -405,8 +456,10 @@
         #define SCI_IIC_CFG_CH11_SSCL_GP (R_SCI_IIC_CFG_SCI11_SSCL11_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI11_SSCL11_PORT) && (('H') >= R_SCI_IIC_CFG_SCI11_SSCL11_PORT))
         #define SCI_IIC_CFG_CH11_SSCL_GP (R_SCI_IIC_CFG_SCI11_SSCL11_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI11_SSCL11_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI11_SSCL11_PORT) && (('N') >= R_SCI_IIC_CFG_SCI11_SSCL11_PORT))
         #define SCI_IIC_CFG_CH11_SSCL_GP (R_SCI_IIC_CFG_SCI11_SSCL11_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI11_SSCL11_PORT)
+        #define SCI_IIC_CFG_CH11_SSCL_GP (R_SCI_IIC_CFG_SCI11_SSCL11_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI11_SSCL11_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -420,8 +473,10 @@
         #define SCI_IIC_CFG_CH11_SSDA_GP (R_SCI_IIC_CFG_SCI11_SSDA11_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI11_SSDA11_PORT) && (('H') >= R_SCI_IIC_CFG_SCI11_SSDA11_PORT))
         #define SCI_IIC_CFG_CH11_SSDA_GP (R_SCI_IIC_CFG_SCI11_SSDA11_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI11_SSDA11_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI11_SSDA11_PORT) && (('N') >= R_SCI_IIC_CFG_SCI11_SSDA11_PORT))
         #define SCI_IIC_CFG_CH11_SSDA_GP (R_SCI_IIC_CFG_SCI11_SSDA11_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI11_SSDA11_PORT)
+        #define SCI_IIC_CFG_CH11_SSDA_GP (R_SCI_IIC_CFG_SCI11_SSDA11_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI11_SSDA11_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -436,8 +491,10 @@
         #define SCI_IIC_CFG_CH12_SSCL_GP (R_SCI_IIC_CFG_SCI12_SSCL12_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI12_SSCL12_PORT) && (('H') >= R_SCI_IIC_CFG_SCI12_SSCL12_PORT))
         #define SCI_IIC_CFG_CH12_SSCL_GP (R_SCI_IIC_CFG_SCI12_SSCL12_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI12_SSCL12_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI12_SSCL12_PORT) && (('N') >= R_SCI_IIC_CFG_SCI12_SSCL12_PORT))
         #define SCI_IIC_CFG_CH12_SSCL_GP (R_SCI_IIC_CFG_SCI12_SSCL12_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI12_SSCL12_PORT)
+        #define SCI_IIC_CFG_CH12_SSCL_GP (R_SCI_IIC_CFG_SCI12_SSCL12_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI12_SSCL12_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -451,8 +508,10 @@
         #define SCI_IIC_CFG_CH12_SSDA_GP (R_SCI_IIC_CFG_SCI12_SSDA12_PORT - 0x30)
     #elif ((('A') <= R_SCI_IIC_CFG_SCI12_SSDA12_PORT) && (('H') >= R_SCI_IIC_CFG_SCI12_SSDA12_PORT))
         #define SCI_IIC_CFG_CH12_SSDA_GP (R_SCI_IIC_CFG_SCI12_SSDA12_PORT - 0x37)
-    #elif (('J') == R_SCI_IIC_CFG_SCI12_SSDA12_PORT)
+    #elif ((('J') <= R_SCI_IIC_CFG_SCI12_SSDA12_PORT) && (('N') >= R_SCI_IIC_CFG_SCI12_SSDA12_PORT))
         #define SCI_IIC_CFG_CH12_SSDA_GP (R_SCI_IIC_CFG_SCI12_SSDA12_PORT - 0x38)
+    #elif (('Q') == R_SCI_IIC_CFG_SCI12_SSDA12_PORT)
+        #define SCI_IIC_CFG_CH12_SSDA_GP (R_SCI_IIC_CFG_SCI12_SSDA12_PORT - 0x3A)
     #else
         #error "Error! Invalid setting for R_SCI_IIC_CFG_SCI12_SSDA12_PORT in r_sci_iic_rx_pin_config.h"
     #endif
@@ -806,9 +865,16 @@
     #define PORTF_GR    (0xF)
     #define PORTG_GR    (0x10)
     #define PORTH_GR    (0x11)
-    #define PORTI_GR    (0x12)
-    #define PORTJ_GR    (0x13)
-    #define PORT_GR_MAX (0x14)
+    #define PORTI_GR    (0x11)
+    #define PORTJ_GR    (0x12)
+    #define PORTK_GR    (0x13)
+    #define PORTL_GR    (0x14)
+    #define PORTM_GR    (0x15)
+    #define PORTN_GR    (0x16)
+    #define PORTO_GR    (0x16)
+    #define PORTP_GR    (0x16)
+    #define PORTQ_GR    (0x17)
+    #define PORT_GR_MAX (0x18)
 
 /*----------------------------------------------------------------------------*/
 /*  Bit position masks                                                        */
@@ -947,6 +1013,11 @@
     #define SCI_IIC_PRV_PFS_BASE_REG ((uint8_t volatile *)(&MPC.PWPR.BYTE+33))
 /* Base register of PIDR used to calculate all PIDR register addresses. This is constant for all supported MCUs. */
     #define SCI_IIC_PRV_PIDR_BASE_REG ((uint8_t volatile *)(&MPC.PWPR.BYTE-223))
+
+/*----------------------------------------------------------------------------*/
+/*  Define int zero.                                                          */
+/*----------------------------------------------------------------------------*/
+    #define INT_ZERO 0
 
 /***********************************************************************************************************************
  Typedef definitions

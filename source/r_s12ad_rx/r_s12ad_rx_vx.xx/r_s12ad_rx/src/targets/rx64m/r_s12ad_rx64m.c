@@ -12,16 +12,16 @@
 * Renesas reserves the right, without notice, to make changes to this software and to discontinue the availability of 
 * this software. By using this software, you agree to the additional terms and conditions found by accessing the 
 * following link:
-* http://www.renesas.com/disclaimer 
+* http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2014-2017 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) 2014 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * File Name    : r_s12ad_rx64m.c
 * Description  : Primary source code for 12-bit A/D Converter driver.
 ***********************************************************************************************************************/
 /**********************************************************************************************************************
-* History : DD.MM.YYYY Version Description           
+* History : DD.MM.YYYY Version Description
 *           13.06.2014 1.00    Initial Release.
 *           01.10.2016 2.20    Bug fix for ADC_TRIG_NONE set to parameter when called R_ADC_Open then error occured.
 *                              Bug fix for R_ADC_Open(temp sensor choice) error occured after use self-diag method.
@@ -45,6 +45,10 @@
 *           03.04.2017 2.30    R_ADC_Control function returns ADC_ERR_INVALID_ARG when set to group B or PGS bit
 *                               except for Group scan mode.
 *                              Corresponding to the notice when setting the PGS bit in the ADGSPCR register to 1.
+*           03.09.2018 3.00    Added the comment to while statement.
+*                              Changed procedure for setting the temperature sensor.
+*           28.12.2018 3.10    Fixed header comment of adc_close function.
+*           05.04.2019 4.00    Added support for GNUC and ICCRX.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -67,9 +71,9 @@ Macro definitions
 Typedef definitions
 ***********************************************************************************************************************/
 /* Unit1 registers are a superset of Unit0 EXCEPT that they do not contain the S&H registers */
-typedef volatile __evenaccess struct st_s12ad1  aregs_t;
+typedef R_BSP_VOLATILE_EVENACCESS struct st_s12ad1  aregs_t;
 
-#define GET_REGS_PTR(x)         ((x==0) ? (aregs_t *)&S12AD : &S12AD1)
+#define GET_REGS_PTR(x)         ((x==0) ? (aregs_t *)&S12AD : (aregs_t *)&S12AD1)
 
 #define GET_SST_ARR(x)          ((x==0) ? sreg0_ptrs : sreg1_ptrs)
 
@@ -115,10 +119,10 @@ adc_ctrl_t g_dcb[2] = {{ADC_MODE_MAX,
 
 /* In ROM. A/D Data Register pointers */
 
-volatile __evenaccess uint16_t * const  dreg0_ptrs[ADC_REG_MAX+1] =
-                      { &S12AD.ADDR0,       // channel 0
-                        &S12AD.ADDR1,       // channel 1
-                        &S12AD.ADDR2,       // channel 2
+volatile uint16_t R_BSP_EVENACCESS_SFR * const  dreg0_ptrs[ADC_REG_MAX+1] =
+                      { &S12AD.ADDR0,       /* channel 0 */
+                        &S12AD.ADDR1,       /* channel 1 */
+                        &S12AD.ADDR2,       /* channel 2 */
                         &S12AD.ADDR3,
                         &S12AD.ADDR4,
                         &S12AD.ADDR5,
@@ -126,7 +130,7 @@ volatile __evenaccess uint16_t * const  dreg0_ptrs[ADC_REG_MAX+1] =
                         &S12AD.ADDR7,
                         NULL,
                         NULL,
-                        NULL,               // channel 10
+                        NULL,               /* channel 10 */
                         NULL,
                         NULL,
                         NULL,
@@ -136,19 +140,19 @@ volatile __evenaccess uint16_t * const  dreg0_ptrs[ADC_REG_MAX+1] =
                         NULL,
                         NULL,
                         NULL,
-                        NULL,               // channel 20
-                        NULL,               // sensor
+                        NULL,               /* channel 20 */
+                        NULL,               /* sensor */
                         NULL,
-                        &S12AD.ADDBLDR.WORD, // double trigger register
-                        &S12AD.ADDBLDRA,    // double trigger registerA
-                        &S12AD.ADDBLDRB,    // double trigger registerB
-                        &S12AD.ADRD.WORD    // self-diagnosis register
+                        &S12AD.ADDBLDR.WORD, /* double trigger register */
+                        &S12AD.ADDBLDRA,    /* double trigger registerA */
+                        &S12AD.ADDBLDRB,    /* double trigger registerB */
+                        &S12AD.ADRD.WORD    /* self-diagnosis register */
                       };
 
-volatile __evenaccess uint16_t * const  dreg1_ptrs[ADC_REG_MAX+1] =
-                      { &S12AD1.ADDR0,       // channel 0
-                        &S12AD1.ADDR1,       // channel 1
-                        &S12AD1.ADDR2,       // channel 2
+volatile uint16_t R_BSP_EVENACCESS_SFR * const  dreg1_ptrs[ADC_REG_MAX+1] =
+                      { &S12AD1.ADDR0,       /* channel 0 */
+                        &S12AD1.ADDR1,       /* channel 1 */
+                        &S12AD1.ADDR2,       /* channel 2 */
                         &S12AD1.ADDR3,
                         &S12AD1.ADDR4,
                         &S12AD1.ADDR5,
@@ -167,22 +171,22 @@ volatile __evenaccess uint16_t * const  dreg1_ptrs[ADC_REG_MAX+1] =
                         &S12AD1.ADDR18,
                         &S12AD1.ADDR19,
                         &S12AD1.ADDR20,
-                        &S12AD1.ADTSDR,    // temperature sensor
-                        &S12AD1.ADOCDR,    // voltage sensor
-                        &S12AD1.ADDBLDR,   // double trigger register
-                        &S12AD1.ADDBLDRA,  // double trigger registerA
-                        &S12AD1.ADDBLDRB,  // double trigger registerB
-                        &S12AD1.ADRD.WORD  // self-diagnosis register
+                        &S12AD1.ADTSDR,    /* temperature sensor */
+                        &S12AD1.ADOCDR,    /* voltage sensor */
+                        &S12AD1.ADDBLDR,   /* double trigger register */
+                        &S12AD1.ADDBLDRA,  /* double trigger registerA */
+                        &S12AD1.ADDBLDRB,  /* double trigger registerB */
+                        &S12AD1.ADRD.WORD  /* self-diagnosis register */
                       };
 
 
 /* In ROM. Sample State (SST) Register pointers */
 
-// 8-bit register pointers
-volatile __evenaccess uint8_t * const  sreg0_ptrs[ADC_SST_REG_MAX+1] =
-                      { &S12AD.ADSSTR0,     // channel 0
-                        &S12AD.ADSSTR1,     // channel 1
-                        &S12AD.ADSSTR2,     // channel 2
+/* 8-bit register pointers */
+volatile uint8_t R_BSP_EVENACCESS_SFR * const  sreg0_ptrs[ADC_SST_REG_MAX+1] =
+                      { &S12AD.ADSSTR0,     /* channel 0 */
+                        &S12AD.ADSSTR1,     /* channel 1 */
+                        &S12AD.ADSSTR2,     /* channel 2 */
                         &S12AD.ADSSTR3,
                         &S12AD.ADSSTR4,
                         &S12AD.ADSSTR5,
@@ -194,18 +198,18 @@ volatile __evenaccess uint8_t * const  sreg0_ptrs[ADC_SST_REG_MAX+1] =
                       };
 
 
-volatile __evenaccess uint8_t * const  sreg1_ptrs[ADC_SST_REG_MAX+1] =
-                      { &S12AD1.ADSSTR0,     // channel 0
-                        &S12AD1.ADSSTR1,     // channel 1
-                        &S12AD1.ADSSTR2,     // channel 2
+volatile uint8_t R_BSP_EVENACCESS_SFR * const  sreg1_ptrs[ADC_SST_REG_MAX+1] =
+                      { &S12AD1.ADSSTR0,     /* channel 0 */
+                        &S12AD1.ADSSTR1,     /* channel 1 */
+                        &S12AD1.ADSSTR2,     /* channel 2 */
                         &S12AD1.ADSSTR3,
                         &S12AD1.ADSSTR4,
                         &S12AD1.ADSSTR5,
                         &S12AD1.ADSSTR6,
                         &S12AD1.ADSSTR7,
-                        &S12AD1.ADSSTRL,     // channels 8-20
-                        &S12AD1.ADSSTRT,     // temperature sensor
-                        &S12AD1.ADSSTRO      // voltage sensor
+                        &S12AD1.ADSSTRL,     /* channels 8-20 */
+                        &S12AD1.ADSSTRT,     /* temperature sensor */
+                        &S12AD1.ADSSTRO      /* voltage sensor */
                       };
 
 
@@ -250,7 +254,6 @@ adc_err_t adc_open(uint8_t const          unit,
     volatile uint16_t   u16_dummy;  /* Dummy read for "1" change to "0".(read first) */
     volatile uint8_t    u8_dummy;   /* Dummy read for "1" change to "0".(read first) */
 
-
 #if ADC_CFG_PARAM_CHECKING_ENABLE == 1
     adc_err_t   err;
 
@@ -276,7 +279,6 @@ adc_err_t adc_open(uint8_t const          unit,
     {
         return ADC_ERR_AD_LOCKED;
     }
-
 
     /* APPLY POWER TO PERIPHERAL */
 
@@ -367,7 +369,26 @@ adc_err_t adc_open(uint8_t const          unit,
         u8_dummy = p_regs->ADCMPSER.BYTE;
         p_regs->ADCMPSER.BYTE = 0;      /* target bit clear by read-modify-write */
     }
-    
+
+    /* SET TEMPERATURE SENSOR */
+
+    if (1 == unit)
+    {
+        if (p_cfg->temp_sensor != ADC_TEMP_SENSOR_NOT_AD_CONVERTED)
+        {
+            if (p_cfg->temp_sensor == ADC_TEMP_SENSOR_AD_CONVERTED)
+            {
+                S12AD1.ADEXICR.BIT.TSSA = 1;     // select temperature output GroupA
+                S12AD1.ADEXICR.BIT.TSSB = 0;
+            }
+            else
+            {
+                S12AD1.ADEXICR.BIT.TSSA = 0;
+                S12AD1.ADEXICR.BIT.TSSB = 1;     // select temperature output GroupB
+            }
+        }
+    }
+
     /* SET MODE RELATED REGISTER FIELDS */
 
     g_dcb[unit].mode = mode;
@@ -382,7 +403,8 @@ adc_err_t adc_open(uint8_t const          unit,
         {
             p_regs->ADCSR.BIT.ADCS = ADC_ADCS_CONT_SCAN;
         }
-        // other modes have ADCS=0
+
+        /* other modes have ADCS=0 */
     }
 
     if ((mode == ADC_MODE_SS_ONE_CH_DBLTRIG)
@@ -390,7 +412,6 @@ adc_err_t adc_open(uint8_t const          unit,
     {
         p_regs->ADCSR.BIT.DBLE = 1;         // enable double trigger
     }
-
 
     /* SET TRIGGER AND INTERRUPT PRIORITY REGISTER FIELDS */
 
@@ -426,25 +447,29 @@ adc_err_t adc_open(uint8_t const          unit,
         IPR(S12ADC1,S12ADI1) = p_cfg->priority;
     }
 
-
     /* SET REGISTER FIELDS FOR REMAINING PARAMETERS */
 
     p_regs->ADCER.BIT.ADPRC = p_cfg->resolution;      // must all be separate
     p_regs->ADCER.BIT.ADRFMT = (p_cfg->alignment == ADC_ALIGN_LEFT) ? 1 : 0;
     p_regs->ADCER.BIT.ACE = (p_cfg->clearing == ADC_CLEAR_AFTER_READ_ON) ? 1 : 0;
+    if (1 == unit)
+    {
+        if (p_cfg->temp_sensor != ADC_TEMP_SENSOR_NOT_AD_CONVERTED)
+        {
+            S12AD1.ADEXICR.BIT.TSSAD = (p_cfg->add_temp_sensor == ADC_TEMP_SENSOR_ADD_ON) ? 1 : 0;
+        }
+    }
     p_regs->ADADC.BYTE = p_cfg->add_cnt;
-
 
     /* SAVE CALLBACK FUNCTION POINTER */
     g_dcb[unit].callback = p_callback;
-
 
     /* MARK DRIVER AS OPENED */
     g_dcb[unit].opened = true;
     R_BSP_HardwareUnlock(ADC_LOCK(unit));
 
     return ADC_SUCCESS;
-}
+} /* End of function adc_open() */
 
 
 /******************************************************************************
@@ -491,7 +516,6 @@ static adc_err_t adc_check_open_cfg(uint8_t                unit,
         return ADC_ERR_ILLEGAL_ARG;
     }
 
-
     /* In double trigger mode, SW and async triggers not allowed */
     if ((mode == ADC_MODE_SS_ONE_CH_DBLTRIG)
      && ((p_cfg->trigger == ADC_TRIG_SOFTWARE) || (p_cfg->trigger == ADC_TRIG_ASYNC_ADTRG)))
@@ -499,9 +523,7 @@ static adc_err_t adc_check_open_cfg(uint8_t                unit,
         return ADC_ERR_ILLEGAL_ARG;
     }
 
-
     /* Group checking; only synchronous triggers allowed; must be unique */
-
     if ((mode == ADC_MODE_SS_MULTI_CH_GROUPED) || (mode == ADC_MODE_SS_MULTI_CH_GROUPED_DBLTRIG_A))
     {
         if ((p_cfg->trigger == ADC_TRIG_ASYNC_ADTRG)
@@ -525,9 +547,38 @@ static adc_err_t adc_check_open_cfg(uint8_t                unit,
         }
     }
 
+    /* If sensors specified, verify in legal configuration */
+    if (p_cfg->temp_sensor != ADC_TEMP_SENSOR_NOT_AD_CONVERTED)
+    {
+        if ((0 == unit)    // cannot use unit 0
+         || (ADC_MODE_SS_ONE_CH_DBLTRIG == mode)    // double trigger mode
+         || (ADC_MODE_SS_MULTI_CH_GROUPED_DBLTRIG_A == mode))    // double trigger mode
+        {
+            return ADC_ERR_ILLEGAL_ARG;
+        }
+
+        if ((ADC_MODE_SS_ONE_CH == mode)
+         || (ADC_MODE_SS_MULTI_CH == mode)
+         || (ADC_MODE_CONT_ONE_CH == mode)
+         || (ADC_MODE_CONT_MULTI_CH == mode))
+        {
+            if (p_cfg->temp_sensor == ADC_TEMP_SENSOR_AD_CONVERTED_GROUPB)
+            {
+                return ADC_ERR_ILLEGAL_ARG;
+            }
+        }
+    }
+    else
+    {
+        if (p_cfg->add_temp_sensor == ADC_TEMP_SENSOR_ADD_ON)
+        {
+            return ADC_ERR_ILLEGAL_ARG;
+        }
+    }
+
     return ADC_SUCCESS;
-}
-#endif
+} /* End of function adc_check_open_cfg() */
+#endif /* ADC_CFG_PARAM_CHECKING_ENABLE == 1 */
 
 
 /******************************************************************************
@@ -572,16 +623,14 @@ adc_err_t adc_control(uint8_t const       unit,
                       adc_cmd_t const     cmd,
                       void * const        p_args)
 {
-adc_err_t       err=ADC_SUCCESS;
-adc_sst_t       *p_sample;
-adc_dda_t       *p_charge;
-adc_cmpwin_t    *p_cmpwin;
-aregs_t         *p_regs = GET_REGS_PTR(unit);
-uint32_t        flags;
-
+    adc_err_t       err=ADC_SUCCESS;
+    adc_sst_t       *p_sample;
+    adc_dda_t       *p_charge;
+    adc_cmpwin_t    *p_cmpwin;
+    aregs_t         *p_regs = GET_REGS_PTR(unit);
+    uint32_t        flags;
 
     /* DO UNIVERSAL PARAMETER CHECKING */
-
 #if (ADC_CFG_PARAM_CHECKING_ENABLE == 1)
     if (unit > 1)
     {
@@ -603,7 +652,6 @@ uint32_t        flags;
 #endif
 
     /* PROCESS INDIVIDUAL COMMANDS */
-
     switch (cmd)
     {
     case ADC_CMD_SET_DDA_STATE_CNT:
@@ -627,12 +675,11 @@ uint32_t        flags;
         }
         else
         {
-            // NOTE: Using Disconnect Detection Assist adds num_states x (#chans) ADCLKS to scan time
+            /* NOTE: Using Disconnect Detection Assist adds num_states x (#chans) ADCLKS to scan time */
             p_regs->ADDISCR.BYTE = (uint8_t)((p_charge->method == ADC_DDA_PRECHARGE) ? 0x10 : 0);
             p_regs->ADDISCR.BYTE |= p_charge->num_states;
         }
-    break;
-
+        break;
 
     case ADC_CMD_SET_SAMPLE_STATE_CNT:
         p_sample = (adc_sst_t *)p_args;
@@ -651,13 +698,11 @@ uint32_t        flags;
         }
 #endif
         *(GET_SST_ARR(unit))[p_sample->reg_id] = p_sample->num_states;
-    break;
-
+        break;
 
     case ADC_CMD_ENABLE_CHANS:
         err = adc_configure_scan(unit, (adc_ch_cfg_t *)p_args);
-    break;
-
+        break;
 
     case ADC_CMD_EN_COMPARATOR_LEVEL:
         p_cmpwin = (adc_cmpwin_t *)p_args;
@@ -665,8 +710,7 @@ uint32_t        flags;
         p_regs->ADCMPCR.BIT.WCMPE = 0;          // disable window function
 
         err = adc_en_comparator_level0(unit, p_cmpwin);
-    break;
-
+        break;
 
     case ADC_CMD_EN_COMPARATOR_WINDOW:
         p_cmpwin = (adc_cmpwin_t *)p_args;
@@ -679,18 +723,15 @@ uint32_t        flags;
         p_regs->ADCMPCR.BIT.WCMPE = 1;          // enable window function
 
         err = adc_en_comparator_level0(unit, p_cmpwin);
-    break;
-
+        break;
 
     case ADC_CMD_ENABLE_TRIG:
         p_regs->ADCSR.BIT.TRGE = 1;           // enable sync/async triggers
-    break;
-
+        break;
 
     case ADC_CMD_DISABLE_TRIG:
         p_regs->ADCSR.BIT.TRGE = 0;           // disable sync/async triggers
-    break;
-
+        break;
 
     case ADC_CMD_SCAN_NOW:
         if (p_regs->ADCSR.BIT.ADST == 0)
@@ -701,16 +742,14 @@ uint32_t        flags;
         {
             err = ADC_ERR_SCAN_NOT_DONE;
         }
-    break;
-
+        break;
 
     case ADC_CMD_CHECK_SCAN_DONE:           // default/Group A or Group B
         if (p_regs->ADCSR.BIT.ADST == 1)
         {
             err = ADC_ERR_SCAN_NOT_DONE;
         }
-    break;
-
+        break;
 
     case ADC_CMD_CHECK_SCAN_DONE_GROUPA:
         if (unit == 0)
@@ -735,8 +774,7 @@ uint32_t        flags;
                 err = ADC_ERR_SCAN_NOT_DONE;
             }
         }
-    break;
-
+        break;
 
     case ADC_CMD_CHECK_SCAN_DONE_GROUPB:
         if (unit == 0)
@@ -761,60 +799,40 @@ uint32_t        flags;
                 err = ADC_ERR_SCAN_NOT_DONE;
             }
         }
-    break;
-
+        break;
 
     case ADC_CMD_CHECK_CONDITION_MET:
-#if 0   // Do NOT use this method. Another driver may make the GROUPBL1 priority non-zero
-        // and there will be no subvector interrupt/callback here to clear the ICU flag.
-        // The result will be that the BSP will be in an "infinite loop" processing the
-        // group interrupt because the flag never resets, and the app level will not run.
-        if (ICU.GRPBL1.LONG & g_dcb[unit].cmpi_mask)
-        {
-            *((uint32_t *)p_args) = adc_get_and_clr_cmpi_flags(unit);
-            ICU.GRPBL1.LONG &= ~g_dcb[unit].cmpi_mask;
-        }
-        else
-        {
-            err = ADC_ERR_CONDITION_NOT_MET;
-        }
-#endif
         flags = adc_get_and_clr_cmpi_flags(unit);
         if (flags == 0)
         {
             err = ADC_ERR_CONDITION_NOT_MET;
         }
         *((uint32_t *)p_args) = flags;
-    break;
-
+        break;
 
     case ADC_CMD_ENABLE_INT:
         p_regs->ADCSR.BIT.ADIE = 1;           // enable S12ADI0 interrupt
-    break;
-
+        break;
 
     case ADC_CMD_DISABLE_INT:
         p_regs->ADCSR.BIT.ADIE = 0;           // disable S12ADI0 interrupt
-    break;
-
+        break;
 
     case ADC_CMD_ENABLE_INT_GROUPB:
         p_regs->ADCSR.BIT.GBADIE = 1;         // enable GBADI interrupt
-    break;
-
+        break;
 
     case ADC_CMD_DISABLE_INT_GROUPB:
         p_regs->ADCSR.BIT.GBADIE = 0;         // disable GBADI interrupt
-    break;
-
+        break;
 
     default:
         err = ADC_ERR_INVALID_ARG;
-    break;
+        break;
     }
 
     return err;
-}
+} /* End of function adc_control() */
 
 /******************************************************************************
 * Function Name: adc_en_comparator_level0
@@ -838,8 +856,9 @@ uint32_t        flags;
 *******************************************************************************/
 static adc_err_t adc_en_comparator_level0(uint8_t   unit, adc_cmpwin_t  *p_cmpwin)
 {
-aregs_t         *p_regs = GET_REGS_PTR(unit);
-bsp_int_ctrl_t  group_priority;
+    aregs_t         *p_regs = GET_REGS_PTR(unit);
+    bsp_int_ctrl_t  group_priority;
+    uint32_t        psw_value;
 
 #if ADC_CFG_PARAM_CHECKING_ENABLE == 1
     if (p_cmpwin->int_priority > BSP_MCU_IPL_MAX)                   // interrupt priority only use 0 to 15
@@ -850,7 +869,9 @@ bsp_int_ctrl_t  group_priority;
     {
         return ADC_ERR_INVALID_ARG;
     }
-    if ((p_cmpwin->inside_window_mask | p_cmpwin->compare_mask) != p_cmpwin->compare_mask)  // checking compare channel combination
+
+    /* checking compare channel combination */
+    if ((p_cmpwin->inside_window_mask | p_cmpwin->compare_mask) != p_cmpwin->compare_mask)
     {
         return ADC_ERR_INVALID_ARG;
     }
@@ -869,9 +890,7 @@ bsp_int_ctrl_t  group_priority;
         return ADC_ERR_TRIG_ENABLED;    // ADST must be 0 to configure comparator
     }
 
-
     /* CONFIGURE COMPARATOR */
-
     p_regs->ADCMPDR0 = p_cmpwin->level_lo;      // set lo end of window or set level
     if (p_regs->ADCMPCR.BIT.WCMPE == 1)
     {
@@ -891,17 +910,24 @@ bsp_int_ctrl_t  group_priority;
         S12AD1.ADCMPLER.BIT.CMPLOC = (p_cmpwin->inside_window_mask & ADC_MASK_VOLT) ? 1 : 0;
     }
 
-
     /* ENABLE INTERRUPT */
-
     if (p_cmpwin->int_priority != 0)
     {
         group_priority.ipl = (uint32_t)(p_cmpwin->int_priority);
 
-        R_BSP_InterruptWrite(BSP_INT_SRC_BL1_S12AD0_S12CMPI0, adc_s12cmpi0_isr);    // callback function setting(GROUPBL1.IS20)
-        R_BSP_InterruptWrite(BSP_INT_SRC_BL1_S12AD1_S12CMPI1, adc_s12cmpi1_isr);    // callback function setting(GROUPBL1.IS22)
+        /* callback function setting(GROUPBL1.IS20) */
+        R_BSP_InterruptWrite(BSP_INT_SRC_BL1_S12AD0_S12CMPI0, adc_s12cmpi0_isr);
+
+        /* callback function setting(GROUPBL1.IS22) */
+        R_BSP_InterruptWrite(BSP_INT_SRC_BL1_S12AD1_S12CMPI1, adc_s12cmpi1_isr);
         p_regs->ADCMPCR.BIT.CMPIE = 1;              // enable interrupt in ADC
+        psw_value = (uint32_t)R_BSP_GET_PSW();
+        R_BSP_InterruptsDisable();
         ICU.GENBL1.LONG |= g_dcb[unit].cmpi_mask;   // enable group subvector
+        if(0x00010000 == (psw_value & 0x00010000))
+        {
+            R_BSP_InterruptsEnable();
+        }
 
         /* set priority for S12CMPI interrupts */
         if (unit == 0)
@@ -921,7 +947,7 @@ bsp_int_ctrl_t  group_priority;
      * group interrupt because the flag never resets, and the app level will not run.
      */
     return ADC_SUCCESS;
-}
+} /* End of function adc_en_comparator_level0() */
 
 
 /*****************************************************************************
@@ -932,7 +958,7 @@ bsp_int_ctrl_t  group_priority;
 ******************************************************************************/
 void adc_s12cmpi0_isr(void *cb_args)
 {
-adc_cb_args_t   args;
+    adc_cb_args_t   args;
 
     if ((g_dcb[0].callback != NULL) && (g_dcb[0].callback != FIT_NO_FUNC))
     {
@@ -946,7 +972,7 @@ adc_cb_args_t   args;
         args.compare_flags = adc_get_and_clr_cmpi_flags(0);
         g_dcb[0].callback(&args);
     }
-}
+} /* End of function adc_s12cmpi0_isr() */
 
 
 /*****************************************************************************
@@ -957,7 +983,7 @@ adc_cb_args_t   args;
 ******************************************************************************/
 void adc_s12cmpi1_isr(void *cb_args)
 {
-adc_cb_args_t   args;
+    adc_cb_args_t   args;
 
     if ((g_dcb[1].callback != NULL) && (g_dcb[1].callback != FIT_NO_FUNC))
     {
@@ -971,7 +997,7 @@ adc_cb_args_t   args;
         args.compare_flags = adc_get_and_clr_cmpi_flags(1);
         g_dcb[1].callback(&args);
     }
-}
+} /* End of function adc_s12cmpi1_isr() */
 
 
 /*****************************************************************************
@@ -984,7 +1010,7 @@ adc_cb_args_t   args;
 ******************************************************************************/
 static uint32_t adc_get_and_clr_cmpi_flags(uint8_t unit)
 {
-uint32_t    flags;
+     uint32_t    flags;
 
     /* NOTE: S12CMPI interrupts are level-based, not edge, so there will be
      * continuous triggers while condition is met. Writing 0 to the flags has
@@ -1013,7 +1039,7 @@ uint32_t    flags;
     }
 
     return flags;
-}
+} /* End of function adc_get_and_clr_cmpi_flags() */
 
 
 /******************************************************************************
@@ -1035,11 +1061,11 @@ uint32_t    flags;
 static adc_err_t adc_configure_scan(uint8_t const   unit,
                                     adc_ch_cfg_t   *p_config)
 {
-uint16_t    i=0;
-uint32_t    tmp_mask=0;
-aregs_t     *p_regs = GET_REGS_PTR(unit);
-uint16_t    trig_a;
-uint16_t    trig_b;
+    uint16_t    i=0;
+    uint32_t    tmp_mask=0;
+    aregs_t     *p_regs = GET_REGS_PTR(unit);
+    uint16_t    trig_a;
+    uint16_t    trig_b;
 
 #if ADC_CFG_PARAM_CHECKING_ENABLE == 1
     adc_err_t   err;
@@ -1049,11 +1075,10 @@ uint16_t    trig_b;
     {
         return err;
     }
-#endif // parameter checking
+#endif /* parameter checking */
 
 
     /* SET MASKS FOR CHANNELS AND SENSORS */
-
     p_regs->ADANSA0.WORD = (uint16_t) (p_config->chan_mask & 0xFFFF);
     p_regs->ADANSB0.WORD = (uint16_t) (p_config->chan_mask_groupb & 0xFFFF);
     p_regs->ADADS0.WORD = (uint16_t) (p_config->add_mask & 0xFFFF);
@@ -1066,15 +1091,13 @@ uint16_t    trig_b;
         adc_configure_sensors(p_config);
     }
 
-
-    // NOTE: S&H adds to scan time because normal state machine still runs.
-    // adds 12 + sample_hold_states ADCLKS to scan time
+    /* NOTE: S&H adds to scan time because normal state machine still runs.
+             adds 12 + sample_hold_states ADCLKS to scan time */
     if (unit == 0)
     {
         S12AD.ADSHCR.BIT.SHANS = p_config->sample_hold_mask;
         S12AD.ADSHCR.BIT.SSTSH = p_config->sample_hold_states;
     }
-
 
     /* SET GROUP A PRIORITY ACTION (not interrupt priority!) */
 
@@ -1086,11 +1109,11 @@ uint16_t    trig_b;
         p_regs->ADSTRGR.BIT.TRSB = ADC_TRIG_NONE;
         if (ADC_TRIG_NONE != p_regs->ADSTRGR.BIT.TRSA)  // bus wait for ADSTRGR write
         {
-            nop();
+            R_BSP_NOP();
         }
         if (ADC_TRIG_NONE != p_regs->ADSTRGR.BIT.TRSB)  // bus wait for ADSTRGR write
         {
-            nop();
+            R_BSP_NOP();
         }
 
         p_regs->ADGSPCR.WORD = p_config->priority_groupa;
@@ -1106,26 +1129,22 @@ uint16_t    trig_b;
         p_regs->ADGSPCR.WORD = p_config->priority_groupa;
     }
 
-
     /* SET ANEX USAGE */
-
     if ((unit == 1) && (p_config->anex_enable))
     {
         S12AD1.ADEXICR.BIT.EXSEL = 1;
         S12AD1.ADEXICR.BIT.EXOEN = 1;
     }
 
-
     /* SET SELF DIAGNOSIS REGISTERS (VIRTUAL CHANNEL) */
-
     if (p_config->diag_method == ADC_DIAG_OFF)
     {
         p_regs->ADCER.BIT.DIAGM = 0;
     }
     else
     {
-        // NOTE: Using Self Diagnosis adds 11/13/15(resolution) + (ch0 SST) ADCLKS to scan time.
-        // (ch0 can still be used with self diagnosis on)
+        /* NOTE: Using Self Diagnosis adds 11/13/15(resolution) + (ch0 SST) ADCLKS to scan time.
+                (ch0 can still be used with self diagnosis on) */
         if (p_config->diag_method == ADC_DIAG_ROTATE_VOLTS)
         {
             p_regs->ADCER.BIT.DIAGLD = 0;
@@ -1139,12 +1158,11 @@ uint16_t    trig_b;
         p_regs->ADCER.BIT.DIAGM = 1;
     }
 
-
     /* SET DOUBLE TRIGGER CHANNEL */
-
     if (p_regs->ADCSR.BIT.DBLE == 1)
     {
         tmp_mask = p_config->chan_mask;         // tmp_mask is non-Group/Group A chans
+        /* WAIT_LOOP */
         while (tmp_mask >>= 1)                  // determine bit/ch number
         {
             i++;
@@ -1152,9 +1170,7 @@ uint16_t    trig_b;
         p_regs->ADCSR.BIT.DBLANS = i;
     }
 
-
     /* ENABLE INTERRUPTS */
-
     adc_enable_s12adi(unit);
     if (p_regs->ADCSR.BIT.ADCS == ADC_ADCS_GROUP_SCAN)
     {
@@ -1162,7 +1178,7 @@ uint16_t    trig_b;
     }
 
     return ADC_SUCCESS;
-}
+} /* End of function adc_configure_scan() */
 
 
 /******************************************************************************
@@ -1193,9 +1209,10 @@ uint16_t    trig_b;
 static adc_err_t adc_check_scan_config(uint8_t const   unit,
                                         adc_ch_cfg_t   *p_config)
 {
-uint32_t    tmp_mask=0;
-uint32_t    a_mask,b_mask;
-aregs_t     *p_regs = GET_REGS_PTR(unit);
+    uint32_t    tmp_mask=0;
+    uint32_t    a_mask;
+    uint32_t    b_mask;
+    aregs_t     *p_regs = GET_REGS_PTR(unit);
 
     /* Verify at least one bonded channel is selected */
      if ((p_config->chan_mask == 0)
@@ -1238,13 +1255,32 @@ aregs_t     *p_regs = GET_REGS_PTR(unit);
         }
     }
 
+    /* Confirm that the temperature sensor settings of R_ADC_Open function and R_ADC_Control function match. */
+    if ((((p_regs->ADEXICR.WORD & 0x0100) != 0) && ((p_config->chan_mask & ADC_MASK_TEMP) == 0))
+     || (((p_regs->ADEXICR.WORD & 0x0100) == 0) && ((p_config->chan_mask & ADC_MASK_TEMP) != 0)))
+    {
+        return ADC_ERR_ILLEGAL_ARG;
+    }
+
+    if ((((p_regs->ADEXICR.WORD & 0x0400) != 0) && ((p_config->chan_mask_groupb & ADC_MASK_TEMP) == 0))
+     || (((p_regs->ADEXICR.WORD & 0x0400) == 0) && ((p_config->chan_mask_groupb & ADC_MASK_TEMP) != 0)))
+    {
+        return ADC_ERR_ILLEGAL_ARG;
+    }
+
+    if ((((p_regs->ADEXICR.WORD & 0x0001) != 0) && ((p_config->add_mask & ADC_MASK_TEMP) == 0))
+     || (((p_regs->ADEXICR.WORD & 0x0001) == 0) && ((p_config->add_mask & ADC_MASK_TEMP) != 0)))
+    {
+        return ADC_ERR_ILLEGAL_ARG;
+    }
+
     /* If sensors specified, verify in legal configuration */
     if ((p_config->chan_mask & ADC_MASK_SENSORS) || (p_config->chan_mask_groupb & ADC_MASK_SENSORS))
     {
         if ((unit == 0)
-         || (S12AD1.ADCSR.BIT.DBLE == 1)       // double trigger mode
-         || (S12AD1.ADDISCR.BYTE != 0)         // disconnect detection assist enabled
-         || (p_config->anex_enable == true))   // external amplifier enabled
+         || (S12AD1.ADCSR.BIT.DBLE == 1)        // double trigger mode
+         || (0 != (S12AD1.ADDISCR.BYTE & 0x0F)) // disconnect detection assist enabled
+         || (p_config->anex_enable == true))    // external amplifier enabled
         {
             return ADC_ERR_ILLEGAL_ARG;
         }
@@ -1254,7 +1290,7 @@ aregs_t     *p_regs = GET_REGS_PTR(unit);
     if (p_config->anex_enable == true)
     {
         if ((p_regs->ADCSR.BIT.ADCS == ADC_ADCS_GROUP_SCAN)
-         || (p_regs->ADDISCR.BYTE != 0)
+         || (0 != (p_regs->ADDISCR.BYTE & 0x0F))
          || (unit == 0)                         // cannot use unit 0
          || (p_config->chan_mask & 0x1FFF00))   // cannot use channels 8-20
         {
@@ -1266,7 +1302,8 @@ aregs_t     *p_regs = GET_REGS_PTR(unit);
     if (p_regs->ADADC.BIT.ADC != ADC_ADD_OFF)
     {
         tmp_mask |= p_config->chan_mask;        // tmp_mask is Group A and B combined
-        // Bit-AND with 1s-complement
+
+        /* Bit-AND with 1s-complement */
         if ((p_config->add_mask & ~tmp_mask) != 0)
         {
             return ADC_ERR_INVALID_ARG;
@@ -1274,7 +1311,7 @@ aregs_t     *p_regs = GET_REGS_PTR(unit);
     }
     else
     {
-        // WARNING! Other features messed up if add_mask is non-zero when addition is turned off!
+        /* WARNING! Other features messed up if add_mask is non-zero when addition is turned off! */
         p_config->add_mask = 0;
     }
 
@@ -1284,7 +1321,8 @@ aregs_t     *p_regs = GET_REGS_PTR(unit);
      || (p_regs->ADCSR.BIT.DBLE == 1))          // double trigger mode
     {
         tmp_mask = p_config->chan_mask;         // tmp_mask is non-Group/Group A chans
-        // Bit-AND with 2s-complement (see note in function header)
+
+        /* Bit-AND with 2s-complement (see note in function header) */
         if ((tmp_mask & (~tmp_mask + 1)) != tmp_mask)
         {
             return ADC_ERR_ILLEGAL_ARG;
@@ -1318,7 +1356,6 @@ aregs_t     *p_regs = GET_REGS_PTR(unit);
             return ADC_ERR_ILLEGAL_ARG;
         }
 
-
         /* S&H channels cannot be a double trigger channel (can be in group B) */
         if ((S12AD.ADCSR.BIT.DBLE == 1) && (a_mask != 0))
         {
@@ -1341,10 +1378,9 @@ aregs_t     *p_regs = GET_REGS_PTR(unit);
         return ADC_ERR_ILLEGAL_ARG;
     }
 
-
     return ADC_SUCCESS;
-}
-#endif
+} /* End of function adc_check_scan_config() */
+#endif /* ADC_CFG_PARAM_CHECKING_ENABLE == 1 */
 
 
 /******************************************************************************
@@ -1359,32 +1395,18 @@ static void adc_configure_sensors(adc_ch_cfg_t   *p_config)
 {
 
     /* TEMPERATURE SENSOR */
-
     if ((p_config->chan_mask & ADC_MASK_TEMP) || (p_config->chan_mask_groupb & ADC_MASK_TEMP))
     {
         R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
         MSTP(TEMPS) = 0;
         R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);
 
-        if (p_config->chan_mask & ADC_MASK_TEMP)
-        {
-            S12AD1.ADEXICR.BIT.TSSA = 1;            // select temperature output to GroupA
-            S12AD1.ADEXICR.BIT.TSSB = 0;
-        }
-        else
-        {
-            S12AD1.ADEXICR.BIT.TSSA = 0;
-            S12AD1.ADEXICR.BIT.TSSB = 1;            // select temperature output to GroupB
-        }
-
-        S12AD1.ADEXICR.BIT.TSSAD = (p_config->add_mask & ADC_MASK_TEMP) ? 1 : 0;
-
         TEMPS.TSCR.BIT.TSEN = 1;                    // enable temp sensor
 
+        /* Dummy read and compare */
         if (1 != TEMPS.TSCR.BIT.TSEN)
         {
-            /* Dommy read and compare */
-            nop();
+            R_BSP_NOP();
         }
 
         /* 30us delay */
@@ -1393,9 +1415,7 @@ static void adc_configure_sensors(adc_ch_cfg_t   *p_config)
         TEMPS.TSCR.BIT.TSOE = 1;                    // enable temp sensor output to adc
     }
 
-
     /* INTERNAL REFERENCE VOLTAGE SENSOR */
-
     if ((p_config->chan_mask & ADC_MASK_VOLT) || (p_config->chan_mask_groupb & ADC_MASK_VOLT))
     {
         if (p_config->chan_mask & ADC_MASK_VOLT)
@@ -1413,7 +1433,7 @@ static void adc_configure_sensors(adc_ch_cfg_t   *p_config)
     }
 
     return;
-}
+} /* End of function adc_configure_sensors() */
 
 
 /******************************************************************************
@@ -1428,14 +1448,13 @@ static void adc_configure_sensors(adc_ch_cfg_t   *p_config)
 *******************************************************************************/
 static void adc_enable_s12adi(uint8_t unit)
 {
-
     if (unit == 0)
     {
         IR(S12ADC0,S12ADI0) = 0;            // clear flag
         S12AD.ADCSR.BIT.ADIE = 1;           // enable in peripheral
         if (IPR(S12ADC0,S12ADI0) != 0)
         {
-            IEN(S12ADC0,S12ADI0) = 1;       // enable in ICU
+            R_BSP_InterruptRequestEnable(VECT(S12ADC0,S12ADI0));       // enable in ICU
         }
     }
     else // Unit1
@@ -1445,10 +1464,10 @@ static void adc_enable_s12adi(uint8_t unit)
         S12AD1.ADCSR.BIT.ADIE = 1;          // enable in peripheral
         if (IPR(S12ADC1,S12ADI1) != 0)
         {
-            IEN(S12ADC1,S12ADI1) = 1;       // enable in ICU
+            R_BSP_InterruptRequestEnable(VECT(S12ADC1,S12ADI1));       // enable in ICU
         }
     }
-}
+} /* End of function adc_enable_s12adi() */
 
 
 /******************************************************************************
@@ -1463,27 +1482,25 @@ static void adc_enable_s12adi(uint8_t unit)
 *******************************************************************************/
 static void adc_enable_s12gbadi(uint8_t unit)
 {
-
     if (unit == 0)
     {
         IR(S12ADC0,S12GBADI0) = 0;            // clear flag
         S12AD.ADCSR.BIT.GBADIE = 1;           // enable in peripheral
         if (IPR(S12ADC0,S12GBADI0) != 0)
         {
-            IEN(S12ADC0,S12GBADI0) = 1;       // enable in ICU
+            R_BSP_InterruptRequestEnable(VECT(S12ADC0,S12GBADI0));       // enable in ICU
         }
     }
     else // Unit1
     {
-
         IR(S12ADC1,S12GBADI1) = 0;            // clear flag
         S12AD1.ADCSR.BIT.GBADIE = 1;          // enable in peripheral
         if (IPR(S12ADC1,S12GBADI1) != 0)
         {
-            IEN(S12ADC1,S12GBADI1) = 1;       // enable in ICU
+            R_BSP_InterruptRequestEnable(VECT(S12ADC1,S12GBADI1));       // enable in ICU
         }
     }
-}
+} /* End of function adc_enable_s12gbadi() */
 
 
 /*****************************************************************************
@@ -1494,10 +1511,9 @@ static void adc_enable_s12gbadi(uint8_t unit)
 * Return Value : none
 ******************************************************************************/
 R_BSP_PRAGMA_STATIC_INTERRUPT(adc_s12adi0_isr, VECT(S12ADC0,S12ADI0))
-//#pragma interrupt adc_s12adi0_isr(vect=VECT(S12ADC0,S12ADI0), enable) // FOR TESTING ONLY!
-static void adc_s12adi0_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void adc_s12adi0_isr(void)
 {
-adc_cb_args_t   args;
+    adc_cb_args_t   args;
 
     if ((g_dcb[0].callback != NULL) && (g_dcb[0].callback != FIT_NO_FUNC))
     {
@@ -1505,7 +1521,7 @@ adc_cb_args_t   args;
         args.unit = 0;
         g_dcb[0].callback(&args);
     }
-}
+} /* End of function adc_s12adi0_isr() */
 
 
 /*****************************************************************************
@@ -1516,10 +1532,9 @@ adc_cb_args_t   args;
 * Return Value : none
 ******************************************************************************/
 R_BSP_PRAGMA_STATIC_INTERRUPT(adc_s12adi1_isr, VECT(S12ADC1,S12ADI1))
-//#pragma interrupt adc_s12adi0_isr(vect=VECT(S12ADC1,S12ADI1), enable) // FOR TESTING ONLY!
-static void adc_s12adi1_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void adc_s12adi1_isr(void)
 {
-adc_cb_args_t   args;
+    adc_cb_args_t   args;
 
     if ((g_dcb[1].callback != NULL) && (g_dcb[1].callback != FIT_NO_FUNC))
     {
@@ -1527,7 +1542,7 @@ adc_cb_args_t   args;
         args.unit = 1;
         g_dcb[1].callback(&args);
     }
-}
+} /* End of function adc_s12adi1_isr() */
 
 
 /*****************************************************************************
@@ -1537,10 +1552,9 @@ adc_cb_args_t   args;
 * Return Value : none
 ******************************************************************************/
 R_BSP_PRAGMA_STATIC_INTERRUPT(adc_s12gbadi0_isr, VECT(S12ADC0,S12GBADI0))
-//#pragma interrupt adc_s12gbadi0_isr(vect=VECT(S12ADC0,S12GBADI0),enable)  // FOR TESTING ONLY!
-static void adc_s12gbadi0_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void adc_s12gbadi0_isr(void)
 {
-adc_cb_args_t   args;
+    adc_cb_args_t   args;
 
     if ((g_dcb[0].callback != NULL) && (g_dcb[0].callback != FIT_NO_FUNC))
     {
@@ -1548,7 +1562,7 @@ adc_cb_args_t   args;
         args.unit = 0;
         g_dcb[0].callback(&args);
     }
-}
+} /* End of function adc_s12gbadi0_isr() */
 
 
 /*****************************************************************************
@@ -1558,10 +1572,9 @@ adc_cb_args_t   args;
 * Return Value : none
 ******************************************************************************/
 R_BSP_PRAGMA_STATIC_INTERRUPT(adc_s12gbadi1_isr, VECT(S12ADC1,S12GBADI1))
-//#pragma interrupt adc_s12gbadi1_isr(vect=VECT(S12ADC1,S12GBADI1),enable)  // FOR TESTING ONLY!
-static void adc_s12gbadi1_isr(void)
+R_BSP_ATTRIB_STATIC_INTERRUPT void adc_s12gbadi1_isr(void)
 {
-adc_cb_args_t   args;
+    adc_cb_args_t   args;
 
     if ((g_dcb[1].callback != NULL) && (g_dcb[1].callback != FIT_NO_FUNC))
     {
@@ -1569,7 +1582,7 @@ adc_cb_args_t   args;
         args.unit = 1;
         g_dcb[1].callback(&args);
     }
-}
+} /* End of function adc_s12gbadi1_isr() */
 
 
 /******************************************************************************
@@ -1578,12 +1591,14 @@ adc_cb_args_t   args;
 *                This function ends any scan in progress, disables interrupts,
 *                and removes power to the A/D peripheral.
 * Arguments    : none
-* Return Value : none
+* Return Value : ADC_SUCCESS - Successful
+*                ADC_ERR_INVALID_ARG - unit contains an invalid value.
 *******************************************************************************/
 adc_err_t adc_close(uint8_t const  unit)
 {
     volatile uint8_t i;
     aregs_t     *p_regs = GET_REGS_PTR(unit);
+    uint32_t psw_value;
 
 #if ADC_CFG_PARAM_CHECKING_ENABLE == 1
     if (unit > 1)
@@ -1592,20 +1607,19 @@ adc_err_t adc_close(uint8_t const  unit)
     }
 #endif
 
-
     /* Stop triggers & conversions, and disable peripheral interrupts */
     if (unit == 0)
     {
-        IEN(S12ADC0,S12ADI0) = 0;         // disable interrupts in ICU
-        IEN(S12ADC0,S12GBADI0) = 0;       // disable interrupts in ICU
+        R_BSP_InterruptRequestDisable(VECT(S12ADC0,S12ADI0));         // disable interrupts in ICU
+        R_BSP_InterruptRequestDisable(VECT(S12ADC0,S12GBADI0));       // disable interrupts in ICU
 
         IPR(S12ADC0,S12ADI0) = 0;         // clear interrupt priority
         IPR(S12ADC0,S12GBADI0) = 0;       // clear interrupt priority
     }
     else // Unit1
     {
-        IEN(S12ADC1,S12ADI1) = 0;         // disable interrupts in ICU
-        IEN(S12ADC1,S12GBADI1) = 0;       // disable interrupts in ICU
+        R_BSP_InterruptRequestDisable(VECT(S12ADC1,S12ADI1));         // disable interrupts in ICU
+        R_BSP_InterruptRequestDisable(VECT(S12ADC1,S12GBADI1));       // disable interrupts in ICU
 
         IPR(S12ADC1,S12ADI1) = 0;         // clear interrupt priority
         IPR(S12ADC1,S12GBADI1) = 0;       // clear interrupt priority
@@ -1613,12 +1627,18 @@ adc_err_t adc_close(uint8_t const  unit)
 
     /* This program does not disable IPR register of Group interrupt. Because,
        other peripheral is possible to use same vector Group interrupt. */
-    IEN(ICU,GROUPBL1) = 0;                      // disable group
+    R_BSP_InterruptRequestDisable(VECT(ICU,GROUPBL1));                      // disable group
+    psw_value = (uint32_t)R_BSP_GET_PSW();
+    R_BSP_InterruptsDisable();
     ICU.GENBL1.LONG &= ~g_dcb[unit].cmpi_mask;  // disable group subvector
+    if(0x00010000 == (psw_value & 0x00010000))
+    {
+        R_BSP_InterruptsEnable();
+    }
     p_regs->ADCMPCR.BIT.CMPIE = 0;              // disable interrupt in ADC
     if (0 != p_regs->ADCMPCR.BIT.CMPIE)         // dummy read for waiting until set the value of CMPIE
     {
-        nop();
+        R_BSP_NOP();
     }
 
     p_regs->ADGSPCR.BIT.PGS = 0;
@@ -1637,13 +1657,14 @@ adc_err_t adc_close(uint8_t const  unit)
     p_regs->ADCSR.WORD = 0;
     if (0 != p_regs->ADCSR.WORD)                // dummy read for waiting until set the value of ADCSR
     {
-        nop();
+        R_BSP_NOP();
     }
 
     /* Wait for 2 ADCLK cycles (MAX: 128 ICLK cycles) */
+    /* WAIT_LOOP */
     for (i = 0; i < 128; i++)
     {
-        nop();
+        R_BSP_NOP();
     }
 
     if (0 == unit)
@@ -1664,7 +1685,7 @@ adc_err_t adc_close(uint8_t const  unit)
      */
     if (ICU.GENBL1.LONG != 0)
     {
-        IEN(ICU,GROUPBL1) = 1;                  // enable group
+        R_BSP_InterruptRequestEnable(VECT(ICU,GROUPBL1));                  // enable group
     }
 
     /* Power down peripheral */
@@ -1681,13 +1702,11 @@ adc_err_t adc_close(uint8_t const  unit)
     }
     R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);
 
-
     /* Show driver as closed */
-
     g_dcb[unit].opened = false;
 
     return ADC_SUCCESS;
-}
+} /* End of function adc_close() */
 
 
 /******************************************************************************
@@ -1744,7 +1763,8 @@ adc_err_t adc_read_all(adc_data_t * const  p_all_data)
     p_all_data->unit1.self_diag          = S12AD1.ADRD.WORD;
 
     return ADC_SUCCESS;
-}
+} /* End of function adc_read_all() */
 
 
-#endif // #if defined (BSP_MCU_RX64M)
+#endif /* #if defined (BSP_MCU_RX64M) */
+

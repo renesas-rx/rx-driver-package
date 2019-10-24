@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_riic_rx
-VERSION = 		v2.20
+VERSION = 		v2.43
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules
@@ -20,4 +20,4 @@ $(TARGET_FOLDER)/$(MODULE_NAME)_$(VERSION).mdf:
 	cp ./$(MODULE_NAME)_vx.xx.mdf $(TARGET_FOLDER)/$(MODULE_NAME)_$(VERSION).mdf
 
 clean:
-	rm -rf $(TARGET_FOLDER)/$(MODULE_NAME)_$(VERSION)*.*
+	rm -rf $(TARGET_FOLDER)/$(MODULE_NAME)*.*

@@ -14,15 +14,17 @@
 * following link:
 * http://www.renesas.com/disclaimer 
 *
-* Copyright (C) 2016-2017 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) 2016-2019 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
-* File Name    : r_sci_rx65n.h
+* File Name    : r_sci_rx65n_private.h
 * Description  : Functions for using SCI on the RX65N device.
 ************************************************************************************************************************
 * History : DD.MM.YYYY Version Description
 *           01.10.2016 1.00    Initial Release.
 *           07.03.2017 2.00    Fixed a bug that the new FIFO threshold was retained only on first receive.
+*           01.02.2019 2.20    Fixed GSCE Code Checker errors.
+*           20.05.2019 3.00    Added support for GNUC and ICCRX.
 ***********************************************************************************************************************/
 
 #ifndef SCI_RX65N_H
@@ -87,6 +89,9 @@ Macro definitions
 #define ENABLE_TEI_INT      (*hdl->rom->icu_grp |= hdl->rom->tei_ch_mask)
 #define DISABLE_TEI_INT     (*hdl->rom->icu_grp &= ~hdl->rom->tei_ch_mask)
 
+#define NUM_DIVISORS_ASYNC  (9)
+#define NUM_DIVISORS_SYNC   (4)
+
 /*****************************************************************************
 Typedef definitions
 ******************************************************************************/
@@ -95,8 +100,8 @@ Typedef definitions
 
 typedef struct st_sci_ch_rom    /* SCI ROM info for channel control block */
 {
-    volatile  __evenaccess struct st_sci10  *regs;  /* base ptr to ch registers */
-    volatile  __evenaccess uint32_t *mstp;          /* ptr to mstp register */
+    volatile  struct st_sci10 R_BSP_EVENACCESS_SFR  *regs;  /* base ptr to ch registers */
+    volatile  uint32_t R_BSP_EVENACCESS_SFR *mstp;          /* ptr to mstp register */
     uint32_t                        stop_mask;      /* mstp mask to disable ch */
 #if SCI_CFG_TEI_INCLUDED
     bsp_int_src_t                   tei_vector;
@@ -106,18 +111,18 @@ typedef struct st_sci_ch_rom    /* SCI ROM info for channel control block */
     bsp_int_cb_t                    eri_isr;
     uint32_t                        tei_ch_mask;    /* ICU IR and IEN mask */
     uint32_t                        eri_ch_mask;    /* ICU IR and IEN mask */
-    volatile  __evenaccess uint8_t  *ipr_rxi;       /* ptr to IPR register */
-    volatile  __evenaccess uint8_t  *ipr_txi;       /* ptr to IPR register */
-    volatile  __evenaccess uint8_t  *ir_rxi;        /* ptr to RXI IR register */
-    volatile  __evenaccess uint8_t  *ir_txi;        /* ptr to TXI IR register */
+    volatile  uint8_t R_BSP_EVENACCESS_SFR  *ipr_rxi;       /* ptr to IPR register */
+    volatile  uint8_t R_BSP_EVENACCESS_SFR  *ipr_txi;       /* ptr to IPR register */
+    volatile  uint8_t R_BSP_EVENACCESS_SFR  *ir_rxi;        /* ptr to RXI IR register */
+    volatile  uint8_t R_BSP_EVENACCESS_SFR  *ir_txi;        /* ptr to TXI IR register */
 
     /* 
     * DO NOT use the enable/disable interrupt bits in the SCR 
     * register. Pending interrupts can be lost that way.
     */
-    volatile  __evenaccess uint8_t  *icu_rxi;       /* ptr to ICU register */
-    volatile  __evenaccess uint8_t  *icu_txi;
-    volatile  __evenaccess uint32_t *icu_grp;
+    volatile  uint8_t R_BSP_EVENACCESS_SFR  *icu_rxi;       /* ptr to ICU register */
+    volatile  uint8_t R_BSP_EVENACCESS_SFR  *icu_txi;
+    volatile  uint32_t R_BSP_EVENACCESS_SFR *icu_grp;
     uint8_t                         rxi_en_mask;    /* ICU enable/disable rxi mask */
     uint8_t                         txi_en_mask;    /* ICU enable/disable txi mask */
 } sci_ch_rom_t;
@@ -177,49 +182,19 @@ typedef struct st_baud_divisor
     uint8_t     cks;        // cks  value to get divisor (cks = n)
 } baud_divisor_t;
 
-#define NUM_DIVISORS_ASYNC  (9)
-#define NUM_DIVISORS_SYNC   (4)
 
 
 /*****************************************************************************
-Private global variables and functions
+Exported global variables and functions
 ******************************************************************************/
+extern const sci_hdl_t g_sci_handles[];
+
 #if (SCI_CFG_ASYNC_INCLUDED)
 extern const baud_divisor_t async_baud[];
 #endif
 #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
 extern const baud_divisor_t sync_baud[];
 #endif
-
-#if SCI_CFG_TEI_INCLUDED
-extern void sci0_tei0_isr(void *cb_args);
-extern void sci1_tei1_isr(void *cb_args);
-extern void sci2_tei2_isr(void *cb_args);
-extern void sci3_tei3_isr(void *cb_args);
-extern void sci4_tei4_isr(void *cb_args);
-extern void sci5_tei5_isr(void *cb_args);
-extern void sci6_tei6_isr(void *cb_args);
-extern void sci7_tei7_isr(void *cb_args);
-extern void sci8_tei8_isr(void *cb_args);
-extern void sci9_tei9_isr(void *cb_args);
-extern void sci10_tei10_isr(void *cb_args);
-extern void sci11_tei11_isr(void *cb_args);
-extern void sci12_tei12_isr(void *cb_args);
-#endif
-
-extern void sci0_eri0_isr(void *cb_args);
-extern void sci1_eri1_isr(void *cb_args);
-extern void sci2_eri2_isr(void *cb_args);
-extern void sci3_eri3_isr(void *cb_args);
-extern void sci4_eri4_isr(void *cb_args);
-extern void sci5_eri5_isr(void *cb_args);
-extern void sci6_eri6_isr(void *cb_args);
-extern void sci7_eri7_isr(void *cb_args);
-extern void sci8_eri8_isr(void *cb_args);
-extern void sci9_eri9_isr(void *cb_args);
-extern void sci10_eri10_isr(void *cb_args);
-extern void sci11_eri11_isr(void *cb_args);
-extern void sci12_eri12_isr(void *cb_args);
 
 #if (SCI_CFG_CH0_INCLUDED)
 extern const sci_ch_rom_t      ch0_rom;
@@ -286,7 +261,38 @@ extern const sci_ch_rom_t      ch12_rom;
 extern sci_ch_ctrl_t           ch12_ctrl;
 #endif
 
-extern const sci_hdl_t g_sci_handles[];
+/*****************************************************************************
+Exported global functions
+******************************************************************************/
+#if SCI_CFG_TEI_INCLUDED
+extern void sci0_tei0_isr(void *cb_args);
+extern void sci1_tei1_isr(void *cb_args);
+extern void sci2_tei2_isr(void *cb_args);
+extern void sci3_tei3_isr(void *cb_args);
+extern void sci4_tei4_isr(void *cb_args);
+extern void sci5_tei5_isr(void *cb_args);
+extern void sci6_tei6_isr(void *cb_args);
+extern void sci7_tei7_isr(void *cb_args);
+extern void sci8_tei8_isr(void *cb_args);
+extern void sci9_tei9_isr(void *cb_args);
+extern void sci10_tei10_isr(void *cb_args);
+extern void sci11_tei11_isr(void *cb_args);
+extern void sci12_tei12_isr(void *cb_args);
+#endif
+
+extern void sci0_eri0_isr(void *cb_args);
+extern void sci1_eri1_isr(void *cb_args);
+extern void sci2_eri2_isr(void *cb_args);
+extern void sci3_eri3_isr(void *cb_args);
+extern void sci4_eri4_isr(void *cb_args);
+extern void sci5_eri5_isr(void *cb_args);
+extern void sci6_eri6_isr(void *cb_args);
+extern void sci7_eri7_isr(void *cb_args);
+extern void sci8_eri8_isr(void *cb_args);
+extern void sci9_eri9_isr(void *cb_args);
+extern void sci10_eri10_isr(void *cb_args);
+extern void sci11_eri11_isr(void *cb_args);
+extern void sci12_eri12_isr(void *cb_args);
 
 extern void sci_init_register(sci_hdl_t const hdl);
 

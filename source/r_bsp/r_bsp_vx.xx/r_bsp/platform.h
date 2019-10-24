@@ -12,7 +12,7 @@
 * Renesas reserves the right, without notice, to make changes to this software and to discontinue the availability of 
 * this software. By using this software, you agree to the additional terms and conditions found by accessing the 
 * following link:
-* http://www.renesas.com/disclaimer 
+* http://www.renesas.com/disclaimer
 *
 * Copyright (C) 2011 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
@@ -89,9 +89,9 @@
 *                               platform is chosen by default (used to be the RSKRX111). This makes it easier to
 *                               understand the problem when you build a new project and have not selected your platform.
 *         : 24.03.2014 2.50     Added support for the RSKRX64M.
-*         : 16.06.2014 2.60     Added version control for r_bsp_config.h Two user callback functions may now be configured
-*                               allowing callbacks from PowerON_Reset_PC() for warm start detection. Stdio charget() and
-*                               charput() functions may now be redirected to user defined functions.
+*         : 16.06.2014 2.60     Added version control for r_bsp_config.h Two user callback functions may now be 
+*                               configured allowing callbacks from PowerON_Reset_PC() for warm start detection.
+*                               Stdio charget() and charput() functions may now be redirected to user defined functions.
 *                               Added support for RSKRX631 and RDKRX631.
 *         : 05.08.2014 2.70     Added support for RSKRX113.
 *         : 29.09.2014 2.80     Added support for RSKRX71M.
@@ -128,9 +128,18 @@
 *                               - RSKRX64M, RSKRX65N, RSKRX65N_2MB, TARGETBOARDRX65N, ENVISIONRX65N, RSKRX71M, 
 *                                 RSKRX230, RSKRX231, TARGETBOARDRX231, RSKRX110, RSKRX111, RPBRX111, RSKRX113, 
 *                                 RSKRX130, RSKRX130_512KB, and TARGETBOARDRX130
-*         : xx.xx.xxxx x.xx     
+*         : 31.10.2018 4.00     Added support for GENERIC_RX72T.
+*                               Deleted the below board folders, since other boards can all be substituted with 
+*                               GENERIC_RXxxx.
+*                               - RSSKRX23T, RSKRX23T, RSKRX24T, and RSKRX24U
+*         : 28.02.2019 5.00     Deleted the below board folders.
+*                               - RSKRX610, RSKRX62N, RSKRX62T, RSKRX62G, RDKRX62N, RSKRX630, RSKRX631, RSKRX63T_64PIN,
+*                                 RSKRX63T_144PIN, RDKRX63N, RDKRX631, RSKRX210, HSBRX21AP and RSKRX220
+*         : 29.03.2019 5.10     Added support for GENERIC_RX23W.
+*         : 08.04.2019 5.20     Added support for GENERIC_RX72M.
 ***********************************************************************************************************************/
 
+/* Multiple inclusion prevention macro */
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
@@ -152,6 +161,12 @@ DEFINE YOUR SYSTEM - UNCOMMENT THE INCLUDE PATH FOR THE PLATFORM YOU ARE USING.
 /* GENERIC_RX71M */
 //#include "./board/generic_rx71m/r_bsp.h"
 
+/* GENERIC_RX72M */
+//#include "./board/generic_rx72m/r_bsp.h"
+
+/* GENERIC_RX72T */
+//#include "./board/generic_rx72t/r_bsp.h"
+
 /* GENERIC_RX230 */
 //#include "./board/generic_rx230/r_bsp.h"
 
@@ -160,6 +175,9 @@ DEFINE YOUR SYSTEM - UNCOMMENT THE INCLUDE PATH FOR THE PLATFORM YOU ARE USING.
 
 /* GENERIC_RX23T */
 //#include "./board/generic_rx23t/r_bsp.h"
+
+/* GENERIC_RX23W */
+//#include "./board/generic_rx23w/r_bsp.h"
 
 /* GENERIC_RX24T */
 //#include "./board/generic_rx24t/r_bsp.h"

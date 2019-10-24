@@ -22,14 +22,10 @@
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * History : DD.MM.YYYY Version  Description
-*         : xx.xx.xxxx 2.00     Merged processing of all devices.
+*         : 28.02.2019 2.00     Merged processing of all devices.
 *                               Added support for GNUC and ICCRX.
 *                               Fixed coding style.
 ***********************************************************************************************************************/
-
-/* Multiple inclusion prevention macro */
-#ifndef LOWSRC_H
-#define LOWSRC_H
 
 /***********************************************************************************************************************
 Includes   <System Includes> , "Project Includes"
@@ -38,6 +34,9 @@ Includes   <System Includes> , "Project Includes"
 /***********************************************************************************************************************
 Macro definitions
 ***********************************************************************************************************************/
+/* Multiple inclusion prevention macro */
+#ifndef LOWSRC_H
+#define LOWSRC_H
 
 /***********************************************************************************************************************
 Typedef definitions
@@ -51,14 +50,30 @@ Exported global variables
 Exported global functions (to be accessed by other files)
 ***********************************************************************************************************************/
 #if defined(__CCRX__)
-void _INIT_IOLIB(void);
-void _CLOSEALL(void);
+void init_iolib(void);
+void close_all(void);
+long open(const char *name, long  mode, long  flg);
+long close(long fileno);
+long write(long  fileno, const unsigned char *buf, long  count);
+long read(long fileno, unsigned char *buf, long count);
+long lseek(long fileno, long offset, long base);
+#ifdef _REENTRANT
+long *errno_addr(void)
+long wait_sem(long semnum)
+long signal_sem(long semnum)
+#endif
 #endif /* defined(__CCRX__) */
 
-/* Output one character to standard output (the E1 Virtual Console or a serial port via user own charput function) */
-void charput (uint32_t output_char);
-/* Input one character from standard input (the E1 Virtual Console or a serial port via user own charget function) */
-uint32_t charget (void);
+#if defined(__GNUC__)
+int write(int fileno, char *buf, int count);
+int read(int fileno, char *buf, int count);
+int _write(int fileno, char *buf, int count);
+int _read(int fileno, char *buf, int count);
+void close(void);
+void fstat(void);
+void isatty(void);
+void lseek(void);
+#endif /* defined(__GNUC__) */
 
 #endif  /* End of multiple inclusion prevention macro */
 

@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_ether_rx
-VERSION = 		v1.15
+VERSION = 		v1.17
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules
@@ -22,4 +22,4 @@ $(TARGET_FOLDER)/$(MODULE_NAME)_$(VERSION)_extend.mdf:
 	cp ./$(MODULE_NAME)_vx.xx_extend.mdf $(TARGET_FOLDER)/$(MODULE_NAME)_$(VERSION)_extend.mdf
 
 clean:
-	rm -rf $(TARGET_FOLDER)/$(MODULE_NAME)_$(VERSION)*.*
+	rm -rf $(TARGET_FOLDER)/$(MODULE_NAME)*.*

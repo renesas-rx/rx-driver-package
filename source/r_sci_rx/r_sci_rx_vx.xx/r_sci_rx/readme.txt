@@ -22,10 +22,14 @@ Features
 * (RX110/111/113, RX210, RX63N/631, RX65N/651) Simultaneous operation of up to 13 channels.
 * (RX231/230) Simultaneous operation of up to 7 channels.
 * (RX23T) Simultaneous operation of up to 2 channels.
+* (RX23W) Simultaneous operation of up to 4 channels.
 * (RX64M, RX71M) Simultaneous operation of up to 9 channels.
 * (RX130) Simultaneous operation of up to 4 channels.
 * (RX24T) Simultaneous operation of up to 3 channels.
 * (RX24U) Simultaneous operation of up to 6 channels.
+* (RX66T) Simultaneous operation of up to 7 channels
+* (RX72T) Simultaneous operation of up to 7 channels
+* (RX72M) Simultaneous operation of up to 13 channels
 * Simultaneous operation of Async, Sync, or SSPI modes on different channels.
 * Queueing of incoming and outgoing data for Asynchronous channels.
 * Interrupt driven.
@@ -39,9 +43,9 @@ r_sci_rx
 |
 +---doc
 |   +---ja
-|   |    r01an1815jj{VERSION_NUMBER}-rx.pdf
+|   |    r01an1815jj{VERSION_NUMBER}-rx-serial.pdf
 |   +---en
-|        r01an1815ej{VERSION_NUMBER}-rx.pdf
+|        r01an1815ej{VERSION_NUMBER}-rx-serial.pdf
 |
 +---ref
 |       r_sci_rx_config_reference.h

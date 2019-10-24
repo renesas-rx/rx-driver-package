@@ -22,19 +22,16 @@
 ***********************************************************************************************************************/
 /**********************************************************************************************************************
 * History : DD.MM.YYYY Version  Description
-*         : xx.xx.xxxx 1.00     First Release
+*         : 28.02.2019 1.00     First Release
 ***********************************************************************************************************************/
-/* Multiple inclusion prevention macro */
-#ifndef R_RTOS_H
-#define R_RTOS_H
 
 /***********************************************************************************************************************
 Includes   <System Includes> , "Project Includes"
 ***********************************************************************************************************************/
 #include "r_bsp_config.h"
 
-#if BSP_CFG_RTOS_USED == 0      // Non-OS
-#elif BSP_CFG_RTOS_USED == 1    // FreeRTOS
+#if BSP_CFG_RTOS_USED == 0      /* Non-OS */
+#elif BSP_CFG_RTOS_USED == 1    /* FreeRTOS */
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
@@ -43,11 +40,18 @@ Includes   <System Includes> , "Project Includes"
 #include "timers.h"
 #include "event_groups.h"
 #include "freertos_start.h"
-#elif BSP_CFG_RTOS_USED == 2    // SEGGER embOS
-#elif BSP_CFG_RTOS_USED == 3    // Micrium MicroC/OS
-#elif BSP_CFG_RTOS_USED == 4    // Renesas RI600V4 & RI600PX
+#elif BSP_CFG_RTOS_USED == 2    /* SEGGER embOS */
+#elif BSP_CFG_RTOS_USED == 3    /* Micrium MicroC/OS */
+#elif BSP_CFG_RTOS_USED == 4    /* Renesas RI600V4 & RI600PX */
 #else
 #endif
 
-#endif  /* End of multiple inclusion prevention macro */
+/***********************************************************************************************************************
+Macro definitions
+***********************************************************************************************************************/
+/* Multiple inclusion prevention macro */
+#ifndef R_RTOS_H
+#define R_RTOS_H
+
+#endif  /* R_RTOS_H */
 

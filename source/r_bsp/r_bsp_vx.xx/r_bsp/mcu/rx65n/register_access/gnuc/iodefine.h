@@ -51,10 +51,11 @@
 *            : V1.5B  (2017-03-22)  [Hardware Manual Revision : 1.00]
 *            : V2.0   (2017-04-21)  [Hardware Manual Revision : 2.00]
 *            : V2.0A  (2017-10-23)  [Hardware Manual Revision : 2.00]
+*            : V2.2   (2018-10-26)  [Hardware Manual Revision : 2.20]
 *
 * NOTE       : THIS IS A TYPICAL EXAMPLE.                                      
 *                                                                              
-*  Copyright(c) 2016 Renesas Electronics Corporation.                          
+*  Copyright(c) 2018 Renesas Electronics Corporation.                          
 *
 *********************************************************************************/
 /********************************************************************************/
@@ -717,10 +718,10 @@
 #define	IS_RSPI2_SPII2		IS20
 #define	IS_RSPI2_SPEI2		IS21
 #define	IS_EDMAC0_EINT0		IS4
-#define IS_GLCDC_VPOS   	IS8
-#define IS_GLCDC_GR1UF  	IS9
-#define IS_GLCDC_GR2UF  	IS10
-#define IS_DRW2D_DRWIRQ  	IS11
+#define	IS_GLCDC_VPOS		IS8
+#define	IS_GLCDC_GR1UF		IS9
+#define	IS_GLCDC_GR2UF		IS10
+#define	IS_DRW2D_DRWIRQ		IS11
 
 #define	EN_CAN0_ERS0		EN0
 #define	EN_CAN1_ERS1		EN1
@@ -789,10 +790,10 @@
 #define	EN_RSPI2_SPII2		EN20
 #define	EN_RSPI2_SPEI2		EN21
 #define	EN_EDMAC0_EINT0		EN4
-#define EN_GLCDC_VPOS   	EN8
-#define EN_GLCDC_GR1UF  	EN9
-#define EN_GLCDC_GR2UF  	EN10
-#define EN_DRW2D_DRWIRQ  	EN11
+#define	EN_GLCDC_VPOS		EN8
+#define	EN_GLCDC_GR1UF		EN9
+#define	EN_GLCDC_GR2UF		EN10
+#define	EN_DRW2D_DRWIRQ		EN11
 
 #define	CLR_CAN0_ERS0		CLR0
 #define	CLR_CAN1_ERS1		CLR1
@@ -864,10 +865,10 @@
 #define	GEN_RSPI2_SPII2		GENAL0
 #define	GEN_RSPI2_SPEI2		GENAL0
 #define	GEN_EDMAC0_EINT0	GENAL1
-#define GEN_GLCDC_VPOS  	GENAL1
-#define GEN_GLCDC_GR1UF 	GENAL1
-#define GEN_GLCDC_GR2UF 	GENAL1
-#define GEN_DRW2D_DRWIRQ 	GENAL1
+#define	GEN_GLCDC_VPOS		GENAL1
+#define	GEN_GLCDC_GR1UF		GENAL1
+#define	GEN_GLCDC_GR2UF		GENAL1
+#define	GEN_DRW2D_DRWIRQ	GENAL1
 
 #define	GRP_CAN0_ERS0		GRPBE0
 #define	GRP_CAN1_ERS1		GRPBE0
@@ -936,10 +937,10 @@
 #define	GRP_RSPI2_SPII2		GRPAL0
 #define	GRP_RSPI2_SPEI2		GRPAL0
 #define	GRP_EDMAC0_EINT0	GRPAL1
-#define GRP_GLCDC_VPOS  	GRPAL1
-#define GRP_GLCDC_GR1UF 	GRPAL1
-#define GRP_GLCDC_GR2UF 	GRPAL1
-#define GRP_DRW2D_DRWIRQ 	GRPAL1
+#define	GRP_GLCDC_VPOS		GRPAL1
+#define	GRP_GLCDC_GR1UF		GRPAL1
+#define	GRP_GLCDC_GR2UF		GRPAL1
+#define	GRP_DRW2D_DRWIRQ	GRPAL1
 
 #define	GCR_CAN0_ERS0		GCRBE0
 #define	GCR_CAN1_ERS1		GCRBE0
@@ -1021,6 +1022,7 @@
 #define	MTU6	(*(volatile struct st_mtu6     *)0xC1A00)
 #define	MTU7	(*(volatile struct st_mtu7     *)0xC1A00)
 #define	MTU8	(*(volatile struct st_mtu8     *)0xC1298)
+#define	OFSM	(*(volatile struct st_ofsm     *)0xFE7F5D00)
 #define	PDC		(*(volatile struct st_pdc      *)0xA0500)
 #define	POE3	(*(volatile struct st_poe      *)0x8C4C0)
 #define	PORT0	(*(volatile struct st_port0    *)0x8C000)
@@ -3727,13 +3729,13 @@ typedef struct st_crc {
 	} BIT;
 	} CRCCR;
 	char           wk0[3];
-	union {	
+	union {
 		unsigned long LONG;
-		unsigned char BYTE;	
+		unsigned char BYTE;
 	} CRCDIR;
 	union {
-		unsigned long LONG;	
-		unsigned short WORD;	
+		unsigned long LONG;
+		unsigned short WORD;
 		unsigned char BYTE;
 	} CRCDOR;
 } st_crc_t;
@@ -16043,6 +16045,188 @@ typedef struct st_mtu8 {
 	unsigned long  TGRD;
 } st_mtu8_t;
 
+typedef struct st_ofsm {
+	union {
+		unsigned long LONG;
+		struct {
+			
+#ifdef __RX_LITTLE_ENDIAN__
+			unsigned long MDE : 3;
+			unsigned long  : 29;
+#else
+			unsigned long  : 29;
+			unsigned long MDE : 3;
+#endif
+	} BIT;
+	} MDE;
+	union {
+		unsigned long LONG;
+		struct {
+			
+#ifdef __RX_LITTLE_ENDIAN__
+			unsigned long  : 1;
+			unsigned long IWDTSTRT : 1;
+			unsigned long IWDTTOPS : 2;
+			unsigned long IWDTTCKS : 4;
+			unsigned long IWDTRPES : 2;
+			unsigned long IWDTRPSS : 2;
+			unsigned long IWDTRSTIRQS : 1;
+			unsigned long  : 1;
+			unsigned long IWDTSLCSTP : 1;
+			unsigned long  : 2;
+			unsigned long WDTSTRT : 1;
+			unsigned long WDTTOPS : 2;
+			unsigned long WDTTCKS : 4;
+			unsigned long WDTRPES : 2;
+			unsigned long WDTRPSS : 2;
+			unsigned long WDTRSTIRQS : 1;
+			unsigned long  : 3;
+#else
+			unsigned long  : 3;
+			unsigned long WDTRSTIRQS : 1;
+			unsigned long WDTRPSS : 2;
+			unsigned long WDTRPES : 2;
+			unsigned long WDTTCKS : 4;
+			unsigned long WDTTOPS : 2;
+			unsigned long WDTSTRT : 1;
+			unsigned long  : 2;
+			unsigned long IWDTSLCSTP : 1;
+			unsigned long  : 1;
+			unsigned long IWDTRSTIRQS : 1;
+			unsigned long IWDTRPSS : 2;
+			unsigned long IWDTRPES : 2;
+			unsigned long IWDTTCKS : 4;
+			unsigned long IWDTTOPS : 2;
+			unsigned long IWDTSTRT : 1;
+			unsigned long  : 1;
+#endif
+	} BIT;
+	} OFS0;
+	union {
+		unsigned long LONG;
+		struct {
+			
+#ifdef __RX_LITTLE_ENDIAN__
+			unsigned long VDSEL : 2;
+			unsigned long LVDAS : 1;
+			unsigned long  : 5;
+			unsigned long HOCOEN : 1;
+			unsigned long  : 23;
+#else
+			unsigned long  : 23;
+			unsigned long HOCOEN : 1;
+			unsigned long  : 5;
+			unsigned long LVDAS : 1;
+			unsigned long VDSEL : 2;
+#endif
+	} BIT;
+	} OFS1;
+	char           wk0[4];
+	unsigned long  TMINF;
+	char           wk1[12];
+	union {
+		unsigned long LONG;
+		struct {
+			
+#ifdef __RX_LITTLE_ENDIAN__
+			unsigned long BANKSWP : 3;
+			unsigned long  : 29;
+#else
+			unsigned long  : 29;
+			unsigned long BANKSWP : 3;
+#endif
+	} BIT;
+	} BANKSEL;
+	char           wk2[28];
+	union {
+		unsigned long LONG;
+		struct {
+			
+#ifdef __RX_LITTLE_ENDIAN__
+			unsigned long  : 27;
+			unsigned long SPE : 1;
+			unsigned long  : 4;
+#else
+			unsigned long  : 4;
+			unsigned long SPE : 1;
+			unsigned long  : 27;
+#endif
+	} BIT;
+	} SPCC;
+	char           wk3[4];
+	union {
+		unsigned long LONG;
+		struct {
+			
+#ifdef __RX_LITTLE_ENDIAN__
+			unsigned long  : 24;
+			unsigned long TMEF : 3;
+			unsigned long  : 5;
+#else
+			unsigned long  : 5;
+			unsigned long TMEF : 3;
+			unsigned long  : 24;
+#endif
+	} BIT;
+	} TMEF;
+	char           wk4[4];
+	union {
+		unsigned char BYTE;
+		struct {
+			unsigned long ID4:8;
+			unsigned long ID3:8;
+			unsigned long ID2:8;
+			unsigned long ID1:8;
+			unsigned long ID8:8;
+			unsigned long ID7:8;
+			unsigned long ID6:8;
+			unsigned long ID5:8;
+			unsigned long ID12:8;
+			unsigned long ID11:8;
+			unsigned long ID10:8;
+			unsigned long ID9:8;
+			unsigned long ID16:8;
+			unsigned long ID15:8;
+			unsigned long ID14:8;
+			unsigned long ID13:8;
+		} BIT;
+	} OSIS;
+	char           wk5[4];
+	union {
+		unsigned long LONG;
+		struct {
+			
+#ifdef __RX_LITTLE_ENDIAN__
+			unsigned long FAWS : 12;
+			unsigned long  : 3;
+			unsigned long FSPR : 1;
+			unsigned long FAWE : 12;
+			unsigned long  : 3;
+			unsigned long BTFLG : 1;
+#else
+			unsigned long BTFLG : 1;
+			unsigned long  : 3;
+			unsigned long FAWE : 12;
+			unsigned long FSPR : 1;
+			unsigned long  : 3;
+			unsigned long FAWS : 12;
+#endif
+	} BIT;
+	} FAW;
+	char           wk6[8];
+	union {
+		unsigned long LONG;
+		struct {
+			
+#ifdef __RX_LITTLE_ENDIAN__
+			unsigned long CODE : 32;
+#else
+			unsigned long CODE : 32;
+#endif
+	} BIT;
+	} ROMCODE;
+} st_ofsm_t;
+
 typedef struct st_pdc {
 	union {
 		unsigned long LONG;
@@ -26764,97 +26948,97 @@ typedef struct st_smci10 {
 	union {
 		unsigned char BYTE;
 		struct {
-		
+			
 #ifdef __RX_LITTLE_ENDIAN__
-			unsigned char CKS:2;
-			unsigned char BCP:2;
-			unsigned char PM:1;
-			unsigned char PE:1;
-			unsigned char BLK:1;
-			unsigned char GM:1;
+			unsigned char CKS : 2;
+			unsigned char BCP : 2;
+			unsigned char PM : 1;
+			unsigned char PE : 1;
+			unsigned char BLK : 1;
+			unsigned char GM : 1;
 #else
-			unsigned char GM:1;
-			unsigned char BLK:1;
-			unsigned char PE:1;
-			unsigned char PM:1;
-			unsigned char BCP:2;
-			unsigned char CKS:2;
+			unsigned char GM : 1;
+			unsigned char BLK : 1;
+			unsigned char PE : 1;
+			unsigned char PM : 1;
+			unsigned char BCP : 2;
+			unsigned char CKS : 2;
 #endif
-		} BIT;
+	} BIT;
 	} SMR;
 	char           wk0[1];
 	union {
 		unsigned char BYTE;
 		struct {
-		
+			
 #ifdef __RX_LITTLE_ENDIAN__
-			unsigned char CKE:2;
-			unsigned char TEIE:1;
-			unsigned char MPIE:1;
-			unsigned char RE:1;
-			unsigned char TE:1;
-			unsigned char RIE:1;
-			unsigned char TIE:1;
+			unsigned char CKE : 2;
+			unsigned char TEIE : 1;
+			unsigned char MPIE : 1;
+			unsigned char RE : 1;
+			unsigned char TE : 1;
+			unsigned char RIE : 1;
+			unsigned char TIE : 1;
 #else
-			unsigned char TIE:1;
-			unsigned char RIE:1;
-			unsigned char TE:1;
-			unsigned char RE:1;
-			unsigned char MPIE:1;
-			unsigned char TEIE:1;
-			unsigned char CKE:2;
+			unsigned char TIE : 1;
+			unsigned char RIE : 1;
+			unsigned char TE : 1;
+			unsigned char RE : 1;
+			unsigned char MPIE : 1;
+			unsigned char TEIE : 1;
+			unsigned char CKE : 2;
 #endif
-		} BIT;
+	} BIT;
 	} SCR;
 	char           wk1[1];
 	union {
 		unsigned char BYTE;
 		struct {
-		
+			
 #ifdef __RX_LITTLE_ENDIAN__
-			unsigned char MPBT:1;
-			unsigned char MPB:1;
-			unsigned char TEND:1;
-			unsigned char PER:1;
-			unsigned char ERS:1;
-			unsigned char ORER:1;
-			unsigned char RDRF:1;
-			unsigned char TDRE:1;
+			unsigned char MPBT : 1;
+			unsigned char MPB : 1;
+			unsigned char TEND : 1;
+			unsigned char PER : 1;
+			unsigned char ERS : 1;
+			unsigned char ORER : 1;
+			unsigned char RDRF : 1;
+			unsigned char TDRE : 1;
 #else
-			unsigned char TDRE:1;
-			unsigned char RDRF:1;
-			unsigned char ORER:1;
-			unsigned char ERS:1;
-			unsigned char PER:1;
-			unsigned char TEND:1;
-			unsigned char MPB:1;
-			unsigned char MPBT:1;
+			unsigned char TDRE : 1;
+			unsigned char RDRF : 1;
+			unsigned char ORER : 1;
+			unsigned char ERS : 1;
+			unsigned char PER : 1;
+			unsigned char TEND : 1;
+			unsigned char MPB : 1;
+			unsigned char MPBT : 1;
 #endif
-		} BIT;
+	} BIT;
 	} SSR;
 	char           wk2[1];
 	union {
 		unsigned char BYTE;
 		struct {
-		
+			
 #ifdef __RX_LITTLE_ENDIAN__
-			unsigned char SMIF:1;
-			unsigned char :1;
-			unsigned char SINV:1;
-			unsigned char SDIR:1;
-			unsigned char CHR1:1;
-			unsigned char :2;
-			unsigned char BCP2:1;
+			unsigned char SMIF : 1;
+			unsigned char  : 1;
+			unsigned char SINV : 1;
+			unsigned char SDIR : 1;
+			unsigned char CHR1 : 1;
+			unsigned char  : 2;
+			unsigned char BCP2 : 1;
 #else
-			unsigned char BCP2:1;
-			unsigned char :2;
-			unsigned char CHR1:1;
-			unsigned char SDIR:1;
-			unsigned char SINV:1;
-			unsigned char :1;
-			unsigned char SMIF:1;
+			unsigned char BCP2 : 1;
+			unsigned char  : 2;
+			unsigned char CHR1 : 1;
+			unsigned char SDIR : 1;
+			unsigned char SINV : 1;
+			unsigned char  : 1;
+			unsigned char SMIF : 1;
 #endif
-		} BIT;
+	} BIT;
 	} SCMR;
 } st_smci10_t;
 

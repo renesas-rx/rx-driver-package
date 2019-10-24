@@ -14,7 +14,7 @@
 * following link:
 * http://www.renesas.com/disclaimer 
 *
-* Copyright (C) 2013-2017 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) 2013-2019 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * File Name    : r_sci_rx_if.h
@@ -36,14 +36,19 @@
 *                               when FIFO(async) enabled.
 *                              Fixed a bug that the interrupt priority level can be changed only in async mode.
 *           31.10.2017 2.01    Added the demo for RX65N, RX65N-2M.
+*           28.09.2018 2.10    Added support RX66T
+*                              Added SCI_CMD_COMPARE_RECEIVED_DATA command
+*                              Added SCI_EVT_RX_CHAR_MATCH for receiving data match event
+*                              Fixed section layout follow GSCE 5.0
+*           16.11.2018 2.11    Added XML document number
+*           01.02.2019 2.20    Added support RX72T, RX65N-64pin
+*           20.05.2019 3.00    Added support for GNUC and ICCRX.
+*           28.06.2019 3.10    Added support RX23W
+*           15.08.2019 3.20    Added support RX72M
 ***********************************************************************************************************************/
 
 #ifndef SCI_IF_H
 #define SCI_IF_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /***********************************************************************************************************************
 Includes   <System Includes> , "Project Includes"
@@ -51,14 +56,29 @@ Includes   <System Includes> , "Project Includes"
 #include "platform.h"
 #include "r_sci_rx_config.h"  /* SCI config definitions */
 
-
 /***********************************************************************************************************************
 Macro definitions
 ***********************************************************************************************************************/
-/* Version Number of API. */
-#define SCI_VERSION_MAJOR  (2)
-#define SCI_VERSION_MINOR  (01)
 
+#if R_BSP_VERSION_MAJOR < 5
+    #error "This module must use BSP module of Rev.5.00 or higher. Please use the BSP module of Rev.5.00 or higher."
+#endif
+
+/* Version Number of API. */
+#define SCI_VERSION_MAJOR  (3)
+#define SCI_VERSION_MINOR  (20)
+
+#define SCI_CLK_INT         (0x00U) /* use internal clock for baud generation */
+#define SCI_CLK_EXT8X       (0x03U) /* use external clock 8x baud rate (ASYNC) */
+#define SCI_CLK_EXT16X      (0x02U) /* use external clock 16x baud rate (ASYNC) */
+#define SCI_DATA_7BIT       (0x40U)
+#define SCI_DATA_8BIT       (0x00U)
+#define SCI_PARITY_ON       (0x20U)
+#define SCI_PARITY_OFF      (0x00U)
+#define SCI_ODD_PARITY      (0x10U)
+#define SCI_EVEN_PARITY     (0x00U)
+#define SCI_STOPBITS_2      (0x08U)
+#define SCI_STOPBITS_1      (0x00U)
 
 /*****************************************************************************
 Typedef definitions
@@ -134,18 +154,6 @@ typedef enum e_sci_spi_mode
                                Mode 3: 11 CPOL=1 resting hi, CPHA=1 trailing edge/rising */
 } sci_spi_mode_t;
 
-#define SCI_CLK_INT         (0x00U) /* use internal clock for baud generation */
-#define SCI_CLK_EXT8X       (0x03U) /* use external clock 8x baud rate (ASYNC) */
-#define SCI_CLK_EXT16X      (0x02U) /* use external clock 16x baud rate (ASYNC) */
-#define SCI_DATA_7BIT       (0x40U)
-#define SCI_DATA_8BIT       (0x00U)
-#define SCI_PARITY_ON       (0x20U)
-#define SCI_PARITY_OFF      (0x00U)
-#define SCI_ODD_PARITY      (0x10U)
-#define SCI_EVEN_PARITY     (0x00U)
-#define SCI_STOPBITS_2      (0x08U)
-#define SCI_STOPBITS_1      (0x00U)
-
 
 /* Open() p_cfg structure when mode=SCI_MODE_ASYNC */
 typedef struct st_sci_uart
@@ -185,6 +193,7 @@ typedef enum e_sci_cb_evt   // callback function events
     /* Async Events */
     SCI_EVT_TEI,            // TEI interrupt occurred; transmitter is idle
     SCI_EVT_RX_CHAR,        // received a character; already placed in queue
+    SCI_EVT_RX_CHAR_MATCH,  // received a matched character; already placed in queue
     SCI_EVT_RXBUF_OVFL,     // rx queue is full; can't save anymore data
     SCI_EVT_FRAMING_ERR,    // receiver hardware framing error
     SCI_EVT_PARITY_ERR,     // receiver hardware parity error
@@ -213,11 +222,11 @@ typedef enum e_sci_cmd
 {
     /* All modes */
     SCI_CMD_CHANGE_BAUD,              /* change baud/bit rate */
-#if (SCI_CFG_CH10_FIFO_INCLUDED) || (SCI_CFG_CH11_FIFO_INCLUDED)
+#if ((SCI_CFG_CH7_FIFO_INCLUDED) || (SCI_CFG_CH8_FIFO_INCLUDED) || (SCI_CFG_CH9_FIFO_INCLUDED)  || (SCI_CFG_CH10_FIFO_INCLUDED) || (SCI_CFG_CH11_FIFO_INCLUDED))
     SCI_CMD_CHANGE_TX_FIFO_THRESH,    /* change TX FIFO threshold */
     SCI_CMD_CHANGE_RX_FIFO_THRESH,    /* change RX FIFO threshold */
 #endif
-#if defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N)
+#if defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX66T) || defined(BSP_MCU_RX72T) || defined(BSP_MCU_RX72M)
     SCI_CMD_SET_RXI_PRIORITY,         /* change RXI priority level */
     SCI_CMD_SET_TXI_PRIORITY,         /* change TXI priority level */
 #endif
@@ -234,6 +243,7 @@ typedef enum e_sci_cmd
     SCI_CMD_RX_Q_FLUSH,               /* flush receive queue */
     SCI_CMD_TX_Q_BYTES_FREE,          /* get count of unused transmit queue bytes */
     SCI_CMD_RX_Q_BYTES_AVAIL_TO_READ, /* get num bytes ready for reading */
+    SCI_CMD_COMPARE_RECEIVED_DATA,    /* Compare received data with comparison data */
 
     /* Async/Sync commands */
     SCI_CMD_EN_CTS_IN,                /* enable CTS input (default RTS output) */
@@ -295,9 +305,5 @@ sci_err_t R_SCI_Close(sci_hdl_t const hdl);
 uint32_t  R_SCI_GetVersion(void);
 
                                     
-#ifdef __cplusplus
-}
-#endif
-
 #endif /* SCI_IF_H */
 

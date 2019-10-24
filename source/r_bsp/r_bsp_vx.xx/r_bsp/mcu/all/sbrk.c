@@ -17,13 +17,12 @@
 * Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
-* File Name    : sgsp_brk.c
-* Device(s)    : RX
+* File Name    : sbrk.c
 * Description  : Configures the MCU heap memory.  The size of the heap is defined by the macro HEAPSIZE below.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * History : DD.MM.YYYY Version  Description
-*         : xx.xx.xxxx 3.00     Merged processing of all devices.
+*         : 28.02.2019 3.00     Merged processing of all devices.
 *                               Added support for GNUC and ICCRX.
 *                               Fixed coding style.
 ***********************************************************************************************************************/
@@ -31,16 +30,13 @@
 /***********************************************************************************************************************
 Includes   <System Includes> , "Project Includes"
 ***********************************************************************************************************************/
-#include "r_bsp_config.h"
+#include "sbrk.h"
 
 /* Only use this file if heap is enabled in r_bsp_config. */
-#if (BSP_CFG_HEAP_BYTES > 0)
-
-/* Used for getting BSP_CFG_HEAP_BYTES macro. */
-#include "platform.h"
+#if BSP_CFG_HEAP_BYTES > 0
 
 /* When using the user startup program, disable the following code. */
-#if (BSP_CFG_STARTUP_DISABLE == 0)
+#if BSP_CFG_STARTUP_DISABLE == 0
 
 #if defined(__CCRX__) || defined(__GNUC__)
 
@@ -59,25 +55,8 @@ Exported global variables (to be accessed by other files)
 /***********************************************************************************************************************
 Private global variables and functions
 ***********************************************************************************************************************/
-/* Memory allocation function prototype declaration (CC-RX and GNURX+NEWLIB) */
-int8_t  *sbrk(size_t size);
-#if defined(__GNUC__)
-/* Memory address function prototype declaration (GNURX+OPTLIB only) */
-int8_t  *_top_of_heap(void);
-#endif /* defined(__GNUC__) */
-
-/*const size_t _sbrk_size=      // Specifies the minimum unit of */
-/* the defined heap area */
-extern int8_t *_s1ptr;
-
-union HEAP_TYPE
-{
-    int32_t  dummy;             /* Dummy for 4-byte boundary */
-    int8_t heap[BSP_CFG_HEAP_BYTES];    /* Declaration of the area managed by sbrk*/
-};
-
 /* Declare memory heap area */
-static union HEAP_TYPE gs_heap_area;
+static u_heap_type_t gs_heap_area;
 
 /* End address allocated by sbrk (CC-RX and GNURX+NEWLIB) */
 static int8_t *gsp_brk=(int8_t *)&gs_heap_area;

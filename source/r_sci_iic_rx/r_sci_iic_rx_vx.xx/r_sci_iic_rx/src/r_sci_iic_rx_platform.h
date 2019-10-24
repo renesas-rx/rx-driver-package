@@ -32,6 +32,10 @@
  *         : 01.10.2016 2.00     RX65N support added.
  *         : 16.12.2016 2.20     Changed include path becuase changed file structure.
  *         :                     RX24U support added.
+ *         : 22.10.2017 2.30     RX66T support added.
+ *         : 21.09.2018 2.40     RX72T support added.
+ *         : 20.06.2019 2.42     RX23W support added.
+ *         : 30.07.2019 2.43     RX72M support added.
  **********************************************************************************************************************/
 /* Guards against multiple inclusion */
 #ifndef SCI_IIC_PLATFORM_H
@@ -54,6 +58,8 @@
         #include "./targets/rx231/r_sci_iic_rx231_private.h"
     #elif defined(BSP_MCU_RX23T)
         #include "./targets/rx23t/r_sci_iic_rx23t_private.h"
+    #elif defined(BSP_MCU_RX23W)
+        #include "./targets/rx23w/r_sci_iic_rx23w_private.h"
     #elif defined(BSP_MCU_RX24T)
         #include "./targets/rx24t/r_sci_iic_rx24t_private.h"
     #elif defined(BSP_MCU_RX24U)
@@ -64,8 +70,14 @@
         #include "./targets/rx64m/r_sci_iic_rx64m_private.h"
     #elif defined(BSP_MCU_RX65N)
         #include "./targets/rx65n/r_sci_iic_rx65n_private.h"
+    #elif defined(BSP_MCU_RX66T)
+        #include "./targets/rx66t/r_sci_iic_rx66t_private.h"
     #elif defined(BSP_MCU_RX71M)
         #include "./targets/rx71m/r_sci_iic_rx71m_private.h"
+    #elif defined(BSP_MCU_RX72T)
+        #include "./targets/rx72t/r_sci_iic_rx72t_private.h"
+    #elif defined(BSP_MCU_RX72M)
+        #include "./targets/rx72m/r_sci_iic_rx72m_private.h"
     #else
         #error "This MCU is not supported by the current r_sci_iic_rx module."
     #endif

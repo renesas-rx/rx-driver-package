@@ -14,7 +14,7 @@
 * following link:
 * http://www.renesas.com/disclaimer 
 *
-* Copyright (C) 2013-2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.
 ******************************************************************************/
 /*****************************************************************************
 * File Name    : r_byteq.c
@@ -25,8 +25,9 @@
 *         : 11.21.2014 1.20     Removed dependency to BSP
 *         : 30.09.2015 1.50     Added dependency to BSP
 *         : 29.01.2016 1.60     Fixed the initial setting process in the R_LONGQ_Open function.
-*         :                     Fixed a program according to the Renesas coding rules.
-*         : xx.xx.xxxx x.xx     Added support for GNUC and ICCRX.
+*                               Fixed a program according to the Renesas coding rules.
+*         : 01.06.2018 1.70     Added the comment to while statement.
+*         : 07.02.2019 1.80     Deleted the inline expansion of the R_BYTEQ_GetVersion function.
 ******************************************************************************/
 
 /*****************************************************************************
@@ -57,7 +58,7 @@ Private global variables and functions
 
 /* QUEUE CONTROL BLOCK ALLOCATIONS */
 
-#if BYTEQ_CFG_USE_HEAP_FOR_CTRL_BLKS == 0
+#if (BYTEQ_CFG_USE_HEAP_FOR_CTRL_BLKS == 0)
 static byteq_ctrl_t     g_qcb[BYTEQ_CFG_MAX_CTRL_BLKS];
 #endif
 
@@ -91,7 +92,7 @@ byteq_err_t R_BYTEQ_Open(uint8_t * const        p_buf,
                          byteq_hdl_t * const    p_hdl)
 {
     byteq_ctrl_t    *p_qcb = 0;
-#if BYTEQ_CFG_USE_HEAP_FOR_CTRL_BLKS == 0
+#if (BYTEQ_CFG_USE_HEAP_FOR_CTRL_BLKS == 0)
     uint32_t        i;
     static bool     qcb_init = false;
 #endif
@@ -127,6 +128,7 @@ byteq_err_t R_BYTEQ_Open(uint8_t * const        p_buf,
     /* if first Open call, mark all QCBs as being available */
     if (false == qcb_init)
     {
+        /* WAIT_LOOP */
         for (i=0; i < BYTEQ_CFG_MAX_CTRL_BLKS; i++)
         {
             g_qcb[i].buffer = NULL;
@@ -135,6 +137,7 @@ byteq_err_t R_BYTEQ_Open(uint8_t * const        p_buf,
     }
 
     /* locate first available QCB */
+    /* WAIT_LOOP */
     for (i=0; i < BYTEQ_CFG_MAX_CTRL_BLKS; i++)
     {
         if (NULL == g_qcb[i].buffer)
@@ -411,7 +414,6 @@ byteq_err_t R_BYTEQ_Close(byteq_hdl_t const hdl)
 * Arguments    : none
 * Return Value : version number
 ******************************************************************************/
-R_BSP_PRAGMA_INLINE(R_BYTEQ_GetVersion)
 uint32_t  R_BYTEQ_GetVersion(void)
 {
 

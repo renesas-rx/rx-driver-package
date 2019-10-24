@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_bsp
-VERSION = 		v3.92
+VERSION = 		v5.20
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules
@@ -13,4 +13,4 @@ $(TARGET_FOLDER)/$(MODULE_NAME)_$(VERSION).xml:
 	cp ./$(MODULE_NAME)_vx.xx.xml $(TARGET_FOLDER)/$(MODULE_NAME)_$(VERSION).xml
 
 clean:
-	rm -rf $(TARGET_FOLDER)/$(MODULE_NAME)_$(VERSION)*.*
+	rm -rf $(TARGET_FOLDER)/$(MODULE_NAME)*.*

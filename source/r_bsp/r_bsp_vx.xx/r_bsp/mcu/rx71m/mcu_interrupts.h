@@ -17,7 +17,7 @@
 * Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
-* File Name    : mcu_interrupts.c
+* File Name    : mcu_interrupts.h
 * Description  : This module is the control of the interrupt enable.
 ***********************************************************************************************************************/
 /**********************************************************************************************************************
@@ -29,20 +29,41 @@
 *                               - From BSP_INT_SRC_BL0_CAC_MENDF to BSP_INT_SRC_BL0_CAC_MENDI.
 *                               - From BSP_INT_SRC_BL0_CAC_OVFF to BSP_INT_SRC_BL0_CAC_OVFI.
 *                               - From BSP_INT_SRC_BL0_DOC_DOPCF to BSP_INT_SRC_BL0_DOC_DOPCI.
-*         : xx.xx.xxxx 2.00     Added the following prototype declaration.
-*                                - bsp_interrupt_enable_disable
-*                                - bsp_interrupt_group_enable_disable
-*                               Deleted the following prototype declarations. 
-*                               (The following prototype declarations moved to the common file (interrupts.h).)
-*                                - bsp_interrupt_open
-*                                - R_BSP_InterruptWrite
-*                                - R_BSP_InterruptRead
-*                                - R_BSP_InterruptControl
+*         : 28.02.2019 2.00     Added the following prototype declaration.
+*                               - bsp_interrupt_enable_disable
+*                               Deleted the following prototype declarations.
+*                               (The following prototype declarations moved to the common file (r_bsp_interrupts.h).)
+*                               - bsp_interrupt_open
+*                               - R_BSP_InterruptWrite
+*                               - R_BSP_InterruptRead
+*                               - R_BSP_InterruptControl
+*                               Deleted the following enumeration constant.
+*                               - BSP_INT_SRC_ECCRAM
+*                               Added the following enumeration constant.
+*                               - BSP_INT_SRC_ECCRAM_1BIT
+*                               - BSP_INT_SRC_ECCRAM_2BIT
+*                               - BSP_INT_SRC_GR_INT_TOP
+*                               - BSP_INT_SRC_GR_INT_BE0_TOP
+*                               - BSP_INT_SRC_GR_INT_BL0_TOP
+*                               - BSP_INT_SRC_GR_INT_BL1_TOP
+*                               - BSP_INT_SRC_GR_INT_BL2_TOP
+*                               - BSP_INT_SRC_GR_INT_AL0_TOP
+*                               - BSP_INT_SRC_GR_INT_AL1_TOP
+*                               - BSP_INT_SRC_GR_INT_END
+*                               - BSP_INT_SRC_BE0_CAN0_ERS0
+*                               - BSP_INT_SRC_BE0_CAN1_ERS1
+*                               - BSP_INT_SRC_BE0_CAN2_ERS2
+*         : 08.04.2019 2.01     Added the following enumeration constant.
+*                               - BSP_INT_SRC_GR_INT_IE0_TOP
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 Macro definitions
 ***********************************************************************************************************************/
+/* Multiple inclusion prevention macro */
+#ifndef MCU_INTERRUPTS_H
+#define MCU_INTERRUPTS_H
+
 
 /***********************************************************************************************************************
 Typedef definitions
@@ -51,32 +72,43 @@ Typedef definitions
 typedef enum
 {
     BSP_INT_SUCCESS = 0,
-    BSP_INT_ERR_NO_REGISTERED_CALLBACK,     //There is not a registered callback for this interrupt source
-    BSP_INT_ERR_INVALID_ARG,                //Illegal argument input
-    BSP_INT_ERR_UNSUPPORTED,                //Operation is not supported by this API
-    BSP_INT_ERR_GROUP_STILL_ENABLED         //Not all group interrupts were disabled so group interrupt was not disabled
+    BSP_INT_ERR_NO_REGISTERED_CALLBACK,     /* There is not a registered callback for this interrupt source */
+    BSP_INT_ERR_INVALID_ARG,                /* Illegal argument input */
+    BSP_INT_ERR_UNSUPPORTED,                /* Operation is not supported by this API */
+    BSP_INT_ERR_GROUP_STILL_ENABLED         /* Not all group interrupts were disabled so group interrupt was not disabled */
 } bsp_int_err_t;
 
 /* Available interrupts to register a callback for. */
 typedef enum
 {
-    BSP_INT_SRC_EXC_SUPERVISOR_INSTR = 0, //Occurs when privileged instruction is executed in User Mode
-    BSP_INT_SRC_EXC_UNDEFINED_INSTR,      //Occurs when MCU encounters an unknown instruction
-    BSP_INT_SRC_EXC_NMI_PIN,              //NMI Pin interrupt
-    BSP_INT_SRC_EXC_FPU,                  //FPU exception
-    BSP_INT_SRC_EXC_ACCESS,               //Access exception
-    BSP_INT_SRC_OSC_STOP_DETECT,          //Oscillation stop is detected
-    BSP_INT_SRC_WDT_ERROR,                //WDT underflow/refresh error has occurred
-    BSP_INT_SRC_IWDT_ERROR,               //IWDT underflow/refresh error has occurred
-    BSP_INT_SRC_LVD1,                     //Voltage monitoring 1 interrupt
-    BSP_INT_SRC_LVD2,                     //Voltage monitoring 2 interrupt
-    BSP_INT_SRC_UNDEFINED_INTERRUPT,      //Interrupt has triggered for a vector that user did not write a handler for
-    BSP_INT_SRC_BUS_ERROR,                //Bus error: illegal address access or timeout
-    BSP_INT_SRC_ECCRAM,                   //ECCRAM error interrupt
+    BSP_INT_SRC_EXC_SUPERVISOR_INSTR = 0, /* Occurs when privileged instruction is executed in User Mode */
+    BSP_INT_SRC_EXC_UNDEFINED_INSTR,      /* Occurs when MCU encounters an unknown instruction */
+    BSP_INT_SRC_EXC_NMI_PIN,              /* NMI Pin interrupt */
+    BSP_INT_SRC_EXC_FPU,                  /* FPU exception */
+    BSP_INT_SRC_EXC_ACCESS,               /* Access exception */
+    BSP_INT_SRC_OSC_STOP_DETECT,          /* Oscillation stop is detected */
+    BSP_INT_SRC_WDT_ERROR,                /* WDT underflow/refresh error has occurred */
+    BSP_INT_SRC_IWDT_ERROR,               /* IWDT underflow/refresh error has occurred */
+    BSP_INT_SRC_LVD1,                     /* Voltage monitoring 1 interrupt */
+    BSP_INT_SRC_LVD2,                     /* Voltage monitoring 2 interrupt */
+    BSP_INT_SRC_UNDEFINED_INTERRUPT,      /* Interrupt has triggered for a vector that user did not write a handler. */
+    BSP_INT_SRC_BUS_ERROR,                /* Bus error: illegal address access or timeout */
+    BSP_INT_SRC_ECCRAM_1BIT,              /* ECCRAM 1-bit error interrupt */
+    BSP_INT_SRC_ECCRAM_2BIT,              /* ECCRAM 2-bit error interrupt */
 
-    /* BE0 Group Interrupts are all CAN and therefore will be taken care of by the CAN module. */
+    BSP_INT_SRC_GR_INT_TOP,
+
+    /* IE0 Group Interrupts */
+    BSP_INT_SRC_GR_INT_IE0_TOP,
+
+    /* BE0 Group Interrupts */
+    BSP_INT_SRC_GR_INT_BE0_TOP,
+    BSP_INT_SRC_BE0_CAN0_ERS0,
+    BSP_INT_SRC_BE0_CAN1_ERS1,
+    BSP_INT_SRC_BE0_CAN2_ERS2,
 
     /* BL0 Group Interrupts. */
+    BSP_INT_SRC_GR_INT_BL0_TOP,
     BSP_INT_SRC_BL0_SCI0_TEI0,
     BSP_INT_SRC_BL0_SCI0_ERI0,
     BSP_INT_SRC_BL0_SCI1_TEI1,
@@ -108,6 +140,7 @@ typedef enum
     BSP_INT_SRC_BL0_PDC_PCERI,
 
     /* BL1 Group Interrupts. */
+    BSP_INT_SRC_GR_INT_BL1_TOP,
     BSP_INT_SRC_BL1_SRC_OVF,
     BSP_INT_SRC_BL1_SRC_UDF,
     BSP_INT_SRC_BL1_SRC_CEF,
@@ -130,7 +163,11 @@ typedef enum
     BSP_INT_SRC_BL1_S12AD0_S12CMPI0,
     BSP_INT_SRC_BL1_S12AD1_S12CMPI1,
 
+    /* BL2 Group Interrupts. */
+    BSP_INT_SRC_GR_INT_BL2_TOP,
+
     /* AL0 Group Interrupts. */
+    BSP_INT_SRC_GR_INT_AL0_TOP,
     BSP_INT_SRC_AL0_SCIFA8_TEIF8,
     BSP_INT_SRC_AL0_SCIFA8_ERIF8,
     BSP_INT_SRC_AL0_SCIFA8_BRIF8,
@@ -153,33 +190,35 @@ typedef enum
     BSP_INT_SRC_AL0_RSPI1_SPEI1,
 
     /* AL1 Group Interrupts. */
+    BSP_INT_SRC_GR_INT_AL1_TOP,
     BSP_INT_SRC_AL1_EPTPC_MINT,
     BSP_INT_SRC_AL1_PTPEDMAC_PINT,
     BSP_INT_SRC_AL1_EDMAC0_EINT0,
     BSP_INT_SRC_AL1_EDMAC1_EINT1,
 
-    BSP_INT_SRC_TOTAL_ITEMS               //DO NOT MODIFY! This is used for sizing the interrupt callback array.
+    BSP_INT_SRC_GR_INT_END,
+    BSP_INT_SRC_TOTAL_ITEMS               /* DO NOT MODIFY! This is used for sizing the interrupt callback array. */
 } bsp_int_src_t;
 
 /* Available commands for R_BSP_InterruptControl() function. */
 typedef enum
 {
-    BSP_INT_CMD_CALL_CALLBACK = 0,        //Calls registered callback function if one exists
-    BSP_INT_CMD_INTERRUPT_ENABLE,         //Enables a given interrupt (Available for NMI pin, FPU, and Bus Error)
-    BSP_INT_CMD_INTERRUPT_DISABLE,        //Disables a given interrupt (Available for FPU, and Bus Error)
-    BSP_INT_CMD_GROUP_INTERRUPT_ENABLE,   //Enables a group interrupt when a group interrupt source is given. The
-                                          //pdata argument should give the IPL to be used using the bsp_int_ctrl_t
-                                          //type. If a group interrupt is enabled multiple times with different IPL
-                                          //levels it will use the highest given IPL.
-    BSP_INT_CMD_GROUP_INTERRUPT_DISABLE,  //Disables a group interrupt when a group interrupt source is given.
-                                          //This will only disable a group interrupt when all interrupt
-                                          //sources for that group are already disabled.
+    BSP_INT_CMD_CALL_CALLBACK = 0,        /* Calls registered callback function if one exists */
+    BSP_INT_CMD_INTERRUPT_ENABLE,         /* Enables a given interrupt (Available for NMI pin, FPU, and Bus Error) */
+    BSP_INT_CMD_INTERRUPT_DISABLE,        /* Disables a given interrupt (Available for FPU, and Bus Error) */
+    BSP_INT_CMD_GROUP_INTERRUPT_ENABLE,   /* Enables a group interrupt when a group interrupt source is given. The
+                                             pdata argument should give the IPL to be used using the bsp_int_ctrl_t
+                                             type. If a group interrupt is enabled multiple times with different IPL
+                                             levels it will use the highest given IPL. */
+    BSP_INT_CMD_GROUP_INTERRUPT_DISABLE,  /* Disables a group interrupt when a group interrupt source is given.
+                                             This will only disable a group interrupt when all interrupt
+                                             sources for that group are already disabled. */
 } bsp_int_cmd_t;
 
 /* Type to be used for pdata argument in Control function. */
 typedef union
 {
-    uint32_t ipl;                         //Used when enabling an interrupt to set that interrupt's priority level
+    uint32_t ipl;                         /* Used when enabling an interrupt to set that interrupt's priority level */
 } bsp_int_ctrl_t;
 
 /* Easy to use typedef for callback functions. */
@@ -190,7 +229,7 @@ typedef void (*bsp_int_cb_t)(void *);
  */
 typedef struct
 {
-    bsp_int_src_t vector;         //Which vector caused this interrupt
+    bsp_int_src_t vector;         /* Which vector caused this interrupt */
 } bsp_int_cb_args_t;
 
 /***********************************************************************************************************************
@@ -201,4 +240,6 @@ Exported global variables
 Exported global functions (to be accessed by other files)
 ***********************************************************************************************************************/
 bsp_int_err_t bsp_interrupt_enable_disable(bsp_int_src_t vector, bool enable);
-bsp_int_err_t bsp_interrupt_group_enable_disable(bsp_int_src_t vector, bool enable, uint32_t ipl);
+
+#endif /* MCU_INTERRUPTS_H */
+

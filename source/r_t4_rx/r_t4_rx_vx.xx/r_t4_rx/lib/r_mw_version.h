@@ -44,6 +44,6 @@ typedef struct mw_version_tag
 {
     uint32_t complier;
     uint8_t  library[__VER_STIRNG_MAX__];
-}mw_version_t;
+} mw_version_t;
 
 #endif /* _R_MW_VERSION_H_ */

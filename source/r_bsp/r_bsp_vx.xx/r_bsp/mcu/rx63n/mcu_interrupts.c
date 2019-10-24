@@ -24,8 +24,8 @@
 * History : DD.MM.YYYY Version  Description
 *         : 31.05.2013 1.00     First Release
 *         : 27.07.2018 1.01     Added the comment to for statement.
-*         : xx.xx.xxxx 2.00     Deleted the following functions. 
-*                               (The following functions moved to the common file (interrupts.c).)
+*         : 28.02.2019 2.00     Deleted the following functions. 
+*                               (The following functions moved to the common file (r_bsp_interrupts.c).)
 *                               - bsp_interrupt_open
 *                               - R_BSP_InterruptWrite
 *                               - R_BSP_InterruptRead
@@ -74,7 +74,9 @@ Private global variables and functions
 ***********************************************************************************************************************/
 bsp_int_err_t bsp_interrupt_enable_disable (bsp_int_src_t vector, bool enable)
 {
-    uint32_t      temp_fpsw;
+#ifdef __FPU
+    uint32_t      tmp_fpsw;
+#endif
     bsp_int_err_t err = BSP_INT_SUCCESS;
 
     switch (vector)
@@ -105,26 +107,26 @@ bsp_int_err_t bsp_interrupt_enable_disable (bsp_int_src_t vector, bool enable)
                 /* Disable timeout detection enable. */
                 BSC.BEREN.BIT.TOEN = 0;
             }
+            break;
 
-        break;
-
+#ifdef __FPU
         case (BSP_INT_SRC_EXC_FPU):
 
             /* Get current FPSW. */
-            temp_fpsw = (uint32_t)R_BSP_GET_FPSW();
+            tmp_fpsw = (uint32_t)R_BSP_GET_FPSW();
 
             if (true == enable)
             {
                 /* Set the FPU exception flags. */
-                R_BSP_SET_FPSW(temp_fpsw | (uint32_t)FPU_EXCEPTIONS_ENABLE);
+                R_BSP_SET_FPSW(tmp_fpsw | (uint32_t)FPU_EXCEPTIONS_ENABLE);
             }
             else
             {
                 /* Clear only the FPU exception flags. */
-                R_BSP_SET_FPSW(temp_fpsw & (uint32_t)~FPU_EXCEPTIONS_ENABLE);
+                R_BSP_SET_FPSW(tmp_fpsw & (uint32_t)~FPU_EXCEPTIONS_ENABLE);
             }
-
-        break;
+            break;
+#endif
 
         case (BSP_INT_SRC_EXC_NMI_PIN):
 
@@ -138,12 +140,11 @@ bsp_int_err_t bsp_interrupt_enable_disable (bsp_int_src_t vector, bool enable)
                 /* NMI pin interrupts cannot be disabled after being enabled. */
                 err = BSP_INT_ERR_UNSUPPORTED;
             }
-
-        break;
+            break;
 
         default:
             err = BSP_INT_ERR_UNSUPPORTED;
-        break;
+            break;
     }
 
     return err;

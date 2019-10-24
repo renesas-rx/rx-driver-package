@@ -22,12 +22,13 @@
 ***********************************************************************************************************************/
 /**********************************************************************************************************************
 * History : DD.MM.YYYY Version  Description
-*         : xx.xx.xxxx 1.00     First Release
+*         : 28.02.2019 1.00     First Release
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
 Includes   <System Includes> , "Project Includes"
 ***********************************************************************************************************************/
+#include "r_rx_compiler.h"
 #include "r_rx_intrinsic_functions.h"
 
 /***********************************************************************************************************************
@@ -45,7 +46,20 @@ Exported global variables (to be accessed by other files)
 /***********************************************************************************************************************
 Private global variables and functions
 ***********************************************************************************************************************/
-
+R_BSP_ATTRIB_STATIC_INLINE_ASM void bsp_get_bpsw(uint32_t *data);
+R_BSP_ATTRIB_STATIC_INLINE_ASM void bsp_get_bpc(uint32_t *data);
+#ifdef BSP_MCU_EXCEPTION_TABLE
+R_BSP_ATTRIB_STATIC_INLINE_ASM void bsp_get_extb(uint32_t *data);
+#endif /* BSP_MCU_EXCEPTION_TABLE */
+R_BSP_ATTRIB_STATIC_INLINE_ASM void bsp_move_from_acc_hi_long(uint32_t *data);
+R_BSP_ATTRIB_STATIC_INLINE_ASM void bsp_move_from_acc_mi_long(uint32_t *data);
+#ifdef BSP_MCU_DOUBLE_PRECISION_FLOATING_POINT
+#ifdef __DPFPU
+R_BSP_ATTRIB_STATIC_INLINE_ASM void bsp_get_dpsw(uint32_t *data);
+R_BSP_ATTRIB_STATIC_INLINE_ASM void bsp_get_decnt(uint32_t *data);
+R_BSP_ATTRIB_STATIC_INLINE_ASM void bsp_get_depc(uint32_t *ret);
+#endif
+#endif
 
 /***********************************************************************************************************************
 * Function Name: R_BSP_Max
@@ -84,7 +98,7 @@ signed long R_BSP_Min(signed long data1, signed long data2)
 *                count  - Count of multiply-and-accumulate operations.
 *                *addr1 - Start address of values 1 to be multiplied.
 *                *addr2 - Start address of values 2 to be multiplied.
-* Return Value : result - Lower 64 bits of the init + ƒ°(data1[n] * data2[n]) result. (n=0, 1, c, const-1)
+* Return Value : result - Lower 64 bits of the init + S(data1[n] * data2[n]) result. (n=0, 1, ..., const-1)
 ***********************************************************************************************************************/
 #if defined(__GNUC__)
 long long R_BSP_MulAndAccOperation_B(long long init, unsigned long count, signed char *addr1, signed char *addr2)
@@ -108,7 +122,7 @@ long long R_BSP_MulAndAccOperation_B(long long init, unsigned long count, signed
 *                count  - Count of multiply-and-accumulate operations.
 *                *addr1 - Start address of values 1 to be multiplied.
 *                *addr2 - Start address of values 2 to be multiplied.
-* Return Value : result - Lower 64 bits of the init + ƒ°(data1[n] * data2[n]) result. (n=0, 1, c, const-1)
+* Return Value : result - Lower 64 bits of the init + S(data1[n] * data2[n]) result. (n=0, 1, ..., const-1)
 ***********************************************************************************************************************/
 #if defined(__GNUC__)
 long long R_BSP_MulAndAccOperation_W(long long init, unsigned long count, short *addr1, short *addr2)
@@ -132,7 +146,7 @@ long long R_BSP_MulAndAccOperation_W(long long init, unsigned long count, short 
 *                count  - Count of multiply-and-accumulate operations.
 *                *addr1 - Start address of values 1 to be multiplied.
 *                *addr2 - Start address of values 2 to be multiplied.
-* Return Value : result - Lower 64 bits of the init + ƒ°(data1[n] * data2[n]) result. (n=0, 1, c, const-1)
+* Return Value : result - Lower 64 bits of the init + S(data1[n] * data2[n]) result. (n=0, 1, ..., const-1)
 ***********************************************************************************************************************/
 #if defined(__GNUC__)
 long long R_BSP_MulAndAccOperation_L(long long init, unsigned long count, long *addr1, long *addr2)
@@ -246,31 +260,33 @@ unsigned long long R_BSP_UnsignedMultiplication(unsigned long data1, unsigned lo
 *                0 (supervisor mode)    1 (user stack)          -->     1 (user mode)       1 (user stack)
 *                1 (user mode)          1 (user stack)          -->     NO CHANGE
 *                1 (user mode)          0 (interrupt stack))    <==     N/A
-* Arguments    : dummy1 - Please set to 0.
-*                dummy2 - Please set to 0.
+* Arguments    : none
 * Return value : none
 ***********************************************************************************************************************/
 R_BSP_PRAGMA_INLINE_ASM(R_BSP_ChangeToUserMode)
-void R_BSP_ChangeToUserMode(uint8_t dummy1, uint8_t dummy2)
+void R_BSP_ChangeToUserMode(void)
 {
-    R_BSP_ASM_INTERNAL_USED(dummy1)
-    R_BSP_ASM_INTERNAL_USED(dummy2)
-
     R_BSP_ASM_BEGIN
-    R_BSP_ASM(;_R_BSP_Change_PSW_PM_to_UserMode:                                           )
-    R_BSP_ASM(    mvfc    psw, r1     ; get the current PSW value                          )
-    R_BSP_ASM(    btst    #20, r1     ; check PSW.PM                                       )
-    R_BSP_ASM(    bne.b   R_BSP_ASM_LAB_NEXT(0);_psw_pm_is_user_mode                       )
-    R_BSP_ASM(;_psw_pm_is_supervisor_mode:                                                 )
-    R_BSP_ASM(    pop     r2          ; pop the return address value of caller             )
-    R_BSP_ASM(    bset    #20, r1     ; change PM = 0(Supervisor Mode) --> 1(User Mode)    )
-    R_BSP_ASM(    push.l  r1          ; push new PSW value which will be changed           )
-    R_BSP_ASM(    push.l  r2          ; push return address value                          )
-    R_BSP_ASM(    rte                                                                      )
-    R_BSP_ASM_LAB(0:;_psw_pm_is_user_mode:                                                 )
-    R_BSP_ASM(    ;rts                                                                     )
+    R_BSP_ASM(;_R_BSP_Change_PSW_PM_to_UserMode:                                                                   )
+    R_BSP_ASM(    PUSH.L  R1          ; push the R1 value                                                          )
+    R_BSP_ASM(    MVFC    PSW, R1     ; get the current PSW value                                                  )
+    R_BSP_ASM(    BTST    #20, R1     ; check PSW.PM                                                               )
+    R_BSP_ASM(    BNE.B   R_BSP_ASM_LAB_NEXT(0);_psw_pm_is_user_mode                                               )
+    R_BSP_ASM(;_psw_pm_is_supervisor_mode:                                                                         )
+    R_BSP_ASM(    BSET    #20, R1     ; change PM = 0(Supervisor Mode) --> 1(User Mode)                            )
+    R_BSP_ASM(    PUSH.L  R2          ; push the R2 value                                                          )
+    R_BSP_ASM(    MOV.L   R0, R2      ; move the current SP value to the R2 value                                  )
+    R_BSP_ASM(    XCHG    8[R2].L, R1 ; exchange the value of R2 destination address and the R1 value              )
+    R_BSP_ASM(                        ; (exchange the return address value of caller and the PSW value)            )
+    R_BSP_ASM(    XCHG    4[R2].L, R1 ; exchange the value of R2 destination address and the R1 value              )
+    R_BSP_ASM(                        ; (exchange the R1 value of stack and the return address value of caller)    )
+    R_BSP_ASM(    POP     R2          ; pop the R2 value of stack                                                  )
+    R_BSP_ASM(    RTE                                                                                              )
+    R_BSP_ASM_LAB(0:;_psw_pm_is_user_mode:                                                                         )
+    R_BSP_ASM(    POP     R1          ; pop the R1 value of stack                                                  )
+    R_BSP_ASM(    ;RTS                                                                                             )
     R_BSP_ASM_END
-} /* End of function Change_PSW_PM_to_UserMode() */
+} /* End of function R_BSP_ChangeToUserMode() */
 
 /***********************************************************************************************************************
 * Function Name: R_BSP_SetACC
@@ -331,7 +347,7 @@ signed long long R_BSP_GetACC(void)
 * Arguments    : data1 - Start address of values 1 to be multiplied.
 *                data2 - Start address of values 2 to be multiplied.
 *                count - Count of multiply-and-accumulate operations.
-* Return Value : ƒ°(data1[n] * data2[n]) result.
+* Return Value : S(data1[n] * data2[n]) result.
 ***********************************************************************************************************************/
 #if defined(__GNUC__)
 long R_BSP_MulAndAccOperation_2byte(short* data1, short* data2, unsigned long count)
@@ -420,17 +436,39 @@ void R_BSP_SetBPSW(uint32_t data)
 } /* End of function R_BSP_SetBPSW() */
 
 /***********************************************************************************************************************
+* Function Name: bsp_get_bpsw
+* Description  : Refers to the BPSW value.
+* Arguments    : ret - Return value address.
+* Return Value : none
+***********************************************************************************************************************/
+R_BSP_PRAGMA_STATIC_INLINE_ASM(bsp_get_bpsw)
+void bsp_get_bpsw(uint32_t *ret)
+{
+    R_BSP_ASM_INTERNAL_USED(ret)
+
+    R_BSP_ASM_BEGIN
+    R_BSP_ASM(    PUSH.L     R2           )
+    R_BSP_ASM(    MVFC       BPSW, R2     )
+    R_BSP_ASM(    MOV.L      R2, [R1]     )
+    R_BSP_ASM(    POP        R2           )
+    R_BSP_ASM_END
+} /* End of function bsp_get_bpsw() */
+
+/***********************************************************************************************************************
 * Function Name: R_BSP_GetBPSW
 * Description  : Refers to the BPSW value.
 * Arguments    : none
 * Return Value : BPSW value.
+* Note         : This function exists to avoid code analysis errors. Because, when inline assembler function has
+*                a return value, the error of "No return, in function returning non-void" occurs.
 ***********************************************************************************************************************/
-R_BSP_PRAGMA_INLINE_ASM(R_BSP_GetBPSW)
 uint32_t R_BSP_GetBPSW(void)
 {
-    R_BSP_ASM_BEGIN
-    R_BSP_ASM(    MVFC    BPSW, R1    )
-    R_BSP_ASM_END
+    uint32_t ret;
+
+    /* Casting is valid because it matches the type to the right side or argument. */
+    bsp_get_bpsw((uint32_t *)&ret);
+    return ret;
 } /* End of function R_BSP_GetBPSW() */
 
 /***********************************************************************************************************************
@@ -450,17 +488,41 @@ void R_BSP_SetBPC(void *data)
 } /* End of function R_BSP_SetBPC() */
 
 /***********************************************************************************************************************
+* Function Name: bsp_get_bpc
+* Description  : Refers to the BPC value.
+* Arguments    : ret - Return value address.
+* Return Value : none
+***********************************************************************************************************************/
+R_BSP_PRAGMA_STATIC_INLINE_ASM(bsp_get_bpc)
+void bsp_get_bpc(uint32_t *ret)
+{
+    R_BSP_ASM_INTERNAL_USED(ret)
+
+    R_BSP_ASM_BEGIN
+    R_BSP_ASM(    PUSH.L     R2           )
+    R_BSP_ASM(    MVFC       BPC, R2      )
+    R_BSP_ASM(    MOV.L      R2, [R1]     )
+    R_BSP_ASM(    POP        R2           )
+    R_BSP_ASM_END
+} /* End of function bsp_get_bpc() */
+
+/***********************************************************************************************************************
 * Function Name: R_BSP_GetBPC
 * Description  : Refers to the BPC value.
 * Arguments    : none
 * Return Value : BPC value
+* Note         : This function exists to avoid code analysis errors. Because, when inline assembler function has
+*                a return value, the error of "No return, in function returning non-void" occurs.
 ***********************************************************************************************************************/
-R_BSP_PRAGMA_INLINE_ASM(R_BSP_GetBPC)
 void *R_BSP_GetBPC(void)
 {
-    R_BSP_ASM_BEGIN
-    R_BSP_ASM(    MVFC    BPC, R1    )
-    R_BSP_ASM_END
+    uint32_t ret;
+
+    /* Casting is valid because it matches the type to the right side or argument. */
+    bsp_get_bpc((uint32_t *)&ret);
+
+    /* Casting is valid because it matches the type to the right side or return. */
+    return (void *)ret;
 } /* End of function R_BSP_GetBPC() */
 
 #ifdef BSP_MCU_EXCEPTION_TABLE
@@ -481,17 +543,41 @@ void R_BSP_SetEXTB(void *data)
 } /* End of function R_BSP_SetEXTB() */
 
 /***********************************************************************************************************************
+* Function Name: bsp_get_extb
+* Description  : Refers to the EXTB value.
+* Arguments    : ret - Return value address.
+* Return Value : none
+***********************************************************************************************************************/
+R_BSP_PRAGMA_STATIC_INLINE_ASM(bsp_get_extb)
+void bsp_get_extb(uint32_t *ret)
+{
+    R_BSP_ASM_INTERNAL_USED(ret)
+
+    R_BSP_ASM_BEGIN
+    R_BSP_ASM(    PUSH.L     R2           )
+    R_BSP_ASM(    MVFC       EXTB, R2     )
+    R_BSP_ASM(    MOV.L      R2, [R1]     )
+    R_BSP_ASM(    POP        R2           )
+    R_BSP_ASM_END
+} /* End of function bsp_get_extb() */
+
+/***********************************************************************************************************************
 * Function Name: R_BSP_GetEXTB
 * Description  : Refers to the EXTB value.
 * Arguments    : none
 * Return Value : EXTB value.
+* Note         : This function exists to avoid code analysis errors. Because, when inline assembler function has
+*                a return value, the error of "No return, in function returning non-void" occurs.
 ***********************************************************************************************************************/
-R_BSP_PRAGMA_INLINE_ASM(R_BSP_GetEXTB)
 void *R_BSP_GetEXTB(void)
 {
-    R_BSP_ASM_BEGIN
-    R_BSP_ASM(    MVFC    EXTB, R1    )
-    R_BSP_ASM_END
+    uint32_t ret;
+
+    /* Casting is valid because it matches the type to the right side or argument. */
+    bsp_get_extb((uint32_t *)&ret);
+
+    /* Casting is valid because it matches the type to the right side or return. */
+    return (void *)ret;
 } /* End of function R_BSP_GetEXTB() */
 #endif /* BSP_MCU_EXCEPTION_TABLE */
 
@@ -528,31 +614,75 @@ void R_BSP_MoveToAccLoLong(int32_t data)
 } /* End of function R_BSP_MoveToAccLoLong() */
 
 /***********************************************************************************************************************
+* Function Name: bsp_move_from_acc_hi_long
+* Description  : This function moves the higher-order 32 bits of the accumulator to dest.
+* Arguments    : ret - Return value address.
+* Return Value : none
+***********************************************************************************************************************/
+R_BSP_PRAGMA_STATIC_INLINE_ASM(bsp_move_from_acc_hi_long)
+void bsp_move_from_acc_hi_long(uint32_t *ret)
+{
+    R_BSP_ASM_INTERNAL_USED(ret)
+
+    R_BSP_ASM_BEGIN
+    R_BSP_ASM(    PUSH.L     R2           )
+    R_BSP_ASM(    MVFACHI    R2           )
+    R_BSP_ASM(    MOV.L      R2, [R1]     )
+    R_BSP_ASM(    POP        R2           )
+    R_BSP_ASM_END
+} /* End of function bsp_move_from_acc_hi_long() */
+
+/***********************************************************************************************************************
 * Function Name: R_BSP_MoveFromAccHiLong
 * Description  : This function moves the higher-order 32 bits of the accumulator to dest.
 * Arguments    : none
 * Return Value : The higher-order 32 bits of the accumulator.
+* Note         : This function exists to avoid code analysis errors. Because, when inline assembler function has
+*                a return value, the error of "No return, in function returning non-void" occurs.
 ***********************************************************************************************************************/
-R_BSP_PRAGMA_INLINE_ASM(R_BSP_MoveFromAccHiLong)
 int32_t R_BSP_MoveFromAccHiLong(void)
 {
-    R_BSP_ASM_BEGIN
-    R_BSP_ASM(    MVFACHI    R1    )
-    R_BSP_ASM_END
+    int32_t ret;
+
+    /* Casting is valid because it matches the type to the right side or argument. */
+    bsp_move_from_acc_hi_long((uint32_t *)&ret);
+    return ret;
 } /* End of function R_BSP_MoveFromAccHiLong() */
+
+/***********************************************************************************************************************
+* Function Name: bsp_move_from_acc_mi_long
+* Description  : This function moves the contents of bits 47 to 16 of the accumulator to dest.
+* Arguments    : ret - Return value address.
+* Return Value : none
+***********************************************************************************************************************/
+R_BSP_PRAGMA_STATIC_INLINE_ASM(bsp_move_from_acc_mi_long)
+void bsp_move_from_acc_mi_long(uint32_t *ret)
+{
+    R_BSP_ASM_INTERNAL_USED(ret)
+
+    R_BSP_ASM_BEGIN
+    R_BSP_ASM(    PUSH.L     R2           )
+    R_BSP_ASM(    MVFACMI    R2           )
+    R_BSP_ASM(    MOV.L      R2, [R1]     )
+    R_BSP_ASM(    POP        R2           )
+    R_BSP_ASM_END
+} /* End of function bsp_move_from_acc_mi_long() */
 
 /***********************************************************************************************************************
 * Function Name: R_BSP_MoveFromAccMiLong
 * Description  : This function moves the contents of bits 47 to 16 of the accumulator to dest.
 * Arguments    : none
 * Return Value : The contents of bits 47 to 16 of the accumulator.
+* Note         : This function exists to avoid code analysis errors. Because, when inline assembler function has
+*                a return value, the error of "No return, in function returning non-void" occurs.
 ***********************************************************************************************************************/
-R_BSP_PRAGMA_INLINE_ASM(R_BSP_MoveFromAccMiLong)
 int32_t R_BSP_MoveFromAccMiLong(void)
 {
-    R_BSP_ASM_BEGIN
-    R_BSP_ASM(    MVFACMI    R1    )
-    R_BSP_ASM_END
+    int32_t ret;
+
+    /* Casting is valid because it matches the type to the right side or argument. */
+    bsp_move_from_acc_mi_long((uint32_t *)&ret);
+    return ret;
 } /* End of function R_BSP_MoveFromAccMiLong() */
 
 /***********************************************************************************************************************
@@ -608,4 +738,168 @@ void R_BSP_BitReverse(uint8_t *data, uint32_t bit)
     R_BSP_ASM(    BNOT    R2, [R1]    )
     R_BSP_ASM_END
 } /* End of function R_BSP_BitReverse() */
+
+#ifdef BSP_MCU_DOUBLE_PRECISION_FLOATING_POINT
+#ifdef __DPFPU
+/***********************************************************************************************************************
+* Function Name: R_BSP_SetDPSW
+* Description  : Sets a value to DPSW.
+* Arguments    : data - Value to be set.
+* Return Value : none
+***********************************************************************************************************************/
+R_BSP_PRAGMA_INLINE_ASM(R_BSP_SetDPSW)
+void R_BSP_SetDPSW(uint32_t data)
+{
+    R_BSP_ASM_INTERNAL_USED(data)
+
+    R_BSP_ASM_BEGIN
+    R_BSP_ASM(    MVTDC   R1, DPSW    )
+    R_BSP_ASM_END
+} /* End of function R_BSP_SetDPSW() */
+
+/***********************************************************************************************************************
+* Function Name: bsp_get_dpsw
+* Description  : Refers to the DPSW value.
+* Arguments    : ret - Return value address.
+* Return Value : none
+***********************************************************************************************************************/
+R_BSP_PRAGMA_STATIC_INLINE_ASM(bsp_get_dpsw)
+void bsp_get_dpsw(uint32_t *ret)
+{
+    R_BSP_ASM_INTERNAL_USED(ret)
+
+    R_BSP_ASM_BEGIN
+    R_BSP_ASM(    PUSH.L     R2           )
+    R_BSP_ASM(    MVFDC      DPSW, R2     )
+    R_BSP_ASM(    MOV.L      R2, [R1]     )
+    R_BSP_ASM(    POP        R2           )
+    R_BSP_ASM_END
+} /* End of function bsp_get_dpsw() */
+
+/***********************************************************************************************************************
+* Function Name: R_BSP_GetDPSW
+* Description  : Refers to the DPSW value.
+* Arguments    : none
+* Return Value : DPSW value.
+* Note         : This function exists to avoid code analysis errors. Because, when inline assembler function has
+*                a return value, the error of "No return, in function returning non-void" occurs.
+***********************************************************************************************************************/
+uint32_t R_BSP_GetDPSW(void)
+{
+    uint32_t ret;
+
+    /* Casting is valid because it matches the type to the right side or argument. */
+    bsp_get_dpsw((uint32_t *)&ret);
+    return ret;
+} /* End of function R_BSP_GetDPSW() */
+
+/***********************************************************************************************************************
+* Function Name: R_BSP_SetDECNT
+* Description  : Sets a value to DECNT.
+* Arguments    : data - Value to be set.
+* Return Value : none
+***********************************************************************************************************************/
+R_BSP_PRAGMA_INLINE_ASM(R_BSP_SetDECNT)
+void R_BSP_SetDECNT(uint32_t data)
+{
+    R_BSP_ASM_INTERNAL_USED(data)
+
+    R_BSP_ASM_BEGIN
+    R_BSP_ASM(    MVTDC   R1, DECNT    )
+    R_BSP_ASM_END
+} /* End of function R_BSP_SetDECNT() */
+
+/***********************************************************************************************************************
+* Function Name: bsp_get_decnt
+* Description  : Refers to the DECNT value.
+* Arguments    : ret - Return value address.
+* Return Value : none
+***********************************************************************************************************************/
+R_BSP_PRAGMA_STATIC_INLINE_ASM(bsp_get_decnt)
+void bsp_get_decnt(uint32_t *ret)
+{
+    R_BSP_ASM_INTERNAL_USED(ret)
+
+    R_BSP_ASM_BEGIN
+    R_BSP_ASM(    PUSH.L     R2           )
+    R_BSP_ASM(    MVFDC      DECNT, R2    )
+    R_BSP_ASM(    MOV.L      R2, [R1]     )
+    R_BSP_ASM(    POP        R2           )
+    R_BSP_ASM_END
+} /* End of function bsp_get_decnt() */
+
+/***********************************************************************************************************************
+* Function Name: R_BSP_GetDECNT
+* Description  : Refers to the DECNT value.
+* Arguments    : none
+* Return Value : DECNT value.
+* Note         : This function exists to avoid code analysis errors. Because, when inline assembler function has
+*                a return value, the error of "No return, in function returning non-void" occurs.
+***********************************************************************************************************************/
+uint32_t R_BSP_GetDECNT(void)
+{
+    uint32_t ret;
+
+    /* Casting is valid because it matches the type to the right side or argument. */
+    bsp_get_decnt((uint32_t *)&ret);
+    return ret;
+} /* End of function R_BSP_GetDECNT() */
+
+/***********************************************************************************************************************
+* Function Name: bsp_get_depc
+* Description  : Refers to the DEPC value.
+* Arguments    : ret - Return value address.
+* Return Value : none
+***********************************************************************************************************************/
+R_BSP_PRAGMA_STATIC_INLINE_ASM(bsp_get_depc)
+void bsp_get_depc(uint32_t *ret)
+{
+    R_BSP_ASM_INTERNAL_USED(ret)
+
+    R_BSP_ASM_BEGIN
+    R_BSP_ASM(    PUSH.L     R2           )
+    R_BSP_ASM(    MVFDC      DEPC, R2     )
+    R_BSP_ASM(    MOV.L      R2, [R1]     )
+    R_BSP_ASM(    POP        R2           )
+    R_BSP_ASM_END
+} /* End of function bsp_get_decnt() */
+
+/***********************************************************************************************************************
+* Function Name: R_BSP_GetDEPC
+* Description  : Refers to the DEPC value.
+* Arguments    : none
+* Return Value : DEPC value.
+* Note         : This function exists to avoid code analysis errors. Because, when inline assembler function has
+*                a return value, the error of "No return, in function returning non-void" occurs.
+***********************************************************************************************************************/
+void *R_BSP_GetDEPC(void)
+{
+    uint32_t ret;
+
+    /* Casting is valid because it matches the type to the right side or argument. */
+    bsp_get_depc((uint32_t *)&ret);
+    return (void *)ret;
+} /* End of function R_BSP_GetDECNT() */
+#endif /* __DPFPU */
+#endif /* BSP_MCU_DOUBLE_PRECISION_FLOATING_POINT */
+
+#ifdef BSP_MCU_TRIGONOMETRIC
+/***********************************************************************************************************************
+* Function Name: R_BSP_InitTFU
+* Description  : Initialize arithmetic unit for trigonometric functions.
+* Arguments    : none
+* Return Value : none
+***********************************************************************************************************************/
+R_BSP_PRAGMA_INLINE_ASM(R_BSP_InitTFU)
+void R_BSP_InitTFU(void)
+{
+    R_BSP_ASM_BEGIN
+    R_BSP_ASM(    PUSH.L    R1             )
+    R_BSP_ASM(    MOV.L     #81400H, R1    )
+    R_BSP_ASM(    MOV.B     #7, [R1]       )
+    R_BSP_ASM(    MOV.B     #7, 1[R1]      )
+    R_BSP_ASM(    POP       R1             )
+    R_BSP_ASM_END
+} /* End of function R_BSP_InitTFU() */
+#endif
 

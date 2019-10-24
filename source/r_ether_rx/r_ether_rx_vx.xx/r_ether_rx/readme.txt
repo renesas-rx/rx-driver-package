@@ -5,12 +5,12 @@ r_ether_rx
 
 Document Number
 ---------------
-R01AN2009EJ0115 (English version)
-R01AN2009JJ0115 (Japanese version)
+R01AN2009EJ0117 (English version)
+R01AN2009JJ0117 (Japanese version)
 
 Version
 -------
-v1.15
+v1.17
 
 Overview
 --------
@@ -22,7 +22,9 @@ to implement Ethernet/IEEE 802.3 frame transmission and reception. This module s
   The result of the automatic negotiation is acquired from the Ethernet PHY-LSI and the connection mode (full or half
 duplex, 10 or 100 Mbps transfer rate) is set in the ETHERC.
 This driver is tested and works with the following toolchain:
-  Renesas RX Toolchain v.2.07.00
+  Renesas RX Toolchain v.3.01.00
+  GCC for Renesas RX 4.8.4
+  IAR C/C++ Compiler for Renesas RX 4.12.1
 All API calls and their supporting interface definitions are located in r_ether_rx_if.h.
 
 Features
@@ -35,6 +37,7 @@ Supported MCUs
 * RX65N Group
 * RX64M Group
 * RX71M Group
+* RX72M Group
 
 Boards Tested On
 ----------------
@@ -43,6 +46,7 @@ Boards Tested On
 * RSKRX65N_2MB
 * RSKRX64M
 * RSKRX71M
+* RSKRX72M
 
 Limitations
 -----------
@@ -66,7 +70,9 @@ Please refer to the Adding Firmware Integration Technology Modules to Projects.
 
 Toolchain(s) Used
 -----------------
-* Renesas RX v2.08.00
+* Renesas RX v3.01.00
+* GCC for Renesas RX 4.8.4
+* IAR C/C++ Compiler for Renesas RX 4.12.1
 
 File Structure
 --------------
@@ -77,10 +83,10 @@ r_ether_rx
 +---doc
 |   |
 |   +---en
-|   |   r01an2009ej0115-rx-ether.pdf
+|   |   r01an2009ej0117-rx-ether.pdf
 |   |
 |   \---ja
-|       r01an2009jj0115-rx-ether.pdf
+|       r01an2009jj0117-rx-ether.pdf
 |
 +---ref
 |       r_ether_config_reference.h
@@ -105,5 +111,8 @@ r_ether_rx
         +---rx63n
         |    r_ether_setting_rx63n.c
         |
-        \---rx65n
-             r_ether_setting_rx65n.c
+        +---rx65n
+        |    r_ether_setting_rx65n.c
+        |
+        \---rx72m
+             r_ether_setting_rx72m.c

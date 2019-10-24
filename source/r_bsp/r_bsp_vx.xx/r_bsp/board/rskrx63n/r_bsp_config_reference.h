@@ -12,7 +12,7 @@
 * Renesas reserves the right, without notice, to make changes to this software and to discontinue the availability of 
 * this software. By using this software, you agree to the additional terms and conditions found by accessing the 
 * following link:
-* http://www.renesas.com/disclaimer 
+* http://www.renesas.com/disclaimer
 *
 * Copyright (C) 2014 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
@@ -23,8 +23,8 @@
 *                somewhere in your package so that the r_bsp code has access to it. This file (r_bsp_config_reference.h)
 *                is just a reference file that the user can use to make their own r_bsp_config.h file.
 ************************************************************************************************************************
-* History : DD.MM.YYYY Version Description           
-*         : 13.03.2012 1.00    First Release         
+* History : DD.MM.YYYY Version Description
+*         : 13.03.2012 1.00    First Release
 *         : 26.06.2012 1.10    Added MCU product part number section. Added endian options for user app and user boot.
 *                              Added OFS register macros. Added option for ROM Code Protect. Added callback function
 *                              options for exception interrupts.
@@ -86,11 +86,12 @@
 *                              - BSP_CFG_MCU_PART_MEMORY_SIZE - Changed the default value from 0xB to 0xF.
 *         : 27.07.2018 2.21    Added the following macro definition.
 *                              - BSP_CFG_FIT_IPL_MAX
-*         : xx.xx.xxxx 3.00    Added the following macro definition.
+*         : 28.02.2019 3.00    Added the following macro definition.
 *                               - BSP_CFG_STARTUP_DISABLE
 *                              Modified comments of the following macro definition.
 *                               - BSP_CFG_RTOS_USED
 *                              Added support for GNUC and ICCRX.
+*                              Fixed coding style.
 ***********************************************************************************************************************/
 
 #ifndef R_BSP_CONFIG_REF_HEADER_FILE
@@ -102,28 +103,28 @@ Configuration Options
 /* Start up select
    0 = Enable BSP startup program.
    1 = Disable BSP startup program. (e.g. Using user startup program.)
-*/
+   NOTE: This setting is available only when using CCRX. */
 #define BSP_CFG_STARTUP_DISABLE (0)
 
 /* Enter the product part number for your MCU. This information will be used to obtain information about your MCU such 
-   as package and memory size. 
+   as package and memory size.
    To help parse this information, the part number will be defined using multiple macros.
    R 5 F 56 3N F D D FC
-   | | | |  |  | | | |  Macro Name              Description
+   | | | |  |  | | | |  Macro Name                      Description
    | | | |  |  | | | |__BSP_CFG_MCU_PART_PACKAGE      = Package type, number of pins, and pin pitch
    | | | |  |  | | |____not used                      = Products with wide temperature range
    | | | |  |  | |______BSP_CFG_MCU_PART_CAN_INCLUDED = CAN included/not included
    | | | |  |  |________BSP_CFG_MCU_PART_MEMORY_SIZE  = ROM, RAM, and Data Flash Capacity
-   | | | |  |___________BSP_CFG_MCU_PART_GROUP        = Group name  
+   | | | |  |___________BSP_CFG_MCU_PART_GROUP        = Group name
    | | | |______________BSP_CFG_MCU_PART_SERIES       = Series name
    | | |________________BSP_CFG_MCU_PART_MEMORY_TYPE  = Type of memory (Flash, ROMless)
    | |__________________not used                      = Renesas MCU
-   |____________________not used                      = Renesas semiconductor product. 
+   |____________________not used                      = Renesas semiconductor product.
    */
 
 /* Package type. Set the macro definition based on values below:
    Character(s) = Value for macro = Package Type/Number of Pins/Pin Pitch
-   FC           = 0x0             = LQFP/176/0.50 
+   FC           = 0x0             = LQFP/176/0.50
    BG           = 0x1             = LFBGA/176/0.80
    LC           = 0x2             = TFLGA/177/0.50
    FB           = 0x3             = LQFP/144/0.50
@@ -136,7 +137,7 @@ Configuration Options
 */
 #define BSP_CFG_MCU_PART_PACKAGE        (0x0)
 
-/* Whether CAN is included or not. 
+/* Whether CAN is included or not.
    Character(s)         = Value for macro = Description
    H                    = true            = CAN included/DEU included/PDC not included.
    D                    = true            = CAN included/DEU not included/PDC not included.
@@ -147,7 +148,7 @@ Configuration Options
 */
 #define BSP_CFG_MCU_PART_CAN_INCLUDED   (true)
 
-/* ROM, RAM, and Data Flash Capacity. 
+/* ROM, RAM, and Data Flash Capacity.
    Character(s) = Value for macro = ROM Size/Ram Size/Data Flash Size
    F            = 0xF             = 2MB/256KB/32KB
    K            = 0x14            = 2MB/192KB/32KB
@@ -169,7 +170,7 @@ Configuration Options
 */
 #define BSP_CFG_MCU_PART_MEMORY_SIZE    (0xF)
 
-/* Group name. 
+/* Group name.
    Character(s) = Value for macro = Description
    30           = 0x0             = RX630 Group
    31           = 0x1             = RX631 Group
@@ -178,13 +179,13 @@ Configuration Options
 */
 #define BSP_CFG_MCU_PART_GROUP          (0x2)
 
-/* Series name. 
+/* Series name.
    Character(s) = Value for macro = Description
    56           = 0x0             = RX600 Series
-*/  
+*/
 #define BSP_CFG_MCU_PART_SERIES         (0x0)
 
-/* Memory type. 
+/* Memory type.
    Character(s) = Value for macro = Description
    F            = 0x0             = Flash memory version
    S            = 0x1             = ROMless version
@@ -226,7 +227,7 @@ Configuration Options
    3) Disable stdio from being built into the project library. This is done by going into the Renesas RX Toolchain 
       settings and choosing the Standard Library section. After that choose 'Standard Library' for Category in HEW or 
       choose 'Contents' in E2Studio. This will present a list of modules that can be included. Uncheck the box for
-      stdio.h. 
+      stdio.h.
 */
 #define BSP_CFG_HEAP_BYTES              (0x400)
 
@@ -260,7 +261,7 @@ Configuration Options
    in ROM are described in the Option-Setting Memory section of the hardware manual. This macro sets these values so 
    that User Boot Mode can be used. The user is still responsible for setting the MCU pins appropriately. If User Boot
    is selected then the user should make sure that they setup a constant data section in their linker named 'UBSETTINGS'
-   at address 0xFF7FFFE8. 
+   at address 0xFF7FFFE8.
    0 = Single-Chip or USB Boot Mode
    1 = User Boot Mode
 */
@@ -283,10 +284,10 @@ Configuration Options
 /* Clock source select (CKSEL).
    0 = Low Speed On-Chip Oscillator  (LOCO)
    1 = High Speed On-Chip Oscillator (HOCO)
-   2 = Main Clock Oscillator  
+   2 = Main Clock Oscillator
    3 = Sub-Clock Oscillator
    4 = PLL Circuit
-*/ 
+*/
 #define BSP_CFG_CLOCK_SOURCE            (4)
 
 /* Clock configuration options.
@@ -316,12 +317,12 @@ Configuration Options
 /* XTAL - Input clock frequency in Hz */
 #define BSP_CFG_XTAL_HZ                 (12000000)
 
-/* PLL Input Frequency Divider Select (PLIDIV). 
+/* PLL Input Frequency Divider Select (PLIDIV).
    Available divisors = /1 (no division), /2, /4
 */
 #define BSP_CFG_PLL_DIV                 (1)
 
-/* PLL Frequency Multiplication Factor Select (STC). 
+/* PLL Frequency Multiplication Factor Select (STC).
    Available multipliers = x8, x10, x12, x16, x20, x24, x25, x50
 */
 #define BSP_CFG_PLL_MUL                 (16)
@@ -331,32 +332,32 @@ Configuration Options
 */
 #define BSP_CFG_ICK_DIV                 (2)
 
-/* Peripheral Module Clock A Divider (PCKA). 
+/* Peripheral Module Clock A Divider (PCKA).
    Available divisors = /1 (no division), /2, /4, /8, /16, /32, /64
 */
 #define BSP_CFG_PCKA_DIV                (2)
 
-/* Peripheral Module Clock B Divider (PCKB). 
+/* Peripheral Module Clock B Divider (PCKB).
    Available divisors = /1 (no division), /2, /4, /8, /16, /32, /64
 */
 #define BSP_CFG_PCKB_DIV                (4)
 
-/* External Bus Clock Divider (BCK). 
+/* External Bus Clock Divider (BCK).
    Available divisors = /1 (no division), /2, /4, /8, /16, /32, /64
 */
 #define BSP_CFG_BCK_DIV                 (8)
 
-/* Flash IF Clock Divider (FCK). 
+/* Flash IF Clock Divider (FCK).
    Available divisors = /1 (no division), /2, /4, /8, /16, /32, /64
 */
 #define BSP_CFG_FCK_DIV                 (4)
 
-/* IEBUS Clock Divider Select. 
+/* IEBUS Clock Divider Select.
    Available divisors = /1 (no division), /2, /4, /6, /8, /16, /32, /64
 */
 #define BSP_CFG_IEBCK_DIV               (8)
 
-/* USB Clock Divider Select. 
+/* USB Clock Divider Select.
    Available divisors = /3, /4
 */
 #define BSP_CFG_UCK_DIV                 (4)
@@ -366,11 +367,11 @@ Configuration Options
 #define BSP_CFG_BCLK_OUTPUT             (0)
 
 /* Configure SDCLK output pin (only effective when external bus enabled)
-   Values 0=no output, 1 = BCK frequency */  
+   Values 0=no output, 1 = BCK frequency */
 #define BSP_CFG_SDCLK_OUTPUT            (0)
 
-/* Configure WDT and IWDT settings. 
-   OFS0 - Option Function Select Register 0 
+/* Configure WDT and IWDT settings.
+   OFS0 - Option Function Select Register 0
    b31:b29 Reserved (set to 1)
    b28     WDTRSTIRQS - WDT Reset Interrupt Request - What to do on underflow (0=take interrupt, 1=reset MCU)
    b27:b26 WDTRPSS - WDT Window Start Position Select - (0=25%, 1=50%, 2=75%, 3=100%,don't use)
@@ -387,17 +388,21 @@ Configuration Options
    b7:b4   IWDTCKS - IWDT Clock Frequency Division Ratio - (0=none, 2=/16, 3 = /32, 4=/64, 0xF=/128, 5=/256)
    b3:b2   IWDTTOPS - IWDT Timeout Period Select - (0=1024 cycles, 1=4096, 2=8192, 3=16384)
    b1      IWDTSTRT - IWDT Start Mode Select - (0=auto-start after reset, halt after reset)
-   b0      Reserved (set to 1) */
-#define BSP_CFG_OFS0_REG_VALUE  (0xFFFFFFFF) //Disable by default
+   b0      Reserved (set to 1)
+   Default value is 0xFFFFFFFF.
+*/
+#define BSP_CFG_OFS0_REG_VALUE  (0xFFFFFFFF)
 
-/* Configure whether voltage detection 0 circuit and HOCO are enabled after reset. 
-   OFS1 - Option Function Select Register 1 
+/* Configure whether voltage detection 0 circuit and HOCO are enabled after reset.
+   OFS1 - Option Function Select Register 1
    b31:b9 Reserved (set to 1)
    b8     HOCOEN - Enable/disable HOCO oscillation after a reset (0=enable, 1=disable)
    b7:b3  Reserved (set to 1)
    b2     LVDAS - Choose to enable/disable Voltage Detection 0 Circuit after a reset (0=enable, 1=disable)
-   b1:b0  Reserved (set to 1) */
-#define BSP_CFG_OFS1_REG_VALUE  (0xFFFFFFFF) //Disable by default
+   b1:b0  Reserved (set to 1)
+   Default value is 0xFFFFFFFF.
+*/
+#define BSP_CFG_OFS1_REG_VALUE  (0xFFFFFFFF)
 
 /* ROM Code Protection is a feature that can prohibit PROM programmers from reading or writing flash memory.
    There are 3 different options that can be chosen:
@@ -417,23 +422,23 @@ Configuration Options
 #define BSP_CFG_RTOS_USED               (0)
 
 /* By default modules will use global locks found in mcu_locks.c. If the user is using a RTOS and would rather use its
-   locking mechanisms then they can change this macro. 
+   locking mechanisms then they can change this macro.
    NOTE: If '1' is chosen for this macro then the user must also change the next macro 'BSP_CFG_USER_LOCKING_TYPE'.
    0 = Use default locking (non-RTOS)
-   1 = Use user defined locking mechanism. 
+   1 = Use user defined locking mechanism.
 */
 #define BSP_CFG_USER_LOCKING_ENABLED    (0)
 
 /* If the user decides to use their own locking mechanism with FIT modules then they will need to redefine the typedef
    that is used for the locks. If the user is using a RTOS then they would likely redefine the typedef to be 
-   a semaphore/mutex type of their RTOS. Use the macro below to set the type that will be used for the locks. 
+   a semaphore/mutex type of their RTOS. Use the macro below to set the type that will be used for the locks.
    NOTE: If BSP_CFG_USER_LOCKING_ENABLED == 0 then this typedef is ignored.
    NOTE: Do not surround the type with parentheses '(' ')'.
 */
 #define BSP_CFG_USER_LOCKING_TYPE       bsp_lock_t
 
 /* If the user decides to use their own locking mechanism with FIT modules then they will need to define the functions
-   that will handle the locking and unlocking. These functions should be defined below. 
+   that will handle the locking and unlocking. These functions should be defined below.
    If BSP_CFG_USER_LOCKING_ENABLED is != 0:
    R_BSP_HardwareLock(mcu_lock_t hw_index) will call BSP_CFG_USER_LOCKING_HW_LOCK_FUNCTION(mcu_lock_t hw_index)
    R_BSP_HardwareUnlock(mcu_lock_t hw_index) will call BSP_CFG_USER_LOCKING_HW_UNLOCK_FUNCTION(mcu_lock_t hw_index)
@@ -442,9 +447,9 @@ Configuration Options
    BSP_CFG_USER_LOCKING_SW_LOCK_FUNCTION(BSP_CFG_USER_LOCKING_TYPE * plock)
    R_BSP_SoftwareUnlock(BSP_CFG_USER_LOCKING_TYPE * plock) will call 
    BSP_CFG_USER_LOCKING_SW_UNLOCK_FUNCTION(BSP_CFG_USER_LOCKING_TYPE * plock)
-       NOTE:With these functions the actual address of the lock to use is passed as the parameter.   
+       NOTE:With these functions the actual address of the lock to use is passed as the parameter.
    NOTE: These functions must return a boolean. If lock was obtained or released successfully then return true. Else, 
-         return false. 
+         return false.
    NOTE: If BSP_CFG_USER_LOCKING_ENABLED == 0 then this typedef is ignored.
    NOTE: Do not surround the type with parentheses '(' ')'.
 */
@@ -453,14 +458,14 @@ Configuration Options
 #define BSP_CFG_USER_LOCKING_SW_LOCK_FUNCTION      my_sw_locking_function
 #define BSP_CFG_USER_LOCKING_SW_UNLOCK_FUNCTION    my_sw_unlocking_function
 
-/* If the user would like to determine if a warm start reset has occurred, then they may enable one or more of the following
- * callback definitions AND provide a call back function name for the respective callback function (to be defined by the user).
- * Setting BSP_CFG_USER_WARM_START_CALLBACK_PRE_INITC_ENABLED = 1 will result in a callback to the user defined my_sw_warmstart_prec_function
- * just prior to the initialization of the C runtime environment by resetprg.
- *
- * Setting BSP_CFG_USER_WARM_START_CALLBACK_POST_INITC_ENABLED = 1 will result in a callback to the user defined my_sw_warmstart_postc_function
- * just after the initialization of the C runtime environment by resetprg.
- */
+/* If the user would like to determine if a warm start reset has occurred, then they may enable one or more of the
+   following callback definitions AND provide a call back function name for the respective callback
+   function (to be defined by the user). Setting BSP_CFG_USER_WARM_START_CALLBACK_PRE_INITC_ENABLED = 1 will result
+   in a callback to the user defined my_sw_warmstart_prec_function just prior to the initialization of the C
+   runtime environment by resetprg.
+   Setting BSP_CFG_USER_WARM_START_CALLBACK_POST_INITC_ENABLED = 1 will result in a callback to the user defined
+   my_sw_warmstart_postc_function just after the initialization of the C runtime environment by resetprg.
+*/
 #define BSP_CFG_USER_WARM_START_CALLBACK_PRE_INITC_ENABLED    (0)
 #define BSP_CFG_USER_WARM_START_PRE_C_FUNCTION     my_sw_warmstart_prec_function
 
@@ -468,13 +473,13 @@ Configuration Options
 #define BSP_CFG_USER_WARM_START_POST_C_FUNCTION    my_sw_warmstart_postc_function
 
 /* By default FIT modules will check input parameters to be valid. This is helpful during development but some users
-   will want to disable this for production code. The reason for this would be to save execution time and code space. 
+   will want to disable this for production code. The reason for this would be to save execution time and code space.
    This macro is a global setting for enabling or disabling parameter checking. Each FIT module will also have its
    own local macro for this same purpose. By default the local macros will take the global value from here though
    they can be overridden. Therefore, the local setting has priority over this global setting. Disabling parameter
    checking should only used when inputs are known to be good and the increase in speed or decrease in code space is 
-   needed. 
-   0 = Global setting for parameter checking is disabled. 
+   needed.
+   0 = Global setting for parameter checking is disabled.
    1 = Global setting for parameter checking is enabled (Default).
 */
 #define BSP_CFG_PARAM_CHECKING_ENABLE               (1)
@@ -501,6 +506,4 @@ Configuration Options
 #define BSP_CFG_FIT_IPL_MAX                         (0xF)
 
 #endif /* R_BSP_CONFIG_REF_HEADER_FILE */
-
-
 

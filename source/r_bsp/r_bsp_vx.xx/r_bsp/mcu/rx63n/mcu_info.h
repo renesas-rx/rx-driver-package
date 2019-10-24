@@ -59,7 +59,7 @@
 *                               - N = 0x17 = 384KB/64KB/32KB
 *                               - M = 0x16 = 256KB/64KB/32KB
 *                               - 0 = 0x0  = 0/128KB/0
-*         : xx.xx.xxxx 2.00     Added macro definition of MCU functions. 
+*         : 28.02.2019 2.00     Added macro definition of MCU functions. 
 *                               Added the following macro definition.
 *                               - BSP_MCU_CPU_VERSION
 *                               - CPU_CYCLES_PER_LOOP

@@ -12,7 +12,7 @@
 * Renesas reserves the right, without notice, to make changes to this software and to discontinue the availability of 
 * this software. By using this software, you agree to the additional terms and conditions found by accessing the 
 * following link:
-* http://www.renesas.com/disclaimer 
+* http://www.renesas.com/disclaimer
 *
 * Copyright (C) 2016 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
@@ -24,8 +24,19 @@
 * History : DD.MM.YYYY Version  Description
 *         : 01.10.2016 1.00     First Release
 *         : 27.07.2018 1.01     Modified the comment of get_iclk_freq_hz.
-*         : xx.xx.xxxx 2.00     Added clock setup.
+*         : 28.02.2019 2.00     Added clock setup.
 *                               Fixed cast of get_iclk_freq_hz function.
+*                               Deleted the rom cache setting.
+*                               (The rom cache setting moved to the hardware setup file (hwsetup.c).)
+*                               Fixed coding style.
+*                               Renamed following macro definitions.
+*                               - BSP_PRV_CKSEL_LOCO
+*                               - BSP_PRV_CKSEL_HOCO
+*                               - BSP_PRV_CKSEL_MAIN_OSC
+*                               - BSP_PRV_CKSEL_SUBCLOCK
+*                               - BSP_PRV_CKSEL_PLL
+*                               - BSP_PRV_NORMALIZE_X10
+*                               Deleted the error check of BSP_CFG_CLOCK_SOURCE in the clock_source_select function.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -36,11 +47,13 @@ Includes   <System Includes> , "Project Includes"
 /***********************************************************************************************************************
 Macro definitions
 ***********************************************************************************************************************/
-#define CKSEL_LOCO            0X0   // SCKCR3.CKSEL register setting for LOCO
-#define CKSEL_HOCO            0X1   // SCKCR3.CKSEL register setting for HOCO
-#define CKSEL_MAIN_OSC        0X2   // SCKCR3.CKSEL register setting for MAIN OSC
-#define CKSEL_SUBCLOCK        0X3   // SCKCR3.CKSEL register setting for SUB-CLOCK OSC
-#define CKSEL_PLL             0X4   // SCKCR3.CKSEL register setting for PLL
+#define BSP_PRV_CKSEL_LOCO            (0x0)
+#define BSP_PRV_CKSEL_HOCO            (0x1)
+#define BSP_PRV_CKSEL_MAIN_OSC        (0x2)
+#define BSP_PRV_CKSEL_SUBCLOCK        (0x3)
+#define BSP_PRV_CKSEL_PLL             (0x4)
+
+#define BSP_PRV_NORMALIZE_X10  (10)   /* used to avoid floating point arithmetic */
 
 /***********************************************************************************************************************
 Typedef definitions
@@ -54,7 +67,7 @@ Exported global variables (to be accessed by other files)
 Private global variables and functions
 ***********************************************************************************************************************/
 /* When using the user startup program, disable the following code. */
-#if (BSP_CFG_STARTUP_DISABLE == 0)
+#if BSP_CFG_STARTUP_DISABLE == 0
 static void operating_frequency_set(void);
 static void clock_source_select(void);
 #endif /* BSP_CFG_STARTUP_DISABLE == 0 */
@@ -62,70 +75,77 @@ static void clock_source_select(void);
 /***********************************************************************************************************************
 * Function Name: get_iclk_freq_hz
 * Description  : Return the current ICLK frequency in Hz.  Called by R_BSP_GetIClkFreqHz().
-*
 *                The system clock source can be changed at any time via SYSTEM.SCKCR3.BIT.CKSEL, so in order to
 *                determine the ICLK frequency we need to first find the current system clock source and then,
 *                in some cases where the clock source can be configured for multiple frequencies, calculate the
 *                frequency at which it is currently running.
-*
 * Arguments    : None
-*
 * Return Value : uint32_t - the iclk frequency in Hz
-*
 ***********************************************************************************************************************/
 uint32_t get_iclk_freq_hz(void)
 {
-    #define NORMALIZE_X10  10   // used to avoid floating point arithmetic
-
-    uint32_t sysClockSrcFreq;
+    uint32_t sys_clock_src_freq;
     uint32_t pll_multiplier;
     uint32_t pll_source_freq;
-    uint32_t hoco_frequency[3] = {16000000, 18000000, 20000000}; // 16/18/20 MHz
-    uint8_t  cksel = (uint8_t)SYSTEM.SCKCR3.BIT.CKSEL;  // Read the system clock select value
+    uint32_t hoco_frequency[3] = {16000000, 18000000, 20000000};
+
+    /* Casting is valid because it matches the type to the retern value. */
+    uint8_t  cksel = (uint8_t)SYSTEM.SCKCR3.BIT.CKSEL;
 
     switch (cksel)
     {
-        case CKSEL_LOCO:
-            sysClockSrcFreq = BSP_LOCO_HZ;
+        case BSP_PRV_CKSEL_LOCO:
+            sys_clock_src_freq = BSP_LOCO_HZ;
             break;
 
-        case CKSEL_HOCO:
-            sysClockSrcFreq = hoco_frequency[SYSTEM.HOCOCR2.BIT.HCFRQ];
+        case BSP_PRV_CKSEL_HOCO:
+
+            /* Set HOCO frequency. */
+            sys_clock_src_freq = hoco_frequency[SYSTEM.HOCOCR2.BIT.HCFRQ];
             break;
 
-        case CKSEL_MAIN_OSC:
-            sysClockSrcFreq = BSP_CFG_XTAL_HZ;
+        case BSP_PRV_CKSEL_MAIN_OSC:
+            sys_clock_src_freq = BSP_CFG_XTAL_HZ;
             break;
 
-        case CKSEL_SUBCLOCK:
-            sysClockSrcFreq = BSP_SUB_CLOCK_HZ;
+        case BSP_PRV_CKSEL_SUBCLOCK:
+            sys_clock_src_freq = BSP_SUB_CLOCK_HZ;
             break;
 
-        case CKSEL_PLL:
+        case BSP_PRV_CKSEL_PLL:
+
             /* The RX65N have two possible sources for the PLL */
 
-            pll_multiplier = ((((uint32_t)(SYSTEM.PLLCR.BIT.STC + 1)) * NORMALIZE_X10) / 2);
+            /* Casting is valid because it matches the type to the retern value. */
+            pll_multiplier = ((((uint32_t)(SYSTEM.PLLCR.BIT.STC + 1)) * BSP_PRV_NORMALIZE_X10) / 2);
 
-            pll_source_freq = BSP_CFG_XTAL_HZ; // Default to the MAIN OSC as the PLL source
-            if (SYSTEM.PLLCR.BIT.PLLSRCSEL == 0x1) // If 1 then the HOCO is the PLL source
+            /* Default to the MAIN OSC as the PLL source */
+            pll_source_freq = BSP_CFG_XTAL_HZ;
+
+            /* If 1 then the HOCO is the PLL source */
+            if (0x1 == SYSTEM.PLLCR.BIT.PLLSRCSEL)
             {
+                /* Set HOCO frequency. */
                 pll_source_freq = hoco_frequency[SYSTEM.HOCOCR2.BIT.HCFRQ];
             }
 
-            sysClockSrcFreq = ((pll_source_freq / (((uint32_t)(SYSTEM.PLLCR.BIT.PLIDIV + 1)) * NORMALIZE_X10)) * pll_multiplier);
-
+            /* Casting is valid because it matches the type to the retern value. */
+            sys_clock_src_freq = ((pll_source_freq / (((uint32_t)(SYSTEM.PLLCR.BIT.PLIDIV + 1)) * BSP_PRV_NORMALIZE_X10)) * pll_multiplier);
             break;
 
         default:
-            sysClockSrcFreq = BSP_CFG_XTAL_HZ; // Should never arrive here. Use the Main OSC freq as a default...
+
+            /* Should never arrive here. Use the Main OSC freq as a default... */
+            sys_clock_src_freq = BSP_CFG_XTAL_HZ;
+            break;
     }
 
     /* Finally, divide the system clock source frequency by the currently set ICLK divider to get the ICLK frequency */
-    return (sysClockSrcFreq / (uint32_t)(1 << SYSTEM.SCKCR.BIT.ICK));
-}
+    return (sys_clock_src_freq / (uint32_t)(1 << SYSTEM.SCKCR.BIT.ICK));
+} /* End of function get_iclk_freq_hz() */
 
 /* When using the user startup program, disable the following code. */
-#if (BSP_CFG_STARTUP_DISABLE == 0)
+#if BSP_CFG_STARTUP_DISABLE == 0
 
 /***********************************************************************************************************************
 * Function name: mcu_clock_setup
@@ -137,7 +157,7 @@ void mcu_clock_setup(void)
 {
     /* Switch to high-speed operation */
     operating_frequency_set();
-}
+} /* End of function mcu_clock_setup() */
 
 /***********************************************************************************************************************
 * Function name: operating_frequency_set
@@ -147,7 +167,7 @@ void mcu_clock_setup(void)
 ***********************************************************************************************************************/
 static void operating_frequency_set (void)
 {
-    /* Used for constructing value to write to SCKCR register. */
+    /* Used for constructing value to write to SCKCR, SCKCR2, and SCKCR3 registers. */
     uint32_t tmp_clock = 0;
 
     /* Protect off. */
@@ -214,7 +234,7 @@ static void operating_frequency_set (void)
 #endif
 
     /* Configure PSTOP1 bit for BCLK output. */
-#if BSP_CFG_BCLK_OUTPUT == 0    
+#if BSP_CFG_BCLK_OUTPUT == 0
     /* Set PSTOP1 bit */
     tmp_clock |= 0x00800000;
 #elif BSP_CFG_BCLK_OUTPUT == 1
@@ -225,14 +245,13 @@ static void operating_frequency_set (void)
     tmp_clock &= ~0x00800000;
     /* Set BCLK divider bit */
     SYSTEM.BCKCR.BIT.BCLKDIV = 1;
-    
-    /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual. */
+
+    /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual.
+       This is done to ensure that the register has been written before the next register access. The RX has a 
+       pipeline architecture so the next instruction could be executed before the previous write had finished.
+    */
     if(1 ==  SYSTEM.BCKCR.BIT.BCLKDIV)
     {
-        /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual.
-           This is done to ensure that the register has been written before the next register access. The RX has a 
-           pipeline architecture so the next instruction could be executed before the previous write had finished.
-        */    
         R_BSP_NOP();
     }
 #else
@@ -240,7 +259,7 @@ static void operating_frequency_set (void)
 #endif
 
     /* Configure PSTOP0 bit for SDCLK output. */
-#if BSP_CFG_SDCLK_OUTPUT == 0    
+#if BSP_CFG_SDCLK_OUTPUT == 0
     /* Set PSTOP0 bit */
     tmp_clock |= 0x00400000;
 #elif BSP_CFG_SDCLK_OUTPUT == 1
@@ -329,13 +348,12 @@ static void operating_frequency_set (void)
     /* Set SCKCR register. */
     SYSTEM.SCKCR.LONG = tmp_clock;
 
-    /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual. */
+    /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual.
+       This is done to ensure that the register has been written before the next register access. The RX has a 
+       pipeline architecture so the next instruction could be executed before the previous write had finished.
+    */
     if(tmp_clock ==  SYSTEM.SCKCR.LONG)
     {
-        /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual.
-           This is done to ensure that the register has been written before the next register access. The RX has a 
-           pipeline architecture so the next instruction could be executed before the previous write had finished.
-        */    
         R_BSP_NOP();
     }
 
@@ -358,59 +376,43 @@ static void operating_frequency_set (void)
     /* Set SCKCR2 register. */
     SYSTEM.SCKCR2.WORD = (uint16_t)tmp_clock;
 
-    /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual. */
+    /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual.
+       This is done to ensure that the register has been written before the next register access. The RX has a 
+       pipeline architecture so the next instruction could be executed before the previous write had finished.
+    */
     if((uint16_t)tmp_clock ==  SYSTEM.SCKCR2.WORD)
     {
-        /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual.
-           This is done to ensure that the register has been written before the next register access. The RX has a 
-           pipeline architecture so the next instruction could be executed before the previous write had finished.
-        */    
         R_BSP_NOP();
     }
 
     /* Choose clock source. Default for r_bsp_config.h is PLL. */
     tmp_clock = ((uint16_t)BSP_CFG_CLOCK_SOURCE) << 8;
+
+    /* Casting is valid because it matches the type to the retern value. */
     SYSTEM.SCKCR3.WORD = (uint16_t)tmp_clock;
 
-    /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual. */
+    /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual.
+       This is done to ensure that the register has been written before the next register access. The RX has a 
+       pipeline architecture so the next instruction could be executed before the previous write had finished.
+    */
     if((uint16_t)tmp_clock ==  SYSTEM.SCKCR3.WORD)
     {
-        /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual.
-           This is done to ensure that the register has been written before the next register access. The RX has a 
-           pipeline architecture so the next instruction could be executed before the previous write had finished.
-        */    
         R_BSP_NOP();
     }
 
-#if (BSP_CFG_CLOCK_SOURCE != 0)
+#if BSP_CFG_CLOCK_SOURCE != 0
     /* We can now turn LOCO off since it is not going to be used. */
     SYSTEM.LOCOCR.BYTE = 0x01;
-    
+
     /* Wait for five the LOCO cycles */
     /* 5 count of LOCO : (1000000/216000)*5 = 23.148148148us
        23 + 2 = 25us ("+2" is overhead cycle) */
     R_BSP_SoftwareDelay((uint32_t)25, BSP_DELAY_MICROSECS);
 #endif
 
-#if (BSP_CFG_ROM_CACHE_ENABLE == 1)
-    FLASH.ROMCIV.WORD = 0x0001;
-    /* WAIT_LOOP */
-    while (FLASH.ROMCIV.WORD != 0x0000)
-    {
-        /* wait for bit to set */
-    }
-    
-    FLASH.ROMCE.WORD = 0x0001;
-    /* WAIT_LOOP */
-    while (FLASH.ROMCE.WORD != 0x0001)
-    {
-        /* wait for bit to set */
-    }
-#endif
-
     /* Protect on. */
     SYSTEM.PRCR.WORD = 0xA500;
-}
+} /* End of function operating_frequency_set() */
 
 /***********************************************************************************************************************
 * Function name: clock_source_select
@@ -446,6 +448,7 @@ static void clock_source_select (void)
         while(1 == SYSTEM.OSCOVFSR.BIT.HCOVF)
         {
             /* The delay period needed is to make sure that the HOCO has stopped. */
+            R_BSP_NOP();
         }
 
         /* Set HOCO frequency. */
@@ -462,11 +465,12 @@ static void clock_source_select (void)
         /* HOCO is chosen. Start it operating. */
         SYSTEM.HOCOCR.BYTE = 0x00;
 
+        /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual.
+           This is done to ensure that the register has been written before the next register access. The RX has a 
+           pipeline architecture so the next instruction could be executed before the previous write had finished.
+         */
         if(0x00 ==  SYSTEM.HOCOCR.BYTE)
         {
-            /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual. 
-               This is done to ensure that the register has been written before the next register access. The RX has a 
-               pipeline architecture so the next instruction could be executed before the previous write had finished. */
             R_BSP_NOP();
         }
     }
@@ -474,10 +478,11 @@ static void clock_source_select (void)
     /* WAIT_LOOP */
     while(0 == SYSTEM.OSCOVFSR.BIT.HCOVF)
     {
-        /* The delay period needed is to make sure that the HOCO has stabilized. */    
+        /* The delay period needed is to make sure that the HOCO has stabilized. */
+        R_BSP_NOP();
     }
-#else
-    /* If HOCO is already operating, it doesn't stop.  */
+#else /* (BSP_CFG_CLOCK_SOURCE != 1) || ((BSP_CFG_CLOCK_SOURCE == 4) && (BSP_CFG_PLL_SRC == 0)) */
+    /* If HOCO is already operating, it doesn't stop. */
     if (1 == SYSTEM.HOCOCR.BIT.HCSTP)
     {
         /* Turn off power to HOCO. */
@@ -489,14 +494,15 @@ static void clock_source_select (void)
         while(0 == SYSTEM.OSCOVFSR.BIT.HCOVF)
         {
             /* The delay period needed is to make sure that the HOCO has stabilized. */
+            R_BSP_NOP();
         }
     }
-#endif
+#endif /* (BSP_CFG_CLOCK_SOURCE == 1) || ((BSP_CFG_CLOCK_SOURCE == 4) && (BSP_CFG_PLL_SRC == 1)) */
 
     /* Use Main clock if Main clock is chosen or if PLL is chosen with Main clock as source. */
 #if (BSP_CFG_CLOCK_SOURCE == 2) || ((BSP_CFG_CLOCK_SOURCE == 4) && (BSP_CFG_PLL_SRC == 0))
     /* Main clock oscillator is chosen. Start it operating. */
-    
+
     /* If the main oscillator is >10MHz then the main clock oscillator forced oscillation control register (MOFCR) must
        be changed. */
     if (BSP_CFG_XTAL_HZ > 20000000)
@@ -521,36 +527,38 @@ static void clock_source_select (void)
     }
 
     /* Set the oscillation stabilization wait time of the main clock oscillator. */
-#if (BSP_CFG_MAIN_CLOCK_SOURCE == 0) /* Resonator */
+#if BSP_CFG_MAIN_CLOCK_SOURCE == 0 /* Resonator */
     SYSTEM.MOSCWTCR.BYTE = BSP_CFG_MOSC_WAIT_TIME;
-#elif (BSP_CFG_MAIN_CLOCK_SOURCE == 1) /* External oscillator input */
+#elif BSP_CFG_MAIN_CLOCK_SOURCE == 1 /* External oscillator input */
     SYSTEM.MOSCWTCR.BYTE = 0x00;
 #else
     #error "Error! Invalid setting for BSP_CFG_MAIN_CLOCK_SOURCE in r_bsp_config.h"
-#endif 
+#endif
 
     /* Set the main clock to operating. */
     SYSTEM.MOSCCR.BYTE = 0x00;
 
+    /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual.
+       This is done to ensure that the register has been written before the next register access. The RX has a 
+       pipeline architecture so the next instruction could be executed before the previous write had finished.
+     */
     if(0x00 ==  SYSTEM.MOSCCR.BYTE)
     {
-        /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual. 
-           This is done to ensure that the register has been written before the next register access. The RX has a 
-           pipeline architecture so the next instruction could be executed before the previous write had finished. */    
         R_BSP_NOP();
     }
 
     /* WAIT_LOOP */
     while(0 == SYSTEM.OSCOVFSR.BIT.MOOVF)
-    {        
+    {
         /* The delay period needed is to make sure that the Main clock has stabilized. */
+        R_BSP_NOP();
     }
-#else
+#else /* (BSP_CFG_CLOCK_SOURCE != 2) || ((BSP_CFG_CLOCK_SOURCE == 4) && (BSP_CFG_PLL_SRC == 1)) */
     /* Main clock is stopped after reset. */
-#endif
+#endif /* (BSP_CFG_CLOCK_SOURCE == 2) || ((BSP_CFG_CLOCK_SOURCE == 4) && (BSP_CFG_PLL_SRC == 0)) */
 
     /* Sub-clock setting. */
-    
+
     /* Cold start setting */
     if (0 == SYSTEM.RSTSR1.BIT.CWSF)
     {
@@ -560,16 +568,16 @@ static void clock_source_select (void)
         b0       RCKSEL   - Count Source Select - Sub-clock oscillator is selected. */
         RTC.RCR4.BIT.RCKSEL = 0;
 
-        /* dummy read four times */
         /* WAIT_LOOP */
         for (i = 0; i < 4; i++)
         {
+            /* dummy read four times */
             dummy = RTC.RCR4.BYTE;
         }
 
+        /* Confirm that the written */
         if (0 != RTC.RCR4.BIT.RCKSEL)
         {
-            /* Confirm that the written */
             R_BSP_NOP();
         }
 
@@ -579,16 +587,16 @@ static void clock_source_select (void)
         b0       RTCEN    - Sub-clock oscillator is stopped. */
         RTC.RCR3.BIT.RTCEN = 0;
 
-        /* dummy read four times */
         /* WAIT_LOOP */
         for (i = 0; i < 4; i++)
         {
+            /* dummy read four times */
             dummy = RTC.RCR3.BYTE;
         }
 
+        /* Confirm that the written */
         if (0 != RTC.RCR3.BIT.RTCEN)
         {
-            /* Confirm that the written */
             R_BSP_NOP();
         }
 
@@ -597,11 +605,12 @@ static void clock_source_select (void)
         b0       SOSTP    - Sub-clock oscillator Stop - Sub-clock oscillator is stopped. */
         SYSTEM.SOSCCR.BYTE = 0x01;
 
+        /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual.
+           This is done to ensure that the register has been written before the next register access. The RX has a 
+           pipeline architecture so the next instruction could be executed before the previous write had finished.
+         */
         if (0x01 != SYSTEM.SOSCCR.BYTE)
         {
-            /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual. 
-               This is done to ensure that the register has been written before the next register access. The RX has a 
-               pipeline architecture so the next instruction could be executed before the previous write had finished. */    
             R_BSP_NOP();
         }
 
@@ -609,6 +618,7 @@ static void clock_source_select (void)
         while (0 != SYSTEM.OSCOVFSR.BIT.SOOVF)
         {        
             /* The delay period needed is to make sure that the sub-clock has stopped. */
+            R_BSP_NOP();
         }
 
 #if (BSP_CFG_CLOCK_SOURCE == 3) || (BSP_CFG_RTC_ENABLE == 1)
@@ -619,20 +629,21 @@ static void clock_source_select (void)
             tmp = 0x01;
         #else
             #error "Error! Invalid setting for BSP_CFG_SOSC_DRV_CAP in r_bsp_config.h"
-        #endif 
+        #endif
 
+        /* Set the Sub-Clock Oscillator Drive Capacity Control. */
         RTC.RCR3.BIT.RTCDV = tmp;
 
-        /* dummy read four times */
         /* WAIT_LOOP */
         for (i = 0; i < 4; i++)
         {
+            /* dummy read four times */
             dummy = RTC.RCR3.BYTE;
         }
 
+        /* Confirm that the written */
         if (tmp != RTC.RCR3.BIT.RTCDV)
         {
-            /* Confirm that the written */
             R_BSP_NOP();
         }
 
@@ -645,11 +656,12 @@ static void clock_source_select (void)
         /* Operate the Sub-clock oscillator */
         SYSTEM.SOSCCR.BYTE = 0x00;
 
+        /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual.
+           This is done to ensure that the register has been written before the next register access. The RX has a 
+           pipeline architecture so the next instruction could be executed before the previous write had finished.
+         */
         if (0x00 != SYSTEM.SOSCCR.BYTE)
         {
-            /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual. 
-               This is done to ensure that the register has been written before the next register access. The RX has a 
-               pipeline architecture so the next instruction could be executed before the previous write had finished. */    
             R_BSP_NOP();
         }
 
@@ -657,27 +669,28 @@ static void clock_source_select (void)
         while (1 != SYSTEM.OSCOVFSR.BIT.SOOVF)
         {
             /* The delay period needed is to make sure that the sub-clock  has stabilized. */
+            R_BSP_NOP();
         }
-#endif
+#endif /* (BSP_CFG_CLOCK_SOURCE == 3) || (BSP_CFG_RTC_ENABLE == 1) */
 
-#if (BSP_CFG_RTC_ENABLE == 1)
+#if BSP_CFG_RTC_ENABLE == 1
         /* ---- Set wait time until the sub-clock oscillator stabilizes ---- */
         SYSTEM.SOSCWTCR.BYTE = 0x00;
 
         /* ---- Operate the sub-clock oscillator ---- */
         RTC.RCR3.BIT.RTCEN = 1;
 
-        /* dummy read four times */
         /* WAIT_LOOP */
         for (i = 0; i < 4; i++)
         {
+             /* dummy read four times */
              dummy = RTC.RCR3.BIT.RTCEN;
         }
 
+        /* Confirm that the written value can be read correctly. */
         if (1 != RTC.RCR3.BIT.RTCEN)
         {
-             /* Confirm that the written value can be read correctly. */
-             R_BSP_NOP();
+            R_BSP_NOP();
         }
 #endif
 
@@ -707,6 +720,7 @@ static void clock_source_select (void)
         while (0 != RTC.RCR2.BIT.START)
         {
             /* Confirm that the written value can be read correctly. */
+             R_BSP_NOP();
         }
 
         /* RTC Software Reset */
@@ -716,6 +730,7 @@ static void clock_source_select (void)
         while (0 != RTC.RCR2.BIT.RESET)
         {
             /* Confirm that the written value can be read correctly. */
+            R_BSP_NOP();
         }
 
         /* An alarm interrupt request is disabled */
@@ -733,12 +748,12 @@ static void clock_source_select (void)
            (8.056640625+2)*(1000000/240000)=41.902669270833us ("+2" is overhead cycle) */
         R_BSP_SoftwareDelay((uint32_t)42, BSP_DELAY_MICROSECS);
 
+        /* Confirm that the written value can be read correctly. */
         if (0x00 != (RTC.RCR1.BYTE & 0x07))
         {
-            /* Confirm that the written value can be read correctly. */
             R_BSP_NOP();
         }
-#endif
+#endif /* (BSP_CFG_CLOCK_SOURCE == 3) && (BSP_CFG_RTC_ENABLE == 0) */
     }
     /* Warm start setting */
     else
@@ -749,11 +764,12 @@ static void clock_source_select (void)
         b0       SOSTP    - Sub-clock oscillator Stop - Sub-clock oscillator is stopped. */
         SYSTEM.SOSCCR.BYTE = 0x01;
 
+        /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual.
+           This is done to ensure that the register has been written before the next register access. The RX has a 
+           pipeline architecture so the next instruction could be executed before the previous write had finished.
+         */
         if (0x01 != SYSTEM.SOSCCR.BYTE)
         {
-            /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual. 
-               This is done to ensure that the register has been written before the next register access. The RX has a 
-               pipeline architecture so the next instruction could be executed before the previous write had finished. */    
             R_BSP_NOP();
         }
 
@@ -761,10 +777,11 @@ static void clock_source_select (void)
         while (0 != SYSTEM.OSCOVFSR.BIT.SOOVF)
         {
             /* Confirm that the Sub clock stopped. */
+            R_BSP_NOP();
         }
 #endif
 
-#if (BSP_CFG_CLOCK_SOURCE == 3)
+#if BSP_CFG_CLOCK_SOURCE == 3
         /* Set wait time until the sub-clock oscillator stabilizes */
         /* SOSCWTCR - Sub-Clock Oscillator Wait Control Register
         b7:b5    Reserved - The write value should be 0.
@@ -774,11 +791,12 @@ static void clock_source_select (void)
         /* Operate the Sub-clock oscillator */
         SYSTEM.SOSCCR.BYTE = 0x00;
 
+        /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual.
+           This is done to ensure that the register has been written before the next register access. The RX has a 
+           pipeline architecture so the next instruction could be executed before the previous write had finished.
+         */
         if (0x00 != SYSTEM.SOSCCR.BYTE)
         {
-            /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual. 
-               This is done to ensure that the register has been written before the next register access. The RX has a 
-               pipeline architecture so the next instruction could be executed before the previous write had finished. */    
             R_BSP_NOP();
         }
 #endif
@@ -788,25 +806,26 @@ static void clock_source_select (void)
         while (1 != SYSTEM.OSCOVFSR.BIT.SOOVF)
         {
             /* The delay period needed is to make sure that the sub-clock  has stabilized. */
+            R_BSP_NOP();
         }
 #endif
 
-#if (BSP_CFG_RTC_ENABLE == 1)
+#if BSP_CFG_RTC_ENABLE == 1
         /* ---- Set wait time until the sub-clock oscillator stabilizes ---- */
         SYSTEM.SOSCWTCR.BYTE = 0x00;
 #endif
     }
 
-#if (BSP_CFG_CLOCK_SOURCE == 4)
+#if BSP_CFG_CLOCK_SOURCE == 4
 
     /* Set PLL Input Divisor. */
     SYSTEM.PLLCR.BIT.PLIDIV = BSP_CFG_PLL_DIV - 1;
 
-    #if (BSP_CFG_PLL_SRC == 0)
-    /* Clear PLL clock source if PLL clock source is Main clock.  */
+    #if BSP_CFG_PLL_SRC == 0
+    /* Clear PLL clock source if PLL clock source is Main clock. */
     SYSTEM.PLLCR.BIT.PLLSRCSEL = 0;
     #else
-    /* Set PLL clock source if PLL clock source is HOCO clock.  */
+    /* Set PLL clock source if PLL clock source is HOCO clock. */
     SYSTEM.PLLCR.BIT.PLLSRCSEL = 1;
     #endif
 
@@ -820,62 +839,59 @@ static void clock_source_select (void)
     while(0 == SYSTEM.OSCOVFSR.BIT.PLOVF)
     {
         /* The delay period needed is to make sure that the PLL has stabilized. */
+        R_BSP_NOP();
     }
-
 #else
     /* PLL is stopped after reset. */
 #endif
 
     /* LOCO is saved for last since it is what is running by default out of reset. This means you do not want to turn
        it off until another clock has been enabled and is ready to use. */
-#if (BSP_CFG_CLOCK_SOURCE == 0)
+#if BSP_CFG_CLOCK_SOURCE == 0
     /* LOCO is chosen. This is the default out of reset. */
 #else
     /* LOCO is not chosen but it cannot be turned off yet since it is still being used. */
 #endif
 
-    /* Make sure a valid clock was chosen. */
-#if (BSP_CFG_CLOCK_SOURCE > 4) || (BSP_CFG_CLOCK_SOURCE < 0)
-    #error "ERROR - Valid clock source must be chosen in r_bsp_config.h using BSP_CFG_CLOCK_SOURCE macro."
-#endif
-
     /* RX65N has a ROMWT register which controls the cycle waiting for access to code flash memory.
-       It is set as zero coming out of reset. 
-       When setting ICLK to [50 MHz < ICLK <= 100 MHz], set the ROMWT.ROMWT[1:0] bits to 01b. 
+       It is set as zero coming out of reset.
+       When setting ICLK to [50 MHz < ICLK <= 100 MHz], set the ROMWT.ROMWT[1:0] bits to 01b.
        When setting ICLK to [100 MHz < ICLK <= 120 MHz], set the ROMWT.ROMWT[1:0] bits to 10b. */
     if (BSP_ICLK_HZ > BSP_MCU_ROMWT_FREQ_THRESHOLD_02)
     {
+        /* Set the ROMWT.ROMWT[1:0] bits to 10b. */
         SYSTEM.ROMWT.BYTE = 0x02;
-        
-        /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual. */
+
+        /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual.
+           This is done to ensure that the register has been written before the next register access. The RX has a 
+           pipeline architecture so the next instruction could be executed before the previous write had finished.
+        */
         if(0x02 == SYSTEM.ROMWT.BYTE)
         {
-            /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual.
-               This is done to ensure that the register has been written before the next register access. The RX has a 
-               pipeline architecture so the next instruction could be executed before the previous write had finished.
-            */
             R_BSP_NOP();
         }
     }
     else if (BSP_ICLK_HZ > BSP_MCU_ROMWT_FREQ_THRESHOLD_01)
     {
+        /* Set the ROMWT.ROMWT[1:0] bits to 01b. */
         SYSTEM.ROMWT.BYTE = 0x01;
 
-        /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual. */
+        /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual.
+           This is done to ensure that the register has been written before the next register access. The RX has a 
+           pipeline architecture so the next instruction could be executed before the previous write had finished.
+        */
         if(0x01 == SYSTEM.ROMWT.BYTE)
         {
-            /* Dummy read and compare. cf."5. I/O Registers", "(2) Notes on writing to I/O registers" in User's manual.
-               This is done to ensure that the register has been written before the next register access. The RX has a 
-               pipeline architecture so the next instruction could be executed before the previous write had finished.
-            */
             R_BSP_NOP();
         }
     }
     else
     {
         /* Do nothing. */
+        R_BSP_NOP();
     }
 
-}
+} /* End of function clock_source_select() */
 
 #endif /* BSP_CFG_STARTUP_DISABLE == 0 */
+

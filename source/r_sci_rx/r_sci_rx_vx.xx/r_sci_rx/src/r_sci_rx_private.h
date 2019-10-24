@@ -17,11 +17,18 @@
 * Copyright (C) 2016 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
-* File Name    : r_sci_rx.h
+* File Name    : r_sci_rx_private.h
 * Description  : Functions for using SCI on the RX devices.
 ************************************************************************************************************************
 * History : DD.MM.YYYY Version Description
 *           01.10.2016 1.80    Initial Release. (The remake of the r01an1815ju0170 to the base.)
+*           28.09.2018 2.10    Added SCI_CFG_DATA_MATCH_INCLUDED for configuration data match function.
+*                              Fix GSCE Code Checker errors.
+*           01.02.2019 2.20    Added support received data match function for RX65N (SCI10 and SCI11).
+*           20.05.2019 3.00    Added support for GNUC and ICCRX.
+*           28.06.2019 3.10    Added support for RX23W
+*           15.08.2019 3.20    Added support received data match function for RX72M (SCI0 to SCI11).
+*                              Added support FIFO mode for RX72M (SCI7 to SCI11).
 ***********************************************************************************************************************/
 
 #ifndef SCI_RX_H
@@ -73,10 +80,27 @@ Macro definitions
     #define NULL (0)
 #endif
 
-#if (SCI_CFG_CH10_FIFO_INCLUDED) || (SCI_CFG_CH11_FIFO_INCLUDED)
+#if ((SCI_CFG_CH7_FIFO_INCLUDED)    || \
+     (SCI_CFG_CH8_FIFO_INCLUDED)    || \
+     (SCI_CFG_CH9_FIFO_INCLUDED)    || \
+     (SCI_CFG_CH10_FIFO_INCLUDED)   || \
+     (SCI_CFG_CH11_FIFO_INCLUDED))
     #define SCI_CFG_FIFO_INCLUDED (1)
-#else
-    #define SCI_CFG_FIFO_INCLUDED (0) /* It is better for XXXX_CFG_YYYY to be defined as 0 rather than not defined. */
+#endif
+
+#if ((SCI_CFG_CH0_DATA_MATCH_INCLUDED)  ||   \
+     (SCI_CFG_CH1_DATA_MATCH_INCLUDED)  ||   \
+     (SCI_CFG_CH2_DATA_MATCH_INCLUDED)  ||   \
+     (SCI_CFG_CH3_DATA_MATCH_INCLUDED)  ||   \
+     (SCI_CFG_CH4_DATA_MATCH_INCLUDED)  ||   \
+     (SCI_CFG_CH5_DATA_MATCH_INCLUDED)  ||   \
+     (SCI_CFG_CH6_DATA_MATCH_INCLUDED)  ||   \
+     (SCI_CFG_CH7_DATA_MATCH_INCLUDED)  ||   \
+     (SCI_CFG_CH8_DATA_MATCH_INCLUDED)  ||   \
+     (SCI_CFG_CH9_DATA_MATCH_INCLUDED)  ||   \
+     (SCI_CFG_CH10_DATA_MATCH_INCLUDED) ||   \
+     (SCI_CFG_CH11_DATA_MATCH_INCLUDED))
+    #define SCI_CFG_DATA_MATCH_INCLUDED (1)
 #endif
 
 #if SCI_CFG_FIFO_INCLUDED
@@ -99,7 +123,7 @@ Macro definitions
 #define SCI_SCR_DUMMY_READ                \
     if (0x00 == hdl->rom->regs->SCR.BYTE) \
     {                                     \
-        R_BSP_NOP();                            \
+        R_BSP_NOP();                      \
     }
 
 /* Interrupt Request register flag clear */
@@ -107,34 +131,34 @@ Macro definitions
 
 /* TDR/FTDR register write access */
 #if SCI_CFG_FIFO_INCLUDED
-#define SCI_TDR(byte)                       \
-    if (true == hdl->fifo_ctrl)             \
-    {                                       \
-        hdl->rom->regs->FTDR.BYTE.L = byte; \
-    }                                       \
-    else                                    \
-    {                                       \
-        hdl->rom->regs->TDR = byte;         \
+#define SCI_TDR(byte)                         \
+    if (true == hdl->fifo_ctrl)               \
+    {                                         \
+        hdl->rom->regs->FTDR.BYTE.L = (byte); \
+    }                                         \
+    else                                      \
+    {                                         \
+        hdl->rom->regs->TDR = (byte);         \
     }
 #else
-#define SCI_TDR(byte)                       \
-        hdl->rom->regs->TDR = byte;
+#define SCI_TDR(byte)                         \
+        hdl->rom->regs->TDR = (byte);
 #endif
 
 /* RDR/FRDR register read access */
 #if SCI_CFG_FIFO_INCLUDED
-#define SCI_RDR(byte)                       \
-    if (true == hdl->fifo_ctrl)             \
-    {                                       \
-        byte = hdl->rom->regs->FRDR.BYTE.L; \
-    }                                       \
-    else                                    \
-    {                                       \
-        byte = hdl->rom->regs->RDR;         \
+#define SCI_RDR(byte)                         \
+    if (true == hdl->fifo_ctrl)               \
+    {                                         \
+        (byte) = hdl->rom->regs->FRDR.BYTE.L; \
+    }                                         \
+    else                                      \
+    {                                         \
+        (byte) = hdl->rom->regs->RDR;         \
     }
 #else
-#define SCI_RDR(byte)                       \
-        byte = hdl->rom->regs->RDR;
+#define SCI_RDR(byte)                         \
+        (byte) = hdl->rom->regs->RDR;
 #endif
 
 /*****************************************************************************

@@ -27,7 +27,7 @@
 * http://www.renesas.com/disclaimer
 ************************************************************************************/
 
-/*  Copyright (C) 2011-2016 Renesas Electronics Corporation All rights reserved.  */
+/*  Copyright (C) 2011-2019 Renesas Electronics Corporation All rights reserved.  */
 
 /*""FILE COMMENT""******************************************************************************
  * System Name  : ether driver
@@ -36,7 +36,7 @@
  * Contents     : timer driver
  * Customer     : Standard
  * Model        : None
- * CPU          : RX64M , RX71M
+ * CPU          : RX
  * Compiler     :
  * OS           : ---
  * Programmer   :
@@ -47,6 +47,7 @@
 *               : 21.06.2010 ---- First Release
 *               : 25.01.2011 ---- clean up source code.
 *               : 05.01.2015 ---- Fixed include file.
+*               : 20.06.2019 ---- Source code maintenance.
 *""FILE COMMENT END""**************************************************************************/
 
 /******************************************************************************
@@ -83,6 +84,7 @@ void OpenTimer(void)
 {
     if(SYS_TIME_SUCCESS != R_SYS_TIME_RegisterPeriodicCallback((callback_from_sys_time_t)&timer_interrupt, 1))
     {
+        /* WAIT_LOOP */
         while (1)
         {
             /* infinite loop(setting error) */

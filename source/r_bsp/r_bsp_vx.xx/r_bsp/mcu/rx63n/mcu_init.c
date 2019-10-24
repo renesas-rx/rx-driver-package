@@ -184,6 +184,8 @@ void bsp_non_existent_port_init (void)
     PORTF.PDR.BYTE |= BSP_PRV_PORTF_NE_PIN_MASK;
     PORTG.PDR.BYTE |= BSP_PRV_PORTG_NE_PIN_MASK;
     PORTJ.PDR.BYTE |= BSP_PRV_PORTJ_NE_PIN_MASK;
+#else
+    R_BSP_NOP();
 #endif
 }
 

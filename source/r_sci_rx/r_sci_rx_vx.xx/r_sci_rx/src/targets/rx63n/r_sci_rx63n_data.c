@@ -22,6 +22,7 @@
 ***********************************************************************************************************************
 * History : DD.MM.YYYY Version Description
 *           17.06.2016 1.00    Initial Release.
+*           20.05.2019 3.00    Added support for GNUC and ICCRX.
 ***********************************************************************************************************************/
 
 /*****************************************************************************
@@ -87,8 +88,8 @@ const baud_divisor_t sync_baud[NUM_DIVISORS_SYNC]=
 #if SCI_CFG_CH0_INCLUDED
 
 /* rom info */
-const sci_ch_rom_t  ch0_rom = {(volatile __evenaccess struct st_sci12 *)&SCI0,
-                                &SYSTEM.MSTPCRB.LONG, BIT31_MASK,
+const sci_ch_rom_t  ch0_rom = {(volatile struct st_sci12 R_BSP_EVENACCESS_SFR *)&SCI0,
+                                (volatile uint32_t R_BSP_EVENACCESS_SFR*)&SYSTEM.MSTPCRB.LONG, BIT31_MASK,
                                 &ICU.IPR[IPR_SCI0_RXI0].BYTE,
                                 &ICU.IR[IR_SCI0_RXI0].BYTE,
                                 &ICU.IR[IR_SCI0_TXI0].BYTE,
@@ -99,7 +100,7 @@ const sci_ch_rom_t  ch0_rom = {(volatile __evenaccess struct st_sci12 *)&SCI0,
                                 BIT0_MASK, BIT6_MASK, BIT7_MASK, BIT0_MASK
                                 };
 /* channel control block */
-sci_ch_ctrl_t   ch0_ctrl = {&ch0_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, true
+sci_ch_ctrl_t   ch0_ctrl = {&ch0_rom, SCI_MODE_OFF, 0, NULL, NULL, NULL, true
                             #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
                             , true, 0, 0, false
                             #endif
@@ -111,8 +112,8 @@ sci_ch_ctrl_t   ch0_ctrl = {&ch0_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, tru
 #if SCI_CFG_CH1_INCLUDED
 
 /* rom info */
-const sci_ch_rom_t  ch1_rom = {(volatile __evenaccess struct st_sci12 *)&SCI1,
-                                &SYSTEM.MSTPCRB.LONG, BIT30_MASK,
+const sci_ch_rom_t  ch1_rom = {(volatile struct st_sci12 R_BSP_EVENACCESS_SFR *)&SCI1,
+                                (volatile uint32_t R_BSP_EVENACCESS_SFR*)&SYSTEM.MSTPCRB.LONG, BIT30_MASK,
                                 &ICU.IPR[IPR_SCI1_RXI1].BYTE,
                                 &ICU.IR[IR_SCI1_RXI1].BYTE,
                                 &ICU.IR[IR_SCI1_TXI1].BYTE,
@@ -123,7 +124,7 @@ const sci_ch_rom_t  ch1_rom = {(volatile __evenaccess struct st_sci12 *)&SCI1,
                                 BIT1_MASK, BIT1_MASK, BIT2_MASK, BIT3_MASK
                                 };
 /* channel control block */
-sci_ch_ctrl_t   ch1_ctrl = {&ch1_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, true
+sci_ch_ctrl_t   ch1_ctrl = {&ch1_rom, SCI_MODE_OFF, 0, NULL, NULL, NULL, true
                             #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
                             , true, 0, 0, false
                             #endif
@@ -135,8 +136,8 @@ sci_ch_ctrl_t   ch1_ctrl = {&ch1_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, tru
 #if SCI_CFG_CH2_INCLUDED
 
 /* rom info */
-const sci_ch_rom_t  ch2_rom = {(volatile __evenaccess struct st_sci12 *)&SCI2,
-                                &SYSTEM.MSTPCRB.LONG, BIT29_MASK,
+const sci_ch_rom_t  ch2_rom = {(volatile struct st_sci12 R_BSP_EVENACCESS_SFR *)&SCI2,
+                                (volatile uint32_t R_BSP_EVENACCESS_SFR*)&SYSTEM.MSTPCRB.LONG, BIT29_MASK,
                                 &ICU.IPR[IPR_SCI2_RXI2].BYTE,
                                 &ICU.IR[IR_SCI2_RXI2].BYTE,
                                 &ICU.IR[IR_SCI2_TXI2].BYTE,
@@ -147,7 +148,7 @@ const sci_ch_rom_t  ch2_rom = {(volatile __evenaccess struct st_sci12 *)&SCI2,
                                 BIT2_MASK, BIT4_MASK, BIT5_MASK, BIT6_MASK
                                 };
 /* channel control block */
-sci_ch_ctrl_t   ch2_ctrl = {&ch2_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, true
+sci_ch_ctrl_t   ch2_ctrl = {&ch2_rom, SCI_MODE_OFF, 0, NULL, NULL, NULL, true
                             #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
                             , true, 0, 0, false
                             #endif
@@ -159,8 +160,8 @@ sci_ch_ctrl_t   ch2_ctrl = {&ch2_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, tru
 #if SCI_CFG_CH3_INCLUDED
 
 /* rom info */
-const sci_ch_rom_t  ch3_rom = {(volatile __evenaccess struct st_sci12 *)&SCI3,
-                                &SYSTEM.MSTPCRB.LONG, BIT28_MASK,
+const sci_ch_rom_t  ch3_rom = {(volatile struct st_sci12 R_BSP_EVENACCESS_SFR *)&SCI3,
+                                (volatile uint32_t R_BSP_EVENACCESS_SFR*)&SYSTEM.MSTPCRB.LONG, BIT28_MASK,
                                 &ICU.IPR[IPR_SCI3_RXI3].BYTE,
                                 &ICU.IR[IR_SCI3_RXI3].BYTE,
                                 &ICU.IR[IR_SCI3_TXI3].BYTE,
@@ -171,7 +172,7 @@ const sci_ch_rom_t  ch3_rom = {(volatile __evenaccess struct st_sci12 *)&SCI3,
                                 BIT3_MASK, BIT7_MASK, BIT0_MASK, BIT1_MASK
                                 };
 /* channel control block */
-sci_ch_ctrl_t   ch3_ctrl = {&ch3_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, true
+sci_ch_ctrl_t   ch3_ctrl = {&ch3_rom, SCI_MODE_OFF, 0, NULL, NULL, NULL, true
                             #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
                             , true, 0, 0, false
                             #endif
@@ -183,8 +184,8 @@ sci_ch_ctrl_t   ch3_ctrl = {&ch3_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, tru
 #if SCI_CFG_CH4_INCLUDED
 
 /* rom info */
-const sci_ch_rom_t  ch4_rom = {(volatile __evenaccess struct st_sci12 *)&SCI4,
-                                &SYSTEM.MSTPCRB.LONG, BIT27_MASK,
+const sci_ch_rom_t  ch4_rom = {(volatile struct st_sci12 R_BSP_EVENACCESS_SFR *)&SCI4,
+                                (volatile uint32_t R_BSP_EVENACCESS_SFR*)&SYSTEM.MSTPCRB.LONG, BIT27_MASK,
                                 &ICU.IPR[IPR_SCI4_RXI4].BYTE,
                                 &ICU.IR[IR_SCI4_RXI4].BYTE,
                                 &ICU.IR[IR_SCI4_TXI4].BYTE,
@@ -195,7 +196,7 @@ const sci_ch_rom_t  ch4_rom = {(volatile __evenaccess struct st_sci12 *)&SCI4,
                                 BIT4_MASK, BIT2_MASK, BIT3_MASK, BIT4_MASK
                                 };
 /* channel control block */
-sci_ch_ctrl_t   ch4_ctrl = {&ch4_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, true
+sci_ch_ctrl_t   ch4_ctrl = {&ch4_rom, SCI_MODE_OFF, 0, NULL, NULL, NULL, true
                             #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
                             , true, 0, 0, false
                             #endif
@@ -207,8 +208,8 @@ sci_ch_ctrl_t   ch4_ctrl = {&ch4_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, tru
 #if SCI_CFG_CH5_INCLUDED
 
 /* rom info */
-const sci_ch_rom_t  ch5_rom = {(volatile __evenaccess struct st_sci12 *)&SCI5,
-                                &SYSTEM.MSTPCRB.LONG, BIT26_MASK,
+const sci_ch_rom_t  ch5_rom = {(volatile struct st_sci12 R_BSP_EVENACCESS_SFR *)&SCI5,
+                                (volatile uint32_t R_BSP_EVENACCESS_SFR*)&SYSTEM.MSTPCRB.LONG, BIT26_MASK,
                                 &ICU.IPR[IPR_SCI5_RXI5].BYTE,
                                 &ICU.IR[IR_SCI5_RXI5].BYTE,
                                 &ICU.IR[IR_SCI5_TXI5].BYTE,
@@ -219,7 +220,7 @@ const sci_ch_rom_t  ch5_rom = {(volatile __evenaccess struct st_sci12 *)&SCI5,
                                 BIT5_MASK, BIT5_MASK, BIT6_MASK, BIT7_MASK
                                 };
 /* channel control block */
-sci_ch_ctrl_t   ch5_ctrl = {&ch5_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, true
+sci_ch_ctrl_t   ch5_ctrl = {&ch5_rom, SCI_MODE_OFF, 0, NULL, NULL, NULL, true
                             #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
                             , true, 0, 0, false
                             #endif
@@ -231,8 +232,8 @@ sci_ch_ctrl_t   ch5_ctrl = {&ch5_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, tru
 #if SCI_CFG_CH6_INCLUDED
 
 /* rom info */
-const sci_ch_rom_t  ch6_rom = {(volatile __evenaccess struct st_sci12 *)&SCI6,
-                                &SYSTEM.MSTPCRB.LONG, BIT25_MASK,
+const sci_ch_rom_t  ch6_rom = {(volatile struct st_sci12 R_BSP_EVENACCESS_SFR *)&SCI6,
+                                (volatile uint32_t R_BSP_EVENACCESS_SFR*)&SYSTEM.MSTPCRB.LONG, BIT25_MASK,
                                 &ICU.IPR[IPR_SCI6_RXI6].BYTE,
                                 &ICU.IR[IR_SCI6_RXI6].BYTE,
                                 &ICU.IR[IR_SCI6_TXI6].BYTE,
@@ -243,7 +244,7 @@ const sci_ch_rom_t  ch6_rom = {(volatile __evenaccess struct st_sci12 *)&SCI6,
                                 BIT6_MASK, BIT0_MASK, BIT1_MASK, BIT2_MASK
                                 };
 /* channel control block */
-sci_ch_ctrl_t   ch6_ctrl = {&ch6_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, true
+sci_ch_ctrl_t   ch6_ctrl = {&ch6_rom, SCI_MODE_OFF, 0, NULL, NULL, NULL, true
                             #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
                             , true, 0, 0, false
                             #endif
@@ -255,8 +256,8 @@ sci_ch_ctrl_t   ch6_ctrl = {&ch6_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, tru
 #if SCI_CFG_CH7_INCLUDED
 
 /* rom info */
-const sci_ch_rom_t  ch7_rom = {(volatile __evenaccess struct st_sci12 *)&SCI7,
-                                &SYSTEM.MSTPCRB.LONG, BIT24_MASK,
+const sci_ch_rom_t  ch7_rom = {(volatile struct st_sci12 R_BSP_EVENACCESS_SFR *)&SCI7,
+                                (volatile uint32_t R_BSP_EVENACCESS_SFR*)&SYSTEM.MSTPCRB.LONG, BIT24_MASK,
                                 &ICU.IPR[IPR_SCI7_RXI7].BYTE,
                                 &ICU.IR[IR_SCI7_RXI7].BYTE,
                                 &ICU.IR[IR_SCI7_TXI7].BYTE,
@@ -267,7 +268,7 @@ const sci_ch_rom_t  ch7_rom = {(volatile __evenaccess struct st_sci12 *)&SCI7,
                                 BIT7_MASK, BIT3_MASK, BIT4_MASK, BIT5_MASK
                                 };
 /* channel control block */
-sci_ch_ctrl_t   ch7_ctrl = {&ch7_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, true
+sci_ch_ctrl_t   ch7_ctrl = {&ch7_rom, SCI_MODE_OFF, 0, NULL, NULL, NULL, true
                             #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
                             , true, 0, 0, false
                             #endif
@@ -279,8 +280,8 @@ sci_ch_ctrl_t   ch7_ctrl = {&ch7_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, tru
 #if SCI_CFG_CH8_INCLUDED
 
 /* rom info */
-const sci_ch_rom_t  ch8_rom = {(volatile __evenaccess struct st_sci12 *)&SCI8,
-                                &SYSTEM.MSTPCRC.LONG, BIT27_MASK,
+const sci_ch_rom_t  ch8_rom = {(volatile struct st_sci12 R_BSP_EVENACCESS_SFR *)&SCI8,
+                                (volatile uint32_t R_BSP_EVENACCESS_SFR*)&SYSTEM.MSTPCRC.LONG, BIT27_MASK,
                                 &ICU.IPR[IPR_SCI8_RXI8].BYTE,
                                 &ICU.IR[IR_SCI8_RXI8].BYTE,
                                 &ICU.IR[IR_SCI8_TXI8].BYTE,
@@ -291,7 +292,7 @@ const sci_ch_rom_t  ch8_rom = {(volatile __evenaccess struct st_sci12 *)&SCI8,
                                 BIT8_MASK, BIT6_MASK, BIT7_MASK, BIT0_MASK
                                 };
 /* channel control block */
-sci_ch_ctrl_t   ch8_ctrl = {&ch8_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, true
+sci_ch_ctrl_t   ch8_ctrl = {&ch8_rom, SCI_MODE_OFF, 0, NULL, NULL, NULL, true
                             #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
                             , true, 0, 0, false
                             #endif
@@ -303,8 +304,8 @@ sci_ch_ctrl_t   ch8_ctrl = {&ch8_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, tru
 #if SCI_CFG_CH9_INCLUDED
 
 /* rom info */
-const sci_ch_rom_t  ch9_rom = {(volatile __evenaccess struct st_sci12 *)&SCI9,
-                                &SYSTEM.MSTPCRC.LONG, BIT26_MASK,
+const sci_ch_rom_t  ch9_rom = {(volatile struct st_sci12 R_BSP_EVENACCESS_SFR *)&SCI9,
+                                (volatile uint32_t R_BSP_EVENACCESS_SFR*)&SYSTEM.MSTPCRC.LONG, BIT26_MASK,
                                 &ICU.IPR[IPR_SCI9_RXI9].BYTE,
                                 &ICU.IR[IR_SCI9_RXI9].BYTE,
                                 &ICU.IR[IR_SCI9_TXI9].BYTE,
@@ -315,7 +316,7 @@ const sci_ch_rom_t  ch9_rom = {(volatile __evenaccess struct st_sci12 *)&SCI9,
                                 BIT9_MASK, BIT1_MASK, BIT2_MASK, BIT3_MASK
                                 };
 /* channel control block */
-sci_ch_ctrl_t   ch9_ctrl = {&ch9_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, true
+sci_ch_ctrl_t   ch9_ctrl = {&ch9_rom, SCI_MODE_OFF, 0, NULL, NULL, NULL, true
                             #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
                             , true, 0, 0, false
                             #endif
@@ -327,8 +328,8 @@ sci_ch_ctrl_t   ch9_ctrl = {&ch9_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, tru
 #if SCI_CFG_CH10_INCLUDED
 
 /* rom info */
-const sci_ch_rom_t  ch10_rom = {(volatile __evenaccess struct st_sci12 *)&SCI10,
-                                &SYSTEM.MSTPCRC.LONG, BIT25_MASK,
+const sci_ch_rom_t  ch10_rom = {(volatile struct st_sci12 R_BSP_EVENACCESS_SFR *)&SCI10,
+                                (volatile uint32_t R_BSP_EVENACCESS_SFR*)&SYSTEM.MSTPCRC.LONG, BIT25_MASK,
                                 &ICU.IPR[IPR_SCI10_RXI10].BYTE,
                                 &ICU.IR[IR_SCI10_RXI10].BYTE,
                                 &ICU.IR[IR_SCI10_TXI10].BYTE,
@@ -339,7 +340,7 @@ const sci_ch_rom_t  ch10_rom = {(volatile __evenaccess struct st_sci12 *)&SCI10,
                                 BIT10_MASK, BIT4_MASK, BIT5_MASK, BIT6_MASK
                                 };
 /* channel control block */
-sci_ch_ctrl_t   ch10_ctrl = {&ch10_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, true
+sci_ch_ctrl_t   ch10_ctrl = {&ch10_rom, SCI_MODE_OFF, 0, NULL, NULL, NULL, true
                             #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
                             , true, 0, 0, false
                             #endif
@@ -351,8 +352,8 @@ sci_ch_ctrl_t   ch10_ctrl = {&ch10_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, t
 #if SCI_CFG_CH11_INCLUDED
 
 /* rom info */
-const sci_ch_rom_t  ch11_rom = {(volatile __evenaccess struct st_sci12 *)&SCI11,
-                                &SYSTEM.MSTPCRC.LONG, BIT24_MASK,
+const sci_ch_rom_t  ch11_rom = {(volatile struct st_sci12 R_BSP_EVENACCESS_SFR *)&SCI11,
+                                (volatile uint32_t R_BSP_EVENACCESS_SFR*)&SYSTEM.MSTPCRC.LONG, BIT24_MASK,
                                 &ICU.IPR[IPR_SCI11_RXI11].BYTE,
                                 &ICU.IR[IR_SCI11_RXI11].BYTE,
                                 &ICU.IR[IR_SCI11_TXI11].BYTE,
@@ -363,7 +364,7 @@ const sci_ch_rom_t  ch11_rom = {(volatile __evenaccess struct st_sci12 *)&SCI11,
                                 BIT11_MASK, BIT7_MASK, BIT0_MASK, BIT1_MASK
                                 };
 /* channel control block */
-sci_ch_ctrl_t   ch11_ctrl = {&ch11_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, true
+sci_ch_ctrl_t   ch11_ctrl = {&ch11_rom, SCI_MODE_OFF, 0, NULL, NULL, NULL, true
                             #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
                             , true, 0, 0, false
                             #endif
@@ -375,8 +376,8 @@ sci_ch_ctrl_t   ch11_ctrl = {&ch11_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, t
 #if SCI_CFG_CH12_INCLUDED
 
 /* rom info */
-const sci_ch_rom_t  ch12_rom = {(volatile __evenaccess struct st_sci12 *)&SCI12,
-                                &SYSTEM.MSTPCRB.LONG, BIT4_MASK,
+const sci_ch_rom_t  ch12_rom = {(volatile struct st_sci12 R_BSP_EVENACCESS_SFR *)&SCI12,
+                                (volatile uint32_t R_BSP_EVENACCESS_SFR*)&SYSTEM.MSTPCRB.LONG, BIT4_MASK,
                                 &ICU.IPR[IPR_SCI12_RXI12].BYTE,
                                 &ICU.IR[IR_SCI12_RXI12].BYTE,
                                 &ICU.IR[IR_SCI12_TXI12].BYTE,
@@ -387,7 +388,7 @@ const sci_ch_rom_t  ch12_rom = {(volatile __evenaccess struct st_sci12 *)&SCI12,
                                 BIT12_MASK, BIT2_MASK, BIT3_MASK, BIT4_MASK
                                 };
 /* channel control block */
-sci_ch_ctrl_t   ch12_ctrl = {&ch12_rom, SCI_MODE_OFF, 0, NULL, {NULL}, {NULL}, true
+sci_ch_ctrl_t   ch12_ctrl = {&ch12_rom, SCI_MODE_OFF, 0, NULL, NULL, NULL, true
                             #if (SCI_CFG_SSPI_INCLUDED || SCI_CFG_SYNC_INCLUDED)
                             , true, 0, 0, false
                             #endif

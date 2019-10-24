@@ -36,6 +36,11 @@
  *         : 31.08.2017 2.20     Changed the default value of the following macro definition.
  *                                 - SCI_IIC_CFG_CH1_INCLUDED
  *                               RX24U,RX130-512 support added.
+ *         : 29.01.2018 2.30     RX66T support added.
+ *                               Change the comment for definition of priority level
+ *         : 21.09.2018 2.40     RX72T support added.
+ *         : 20.06.2019 2.42     RX23W support added.
+ *         : 30.07.2019 2.43     RX72M support added.
  **********************************************************************************************************************/
 /* Guards against multiple inclusion */
 #ifndef SCI_IIC_CONFIG_H
@@ -58,12 +63,16 @@
 /*  RX230    : ch0, ch1,    ,    ,    , ch5, ch6,    , ch8, ch9,    ,    ,ch12 */
 /*  RX231    : ch0, ch1,    ,    ,    , ch5, ch6,    , ch8, ch9,    ,    ,ch12 */
 /*  RX23T    :    , ch1,    ,    ,    , ch5,    ,    ,    ,    ,    ,    ,     */
+/*  RX23W    :    , ch1,    ,    ,    , ch5,    ,    , ch8,    ,    ,    ,ch12 */
 /*  RX24T    :    , ch1,    ,    ,    , ch5, ch6,    ,    ,    ,    ,    ,     */
 /*  RX24U    :    , ch1,    ,    ,    , ch5, ch6,    , ch8, ch9,    ,ch11,     */
 /*  RX63N    : ch0, ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8, ch9,ch10,ch11,ch12 */
 /*  RX64M    : ch0, ch1, ch2, ch3, ch4, ch5, ch6, ch7,    ,    ,    ,    ,ch12 */
 /*  RX65N    : ch0, ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8, ch9,ch10,ch11,ch12 */
+/*  RX66T    :    , ch1,    ,    ,    , ch5, ch6,    , ch8, ch9,    ,ch11,ch12 */
 /*  RX71M    : ch0, ch1, ch2, ch3, ch4, ch5, ch6, ch7,    ,    ,    ,    ,ch12 */
+/*  RX72T    :    , ch1,    ,    ,    , ch5, ch6,    , ch8, ch9,    ,ch11,ch12 */
+/*  RX72M    : ch0, ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8, ch9,ch10,ch11,ch12 */
 /* Please change the definition value of channel to be used to '1'. */
     #define SCI_IIC_CFG_CH0_INCLUDED    (0)
     #define SCI_IIC_CFG_CH1_INCLUDED    (0)
@@ -95,10 +104,12 @@
     #define SCI_IIC_CFG_CH11_BITRATE_BPS  (384000)
     #define SCI_IIC_CFG_CH12_BITRATE_BPS  (384000)
 
-/* SET GROUP12 (RECEIVER ERROR) INTERRUPT PRIORITY; RX63N ONLY
- This #define sets the priority level for the interrupt that handles 
- receiver overrun, framing, and parity errors for all SCI channels
- on the RX63N. It is ignored for all other parts.
+/*
+ This definition set for TXI and so on for SCI interrupt priority level for SCI IIC.
+ When you use device which has GROUP12 interrupt(e.g RX65N) then
+ this definition set for GROUP12 and TXI and so on for SCI interrupt priority level.
+ When you use RX63N or device whcih does not have GROUP12 interrupt
+ then this definition set for TXI and so on for SCI interrupt priority level.
  */
 /* 1 lowest, 15 highest */
     #define SCI_IIC_CFG_CH0_INT_PRIORITY  (2)

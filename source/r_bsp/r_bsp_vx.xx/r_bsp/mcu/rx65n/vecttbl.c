@@ -12,9 +12,9 @@
 * Renesas reserves the right, without notice, to make changes to this software and to discontinue the availability of 
 * this software. By using this software, you agree to the additional terms and conditions found by accessing the 
 * following link:
-* http://www.renesas.com/disclaimer 
+* http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2016 Renesas Electronics Corporation. All rights reserved.    
+* Copyright (C) 2016 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * File Name    : vecttbl.c
@@ -32,9 +32,10 @@
 *                                Added the bsp startup module disable function.
 *         : 27.07.2018 2.01      Modified the comment of START_BANK_VALUE.
 *                                Changed the setting of ID code protection.
-*         : xx.xx.xxxx 3.00      Deleted exception functions.
-*                                (Exception functions moved to the common file (interrupts.c).)
+*         : 28.02.2019 3.00      Deleted exception functions.
+*                                (Exception functions moved to the common file (r_bsp_interrupts.c).)
 *                                Added support for GNUC and ICCRX.
+*                                Fixed coding style.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -44,7 +45,7 @@ Includes   <System Includes> , "Project Includes"
 #include "platform.h"
 
 /* When using the user startup program, disable the following code. */
-#if (BSP_CFG_STARTUP_DISABLE == 0)
+#if BSP_CFG_STARTUP_DISABLE == 0
 
 /***********************************************************************************************************************
 Macro definitions
@@ -55,55 +56,33 @@ Exported global functions (to be accessed by other files)
 ***********************************************************************************************************************/
 R_BSP_POR_FUNCTION(R_BSP_POWER_ON_RESET_FUNCTION);
 
-#ifdef BSP_MCU_EXCEP_SUPERVISOR_INST_ISR
-R_BSP_PRAGMA_INTERRUPT_FUNCTION(excep_supervisor_inst_isr)
-#endif
-#ifdef BSP_MCU_EXCEP_ACCESS_ISR
-R_BSP_PRAGMA_INTERRUPT_FUNCTION(excep_access_isr)
-#endif
-#ifdef BSP_MCU_EXCEP_UNDEFINED_INST_ISR
-R_BSP_PRAGMA_INTERRUPT_FUNCTION(excep_undefined_inst_isr)
-#endif
-#ifdef BSP_MCU_EXCEP_FLOATING_POINT_ISR
-R_BSP_PRAGMA_INTERRUPT_FUNCTION(excep_floating_point_isr)
-#endif
-#ifdef BSP_MCU_NON_MASKABLE_ISR
-R_BSP_PRAGMA_INTERRUPT_FUNCTION(non_maskable_isr)
-#endif
-#ifdef BSP_MCU_UNDEFINED_INTERRUPT_SOURCE_ISR
-R_BSP_PRAGMA_INTERRUPT_DEFAULT(undefined_interrupt_source_isr)
-#endif
-#ifdef BSP_MCU_BUS_ERROR_ISR
-R_BSP_PRAGMA_INTERRUPT(bus_error_isr, VECT(BSC,BUSERR))
-#endif
-
 /***********************************************************************************************************************
-* The following array fills in the UB codes to get into User Boot Mode, the MDEB register, and the User Boot reset
-* vector.
+* The following array fills in the option function select registers, fixed vector table, and the ID code protection 
+* bytes.
 ***********************************************************************************************************************/
 #ifdef __BIG
-    #define MDE_VALUE (0xfffffff8)    /* big */
+    #define BSP_PRV_MDE_VALUE (0xfffffff8)    /* big */
 #else
-    #define MDE_VALUE (0xffffffff)    /* little */
+    #define BSP_PRV_MDE_VALUE (0xffffffff)    /* little */
 #endif
 
 #if defined(BSP_MCU_RX65N_2MB) /* In the case of 1.5 or 2Mbyte ROM capacity. */
-    #if (BSP_CFG_CODE_FLASH_BANK_MODE == 0)
-        #define BANK_MODE_VALUE (0xffffff8f)    /* dual */
+    #if BSP_CFG_CODE_FLASH_BANK_MODE == 0
+        #define BSP_PRV_BANK_MODE_VALUE (0xffffff8f)    /* dual */
     #else
-        #define BANK_MODE_VALUE (0xffffffff)    /* linear */
+        #define BSP_PRV_BANK_MODE_VALUE (0xffffffff)    /* linear */
     #endif
 #else
-    #define BANK_MODE_VALUE (0xffffffff)    /* linear */
+    #define BSP_PRV_BANK_MODE_VALUE (0xffffffff)    /* linear */
 #endif
 
 #if defined(BSP_MCU_RX65N_2MB) /* In the case of 1.5 or 2Mbyte ROM capacity. */
-    #if (BSP_CFG_CODE_FLASH_START_BANK == 0)
+    #if BSP_CFG_CODE_FLASH_START_BANK == 0
         /* The address range of bank 1 from FFE00000h to FFEFFFFFh and bank 0 from FFF00000h to FFFFFFFFh. */
-        #define START_BANK_VALUE (0xffffffff)
+        #define BSP_PRV_START_BANK_VALUE (0xffffffff)
     #else
         /* The address range of bank 1 from FFF00000h to FFFFFFFFh and bank 0 from FFE00000h to FFEFFFFFh. */
-        #define START_BANK_VALUE (0xfffffff8)
+        #define BSP_PRV_START_BANK_VALUE (0xfffffff8)
     #endif
 #endif
 
@@ -125,48 +104,48 @@ R_BSP_PRAGMA_INTERRUPT(bus_error_isr, VECT(BSC,BUSERR))
 #pragma address __FAWreg     = 0xFE7F5D64
 #pragma address __ROMCODEreg = 0xFE7F5D70
 
-const unsigned long __MDEreg     = (MDE_VALUE & BANK_MODE_VALUE);
-const unsigned long __OFS0reg    = BSP_CFG_OFS0_REG_VALUE;
-const unsigned long __OFS1reg    = BSP_CFG_OFS1_REG_VALUE;
-const unsigned long __TMINFreg   = 0xffffffff;
+const uint32_t __MDEreg     = (BSP_PRV_MDE_VALUE & BSP_PRV_BANK_MODE_VALUE);
+const uint32_t __OFS0reg    = BSP_CFG_OFS0_REG_VALUE;
+const uint32_t __OFS1reg    = BSP_CFG_OFS1_REG_VALUE;
+const uint32_t __TMINFreg   = 0xffffffff;
 #if defined(BSP_MCU_RX65N_2MB)
-const unsigned long __BANKSELreg = START_BANK_VALUE;
+const uint32_t __BANKSELreg = BSP_PRV_START_BANK_VALUE;
 #endif
-const unsigned long __SPCCreg    = 0xffffffff;
-const unsigned long __TMEFreg    = BSP_CFG_TRUSTED_MODE_FUNCTION;
-const unsigned long __OSIS1reg   = BSP_CFG_ID_CODE_LONG_1;
-const unsigned long __OSIS2reg   = BSP_CFG_ID_CODE_LONG_2;
-const unsigned long __OSIS3reg   = BSP_CFG_ID_CODE_LONG_3;
-const unsigned long __OSIS4reg   = BSP_CFG_ID_CODE_LONG_4;
-const unsigned long __FAWreg     = BSP_CFG_FAW_REG_VALUE;
-const unsigned long __ROMCODEreg = BSP_CFG_ROMCODE_REG_VALUE;
+const uint32_t __SPCCreg    = 0xffffffff;
+const uint32_t __TMEFreg    = BSP_CFG_TRUSTED_MODE_FUNCTION;
+const uint32_t __OSIS1reg   = BSP_CFG_ID_CODE_LONG_1;
+const uint32_t __OSIS2reg   = BSP_CFG_ID_CODE_LONG_2;
+const uint32_t __OSIS3reg   = BSP_CFG_ID_CODE_LONG_3;
+const uint32_t __OSIS4reg   = BSP_CFG_ID_CODE_LONG_4;
+const uint32_t __FAWreg     = BSP_CFG_FAW_REG_VALUE;
+const uint32_t __ROMCODEreg = BSP_CFG_ROMCODE_REG_VALUE;
 
 #elif defined(__GNUC__)
 
-const unsigned long __MDEreg     __attribute__ ((section(".ofs1"))) = (MDE_VALUE & BANK_MODE_VALUE);
-const unsigned long __OFS0reg    __attribute__ ((section(".ofs1"))) = BSP_CFG_OFS0_REG_VALUE;
-const unsigned long __OFS1reg    __attribute__ ((section(".ofs1"))) = BSP_CFG_OFS1_REG_VALUE;
-const unsigned long __TMINFreg   __attribute__ ((section(".ofs2"))) = 0xffffffff;
+const uint32_t __MDEreg     __attribute__ ((section(".ofs1"))) = (BSP_PRV_MDE_VALUE & BSP_PRV_BANK_MODE_VALUE);
+const uint32_t __OFS0reg    __attribute__ ((section(".ofs1"))) = BSP_CFG_OFS0_REG_VALUE;
+const uint32_t __OFS1reg    __attribute__ ((section(".ofs1"))) = BSP_CFG_OFS1_REG_VALUE;
+const uint32_t __TMINFreg   __attribute__ ((section(".ofs2"))) = 0xffffffff;
 #if defined(BSP_MCU_RX65N_2MB)
-//const unsigned long __BANKSELreg __attribute__ ((section(".ofs2"))) = START_BANK_VALUE;
+const uint32_t __BANKSELreg __attribute__ ((section(".ofs3"))) = BSP_PRV_START_BANK_VALUE;
 #endif
-const unsigned long __SPCCreg    __attribute__ ((section(".ofs3"))) = 0xffffffff;
-const unsigned long __TMEFreg    __attribute__ ((section(".ofs4"))) = BSP_CFG_TRUSTED_MODE_FUNCTION;
-const unsigned long __OSIS1reg   __attribute__ ((section(".ofs5"))) = BSP_CFG_ID_CODE_LONG_1;
-const unsigned long __OSIS2reg   __attribute__ ((section(".ofs5"))) = BSP_CFG_ID_CODE_LONG_2;
-const unsigned long __OSIS3reg   __attribute__ ((section(".ofs5"))) = BSP_CFG_ID_CODE_LONG_3;
-const unsigned long __OSIS4reg   __attribute__ ((section(".ofs5"))) = BSP_CFG_ID_CODE_LONG_4;
-const unsigned long __FAWreg     __attribute__ ((section(".ofs6"))) = BSP_CFG_FAW_REG_VALUE;
-const unsigned long __ROMCODEreg __attribute__ ((section(".ofs7"))) = BSP_CFG_ROMCODE_REG_VALUE;
+const uint32_t __SPCCreg    __attribute__ ((section(".ofs4"))) = 0xffffffff;
+const uint32_t __TMEFreg    __attribute__ ((section(".ofs5"))) = BSP_CFG_TRUSTED_MODE_FUNCTION;
+const uint32_t __OSIS1reg   __attribute__ ((section(".ofs6"))) = BSP_CFG_ID_CODE_LONG_1;
+const uint32_t __OSIS2reg   __attribute__ ((section(".ofs6"))) = BSP_CFG_ID_CODE_LONG_2;
+const uint32_t __OSIS3reg   __attribute__ ((section(".ofs6"))) = BSP_CFG_ID_CODE_LONG_3;
+const uint32_t __OSIS4reg   __attribute__ ((section(".ofs6"))) = BSP_CFG_ID_CODE_LONG_4;
+const uint32_t __FAWreg     __attribute__ ((section(".ofs7"))) = BSP_CFG_FAW_REG_VALUE;
+const uint32_t __ROMCODEreg __attribute__ ((section(".ofs8"))) = BSP_CFG_ROMCODE_REG_VALUE;
 
 #elif defined(__ICCRX__)
 
-#pragma public_equ = "__MDE", (MDE_VALUE & BANK_MODE_VALUE)
+#pragma public_equ = "__MDE", (BSP_PRV_MDE_VALUE & BSP_PRV_BANK_MODE_VALUE)
 #pragma public_equ = "__OFS0", BSP_CFG_OFS0_REG_VALUE
 #pragma public_equ = "__OFS1", BSP_CFG_OFS1_REG_VALUE
 #pragma public_equ = "__TMINF", 0xffffffff
 #if defined(BSP_MCU_RX65N_2MB)
-#pragma public_equ = "__BANKSEL", START_BANK_VALUE
+#pragma public_equ = "__BANKSEL", BSP_PRV_START_BANK_VALUE
 #endif
 #pragma public_equ = "__SPCC", 0xffffffff
 #pragma public_equ = "__TMEF", BSP_CFG_TRUSTED_MODE_FUNCTION

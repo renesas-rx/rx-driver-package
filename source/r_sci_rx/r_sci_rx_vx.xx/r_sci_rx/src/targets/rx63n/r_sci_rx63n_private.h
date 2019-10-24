@@ -22,6 +22,7 @@
 ************************************************************************************************************************
 * History : DD.MM.YYYY Version Description
 *           17.06.2016 1.00    Initial Release.
+*           20.05.2019 3.00    Added support for GNUC and ICCRX.
 ***********************************************************************************************************************/
 
 #ifndef SCI_RX63N_H
@@ -76,7 +77,7 @@ Macro definitions
 #define DISABLE_TXI_INT     (*hdl->rom->icu_txi &= (uint8_t)~hdl->rom->txi_en_mask)
 
 #define ENABLE_ERI_INT      (ICU.GEN[12].LONG |= hdl->rom->group12_ch_mask)
-#define DISABLE_ERI_INT     (ICU.GEN[12].LONG &= (uint32_t)~hdl->rom->group12_ch_mask)
+#define DISABLE_ERI_INT     (ICU.GEN[12].LONG &= ~hdl->rom->group12_ch_mask)
 #define ENABLE_TEI_INT      (*hdl->rom->icu_tei |= hdl->rom->tei_en_mask)
 #define DISABLE_TEI_INT     (*hdl->rom->icu_tei &= (uint8_t)~hdl->rom->tei_en_mask)
 
@@ -88,21 +89,21 @@ Typedef definitions
 
 typedef struct st_sci_ch_rom    /* SCI ROM info for channel control block */
 {
-    volatile  __evenaccess struct st_sci12  *regs;   /* base ptr to ch registers */
-    volatile  __evenaccess uint32_t *mstp;           /* ptr to mstp register */
+    volatile  struct st_sci12 R_BSP_EVENACCESS_SFR  *regs;   /* base ptr to ch registers */
+    volatile  uint32_t R_BSP_EVENACCESS_SFR *mstp;           /* ptr to mstp register */
     uint32_t                        stop_mask;       /* mstp mask to disable ch */
-    volatile  __evenaccess uint8_t  *ipr;            /* ptr to IPR register */
-    volatile  __evenaccess uint8_t  *ir_rxi;         /* ptr to RXI IR register */
-    volatile  __evenaccess uint8_t  *ir_txi;         /* ptr to TXI IR register */
-    volatile  __evenaccess uint8_t  *ir_tei;         /* ptr to TEI IR register */
+    volatile  uint8_t R_BSP_EVENACCESS_SFR  *ipr;            /* ptr to IPR register */
+    volatile  uint8_t R_BSP_EVENACCESS_SFR  *ir_rxi;         /* ptr to RXI IR register */
+    volatile  uint8_t R_BSP_EVENACCESS_SFR  *ir_txi;         /* ptr to TXI IR register */
+    volatile  uint8_t R_BSP_EVENACCESS_SFR  *ir_tei;         /* ptr to TEI IR register */
 
     /* 
     * DO NOT use the enable/disable interrupt bits in the SCR 
     * register. Pending interrupts can be lost that way.
     */
-    volatile  __evenaccess uint8_t  *icu_rxi;        /* ptr to ICU register */
-    volatile  __evenaccess uint8_t  *icu_txi;
-    volatile  __evenaccess uint8_t  *icu_tei;
+    volatile  uint8_t R_BSP_EVENACCESS_SFR  *icu_rxi;        /* ptr to ICU register */
+    volatile  uint8_t R_BSP_EVENACCESS_SFR  *icu_txi;
+    volatile  uint8_t R_BSP_EVENACCESS_SFR  *icu_tei;
     uint16_t                        group12_ch_mask; /* bit mask to enable/disable rx error int in ICU */
     uint8_t                         rxi_en_mask;     /* ICU enable/disable rxi mask */
     uint8_t                         txi_en_mask;     /* ICU enable/disable txi mask */
