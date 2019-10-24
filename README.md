@@ -7,7 +7,7 @@ So please download tested FIT Modules from [Renesas official website](https://ww
 - can be used for any users.
 - can be re-distributed by any users.
 - can be integrated with specified open source code.
-- use condition is shown in [PDF file in FIT Modules directory](https://github.com/renesas-rx/rx-driver-package/tree/master/FITModules).
+- use condition is basically MIT License, and details are shown in [PDF file in FIT Modules directory](https://github.com/renesas-rx/rx-driver-package/tree/master/FITModules).
 
 # early prototype of FIT Modules
 - r_drw2d_rx
