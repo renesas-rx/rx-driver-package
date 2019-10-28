@@ -1,5 +1,5 @@
 MODULE_NAME_LIST = 	r_bsp r_byteq r_can_rx r_cmt_rx r_cmtw_rx\
-					r_ctsu_qe r_dac_rx r_datfrx_rx r_dmaca_rx r_drw2d_rx r_dtc_rx\
+					r_ctsu_qe r_dac_rx r_datfrx_rx r_dmaca_rx r_drw2d_rx r_dsmif_rx r_dtc_rx\
 					r_eeprom_spi r_elc_rx r_emwin_rx r_ether_rx r_flash_rx r_flash_spi\
 					r_glcdc_rx r_gpio_rx r_irda_sci_rx r_irq_rx r_iwdt_rx\
 					r_jpegd_rx r_jpege_rx r_lcdc_rx r_longq r_lpc_rx r_lpt_rx r_lvd_rx\
