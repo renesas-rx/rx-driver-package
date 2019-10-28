@@ -14,7 +14,7 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) 2014-2019 Renesas Electronics Corporation. All rights reserved.
 ********************************************************************************************************************/
 /*******************************************************************************************************************
 * File Name : r_flash_type1.c
@@ -38,7 +38,7 @@
 *                              Added check in Open() for another operation in progress when in BGO mode.
 *           18.11.2016 3.00    Removed functions common to other MCUs for new merged source code.
 *           02.08.2017 3.10    Removed #include "r_mcu_config.h". Now in targets.h (r_flash_rx_if.h includes)
-*           xx.xx.xxxx x.xx    Added support for GNUC and ICCRX.
+*           19.04.2019 4.00    Added support for GNUC and ICCRX.
 ********************************************************************************************************************/
 
 /********************************************************************************************************************
@@ -47,6 +47,7 @@ Includes   <System Includes> , "Project Includes"
 /* Includes board and MCU related header files. */
 #include "r_flash_rx_if.h"
 #if (FLASH_TYPE == FLASH_TYPE_1)
+
 /* Private header file for this package. */
 #include "r_flash_type1_if.h"
 #include "r_flash_common.h"
@@ -120,17 +121,16 @@ FLASH_PE_MODE_SECTION
 R_BSP_PRAGMA_STATIC_INLINE_ASM(r_flash_delay)
 void r_flash_delay (unsigned long loop_cnt)
 {
-    R_ASM_INTERNAL_USED(loop_cnt)
-    R_ASM_BEGIN
-    R_ASM(    BRA.B    R_LAB_NEXT(0)    )
-    R_ASM(    NOP                       ) // FIXME: What is the purpose of this NOP?
-    R_LAB(0:                            )
-    R_ASM(    NOP                       )
-    R_ASM(    SUB     #01H, R1          )
-    R_ASM(    BNE.B   R_LAB_PREV(0)     )
-    R_ASM_END
+    R_BSP_ASM_INTERNAL_USED(loop_cnt)
+    R_BSP_ASM_BEGIN
+    R_BSP_ASM(    BRA.B   R_BSP_ASM_LAB_NEXT(0)    )
+    R_BSP_ASM(    NOP                              )
+    R_BSP_ASM_LAB(0:                               )
+    R_BSP_ASM(    NOP                              )
+    R_BSP_ASM(    SUB     #01H, R1                 )
+    R_BSP_ASM(    BNE.B   R_BSP_ASM_LAB_PREV(0)    )
+    R_BSP_ASM_END
 }
-
 
 /*******************************************************************************
 * Outline      : Function that specifies the execution time
@@ -170,7 +170,7 @@ void r_flash_delay_us (unsigned long us, unsigned long khz)
 * Arguments    : none
 * Return Value : none
 ******************************************************************************/
-R_BSP_PRAGMA_STATIC_INTERRUPT(Excep_FCU_FRDYI, VECT(FCU, FRDYI))
+R_BSP_PRAGMA_STATIC_INTERRUPT(Excep_FCU_FRDYI,VECT(FCU,FRDYI))
 FLASH_PE_MODE_SECTION
 R_BSP_ATTRIB_STATIC_INTERRUPT void Excep_FCU_FRDYI(void)
 {

@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer
  *
- * Copyright (C) 2016 Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2019 Renesas Electronics Corporation. All rights reserved.
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_flash_utils.c
@@ -29,6 +29,7 @@
 *           12.08.2016 2.00    Modified for BSPless operation.
 *           15.11.2016 2.10    Added function flash_stop().
 *           05.10.2016 3.00    Moved flash_interrupt_config() to r_flash_group.c.
+*           19.04.2019 4.00    Added support for GNUC and ICCRX.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -357,7 +358,7 @@ flash_err_t flash_pe_mode_exit()
 #endif
 
 #if ((FLASH_CFG_CODE_FLASH_ENABLE == 1) && (FLASH_CFG_CODE_FLASH_BGO == 1) || (FLASH_CFG_DATA_FLASH_BGO == 1))
-    /* Enable Flash Ready Interrupt */
+    /* Disable Flash Ready Interrupt */
     IEN(FCU,FRDYI)= 0;
 #endif
 

@@ -14,7 +14,7 @@
 * following link:
 * http://www.renesas.com/disclaimer 
 *
-* Copyright (C) 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) 2016-2019 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * File Name    : r_flash_fcu.c
@@ -25,6 +25,13 @@
 *              : 05.10.2016 1.00    First Release
 *              : 06.02.2017 1.10    Added support for RX65N-2M (bank/application swap).
 *                                   Added code to clear ECC flag in flash_fcuram_codecopy();
+*              : 23.02.2018 1.20    Replaced FLASH_TYPE_3 check with FLASH_HAS_FCU_RAM_ENABLE.
+*                                   Fixed bug where the error return code was not being checked when calling
+*                                     FLASH_CMD_CONFIG_CLOCK in flash_init_fcu().
+*              : 06.09.2018 1.30    Modified flash_write() to check for FLASH_CUR_STOP (write access error occurred).
+*              : 19.04.2019 4.00    Added support for GNUC and ICCRX.
+*              : 19.07.2019 4.20    Modified flash_erase() & Excep_FCU_FRDYI().
+*                                   Removed include of r_flash_type3_if.h.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -34,9 +41,6 @@ Includes   <System Includes> , "Project Includes"
 #include "r_flash_rx_if.h"
 #include "r_flash_fcu.h"
 #include "r_flash_group.h"
-#if (FLASH_TYPE == FLASH_TYPE_3)
-#include "r_flash_type3_if.h"
-#endif
 
 /***********************************************************************************************************************
 Macro definitions
@@ -77,16 +81,19 @@ flash_err_t flash_init_fcu(void)
     FLASH.FWEPROR.BYTE = 0x01;
 
     /* Let the sequencer know what FCLK is running at */
-    R_FLASH_Control(FLASH_CMD_CONFIG_CLOCK, &fclk);
+    err = R_FLASH_Control(FLASH_CMD_CONFIG_CLOCK, &fclk);
 
     /* Copy the FCU firmware to FCU RAM */
-#if (FLASH_TYPE == FLASH_TYPE_3)
-    err = flash_fcuram_codecopy();
+#ifdef FLASH_HAS_FCU_RAM_ENABLE
+    if (err == FLASH_SUCCESS)
+    {
+        err = flash_fcuram_codecopy();
+    }
 #endif
     return err;
 }
 
-#if (FLASH_TYPE == FLASH_TYPE_3)
+#ifdef FLASH_HAS_FCU_RAM_ENABLE
 /***********************************************************************************************************************
  * Function Name: flash_fcuram_codecopy
  * Description  : This function copies FCU firmware to the FCURAM.
@@ -153,7 +160,7 @@ flash_err_t flash_fcuram_codecopy(void)
 
     return err;
 }
-#endif // FLASH_TYPE_3
+#endif // FLASH_HAS_FCU_RAM_ENABLE
 
 
 #if (FLASH_CFG_CODE_FLASH_ENABLE == 1)
@@ -416,10 +423,8 @@ flash_err_t flash_get_status (void)
  * Description  : Function erases a block of Code or Data Flash
  * Arguments    : block address -
  *                    Block address to start erasing from
- *                    This is not used here but used in same function of the src\flash_type_1\r_flash_utils.c.
  *                num_blocks -
  *                    Number of blocks to erase in ascending order (descending addresses)
- *                    This is not used here but used in same function of the src\flash_type_1\r_flash_utils.c.
  * Return Value : FLASH_SUCCESS -
  *                    Block Erased successfully.
  *                FLASH_ERR_TIMEOUT -
@@ -439,9 +444,6 @@ flash_err_t flash_erase(uint32_t block_address, uint32_t num_blocks)
     uint32_t    size_boundary;
 #endif
     flash_err_t err = FLASH_SUCCESS;
-
-    INTERNAL_NOT_USED(block_address);
-    INTERNAL_NOT_USED(num_blocks);
 
 
     /* Set Erasure Priority Mode */
@@ -487,7 +489,7 @@ flash_err_t flash_erase(uint32_t block_address, uint32_t num_blocks)
 #ifdef FLASH_IN_DUAL_BANK_MODE
             if (g_current_parameters.dest_addr <= (uint32_t)FLASH_CF_LO_BANK_HI_ADDR)
             {
-                size_boundary = (uint32_t)FLASH_CF_BLOCK_45;
+                size_boundary = (uint32_t)FLASH_CF_LO_BANK_SMALL_BLOCK_ADDR;
             }
 #endif
 
@@ -636,6 +638,12 @@ flash_err_t flash_write(uint32_t src_start_address,
             while (FLASH.FSTATR.BIT.DBFULL == 1)    // wait for fcu buffer to empty
                 ;
 
+            if (g_current_parameters.current_operation == FLASH_CUR_STOP)   // err occurred; addr known good; protection err
+            {
+                err = FLASH_ERR_ACCESSW;
+                break;
+            }
+
             g_current_parameters.src_addr += 2;
             g_current_parameters.dest_addr += 2;
             g_current_parameters.total_count--;
@@ -649,7 +657,8 @@ flash_err_t flash_write(uint32_t src_start_address,
 
         /* Return if in BGO mode. Processing will finish in FRDYI interrupt */
         if ((g_current_parameters.current_operation == FLASH_CUR_CF_BGO_WRITE)
-         || (g_current_parameters.current_operation == FLASH_CUR_DF_BGO_WRITE))
+         || (g_current_parameters.current_operation == FLASH_CUR_DF_BGO_WRITE)
+         || (g_current_parameters.current_operation == FLASH_CUR_STOP))
         {
             break;
         }
@@ -748,7 +757,7 @@ R_BSP_ATTRIB_STATIC_INTERRUPT void Excep_FCU_FRDYI(void)
 #ifdef FLASH_IN_DUAL_BANK_MODE
                 if (g_current_parameters.dest_addr <= (uint32_t)FLASH_CF_LO_BANK_HI_ADDR)
                 {
-                    size_boundary = (uint32_t)FLASH_CF_BLOCK_45;
+                    size_boundary = (uint32_t)FLASH_CF_LO_BANK_SMALL_BLOCK_ADDR;
                 }
 #endif
                 if (g_current_parameters.dest_addr <= size_boundary)

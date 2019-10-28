@@ -14,7 +14,7 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) 2014-2019 Renesas Electronics Corporation. All rights reserved.
 ********************************************************************************************************************/
 /*******************************************************************************************************************
 * File Name : r_flash_type3.c
@@ -36,6 +36,8 @@
 *           17.11.2016 2.10    Fixed flash_reset() so enters PE mode before issuing a flash_stop()
 *                                when in idle state.
 *           18.11.2016 3.00    Merged functions common to other flash types into r_flash_fcu.c and r_flash_group.c.
+*           27.22.2018 3.10    Added #if FLASH_HAS_2BIT_ERR_CHK (not supported by RX66T).
+*           19.04.2019 4.00    Added support for GNUC and ICCRX.
 ********************************************************************************************************************/
 
 /********************************************************************************************************************
@@ -135,9 +137,12 @@ void do_cmdlk_recovery(void)
     }
 
     if ((FLASH.FSTATR.BIT.FCUERR == 1)
+#ifdef FLASH_HAS_2BIT_ERR_CHK
      || (FLASH.FSTATR.BIT.FRDTCT == 1)
-     || (FLASH.FSTATR.BIT.FLWEERR == 1)
-     || ((FLASH.FSTATR.BIT.FCUERR == 0) && (FLASH.FSTATR.BIT.FRDTCT == 0) && (FLASH.FSTATR.BIT.FLWEERR == 0)))
+     || ((FLASH.FSTATR.BIT.FCUERR == 0) && (FLASH.FSTATR.BIT.FRDTCT == 0) && (FLASH.FSTATR.BIT.FLWEERR == 0))
+#endif
+     || (FLASH.FSTATR.BIT.FLWEERR == 1))
+
     {
         flash_stop();
     }

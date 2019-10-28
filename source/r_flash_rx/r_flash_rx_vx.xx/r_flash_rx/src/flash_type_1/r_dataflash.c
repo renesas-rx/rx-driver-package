@@ -19,7 +19,7 @@
 * following link:
 * http://www.renesas.com/disclaimer
 *
-* Copyright (C) 2015 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) 2014-2019 Renesas Electronics Corporation. All rights reserved.
 *******************************************************************************/
 /*******************************************************************************
 * File Name    : r_dataflash.c
@@ -44,7 +44,7 @@
 *           02.08.2016 2.00     Modified for BSPless flash.
 *           02.08.2017 2.10     Removed #include "r_mcu_config.h". Now in
 *                               targets.h (r_flash_rx_if.h includes)
-*         : xx.xx.xxxx x.xx     Added support for GNUC and ICCRX.
+*           19.04.2019 4.00     Added support for GNUC and ICCRX.
 *******************************************************************************/
 
 /******************************************************************************

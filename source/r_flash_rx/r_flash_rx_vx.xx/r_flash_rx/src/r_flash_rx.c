@@ -14,7 +14,7 @@
 * following link:
 * http://www.renesas.com/disclaimer 
 *
-* Copyright (C) 2016 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) 2014-2019 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * File Name    : r_flash_rx.c
@@ -29,7 +29,9 @@
 *              : 05.10.2016 3.00    Modified API functions to call either flash_api_xxx Flash Type 2 functions
 *                                   or r_flash_xxx Flash Type 1, 3, 4 functions.
 *              : 31.10.2017 3.10    Added function R_FLASH_Close().
-*              : xx.xx.xxxx x.xx    Added support for GNUC and ICCRX.
+*              : 23.02.2018 3.20    Removed unused variable warnings in R_FlashCodeCopy().
+*              : 19.04.2019 4.00    Added support for GNUC and ICCRX.
+*                                   Removed support for flash type 2.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -85,11 +87,7 @@ flash_err_t R_FLASH_Open(void)
 
 
     /* Perform flash and driver initialization */
-#if (FLASH_TYPE == FLASH_TYPE_2)
-    err = flash_api_open();     /* Call supported handler */
-#else
     err = r_flash_open();
-#endif
     if (err == FLASH_SUCCESS)
     {
         g_flash_state = FLASH_READY;
@@ -110,43 +108,85 @@ void R_FlashCodeCopy(void)
 {
 #if (FLASH_CFG_CODE_FLASH_ENABLE == 1)
 
+#if ((FLASH_CFG_CODE_FLASH_RUN_FROM_ROM == 0) || (FLASH_IN_DUAL_BANK_MODE == 1))
     uint8_t * p_rom_section;    // ROM source location
     uint8_t * p_ram_section;    // RAM copy destination
     uint32_t  bytes_copied;
+#endif /* ((FLASH_CFG_CODE_FLASH_RUN_FROM_ROM == 0) || (FLASH_IN_DUAL_BANK_MODE == 1)) */
+
+#if defined(__CCRX__) || defined(__GNUC__)
+
 #if (FLASH_CFG_CODE_FLASH_RUN_FROM_ROM == 0)
-    R_EXTERN_SEC(RPFRAM)
-    R_EXTERN_SEC(PFRAM)
-#endif
+    R_BSP_SECTION_OPERATORS_INIT(RPFRAM)
+    R_BSP_SECTION_OPERATORS_INIT(PFRAM)
+#endif /* (FLASH_CFG_CODE_FLASH_RUN_FROM_ROM == 0) */
 #ifdef FLASH_IN_DUAL_BANK_MODE
-    R_EXTERN_SEC(RPFRAM2)
-    R_EXTERN_SEC(PFRAM2)
-#endif
+    R_BSP_SECTION_OPERATORS_INIT(RPFRAM2)
+    R_BSP_SECTION_OPERATORS_INIT(PFRAM2)
+#endif /* FLASH_IN_DUAL_BANK_MODE */
 
 #if (FLASH_CFG_CODE_FLASH_RUN_FROM_ROM == 0)
     /* Initialize pointers */
-    p_ram_section = (uint8_t *)R_SECTOP(RPFRAM);
-    p_rom_section = (uint8_t *)R_SECTOP(PFRAM);
+    p_ram_section = (uint8_t *)R_BSP_SECTOP(RPFRAM);
+    p_rom_section = (uint8_t *)R_BSP_SECTOP(PFRAM);
 
     /* Copy code from ROM to RAM. */
-    for (bytes_copied = 0; bytes_copied < R_SECSIZE(PFRAM); bytes_copied++)
+    for (bytes_copied = 0; bytes_copied < R_BSP_SECSIZE(PFRAM); bytes_copied++)
     {
         p_ram_section[bytes_copied] = p_rom_section[bytes_copied];
     }
-#endif
+#endif /* (FLASH_CFG_CODE_FLASH_RUN_FROM_ROM == 0) */
 
 #ifdef FLASH_IN_DUAL_BANK_MODE
     /* Initialize pointers */
-    p_ram_section = (uint8_t *)R_SECTOP(RPFRAM2);
-    p_rom_section = (uint8_t *)R_SECTOP(PFRAM2);
+    p_ram_section = (uint8_t *)R_BSP_SECTOP(RPFRAM2);
+    p_rom_section = (uint8_t *)R_BSP_SECTOP(PFRAM2);
 
     /* Copy code from ROM to RAM. */
-    for (bytes_copied = 0; bytes_copied < R_SECSIZE(PFRAM2); bytes_copied++)
+    for (bytes_copied = 0; bytes_copied < R_BSP_SECSIZE(PFRAM2); bytes_copied++)
     {
         p_ram_section[bytes_copied] = p_rom_section[bytes_copied];
     }
-#endif
+#endif /* FLASH_IN_DUAL_BANK_MODE */
 
-#endif
+#elif defined(__ICCRX__)
+
+#if (FLASH_CFG_CODE_FLASH_RUN_FROM_ROM == 0)
+    R_BSP_SECTION_OPERATORS_INIT(PFRAM)
+    R_BSP_SECTION_OPERATORS_INIT(PFRAM_init);
+#endif /* (FLASH_CFG_CODE_FLASH_RUN_FROM_ROM == 0) */
+#ifdef FLASH_IN_DUAL_BANK_MODE
+    R_BSP_SECTION_OPERATORS_INIT(PFRAM2)
+    R_BSP_SECTION_OPERATORS_INIT(PFRAM2_init);
+#endif /* FLASH_IN_DUAL_BANK_MODE */
+
+#if (FLASH_CFG_CODE_FLASH_RUN_FROM_ROM == 0)
+    /* Initialize pointers */
+    p_ram_section = (uint8_t *) R_BSP_SECTOP(PFRAM);
+    p_rom_section = (uint8_t *) R_BSP_SECTOP(PFRAM_init);
+
+    /* Copy code from ROM to RAM. */
+    for (bytes_copied = 0; bytes_copied < R_BSP_SECSIZE(PFRAM_init); bytes_copied++)
+    {
+        p_ram_section[bytes_copied] = p_rom_section[bytes_copied];
+    }
+#endif /* (FLASH_CFG_CODE_FLASH_RUN_FROM_ROM == 0) */
+
+#ifdef FLASH_IN_DUAL_BANK_MODE
+    /* Initialize pointers */
+    p_rom_section = (uint8_t *)R_BSP_SECTOP(PFRAM2);
+    p_ram_section = (uint8_t *)R_BSP_SECTOP(PFRAM2_init);
+
+    /* Copy code from ROM to RAM. */
+    for (bytes_copied = 0; bytes_copied < R_BSP_SECSIZE(PFRAM2_init); bytes_copied++)
+    {
+        p_ram_section[bytes_copied] = p_rom_section[bytes_copied];
+    }
+#endif /* FLASH_IN_DUAL_BANK_MODE */
+
+#endif /* defined(__CCRX__) || defined(__GNUC__) */
+
+#endif /* (FLASH_CFG_CODE_FLASH_ENABLE == 1) */
 }
 
 
@@ -158,11 +198,7 @@ void R_FlashCodeCopy(void)
 ***********************************************************************************************************************/
 flash_err_t R_FLASH_Close(void)
 {
-#if (FLASH_TYPE == FLASH_TYPE_2)
-    return(flash_api_close());
-#else
     return(r_flash_close());
-#endif
 }
 
 
@@ -185,11 +221,7 @@ flash_err_t R_FLASH_Close(void)
 FLASH_PE_MODE_SECTION
 flash_err_t R_FLASH_Erase(flash_block_address_t block_start_address, uint32_t num_blocks)
 {
-#if (FLASH_TYPE == FLASH_TYPE_2)
-    return(flash_api_erase(block_start_address, num_blocks));
-#else
     return(r_flash_erase(block_start_address, num_blocks));
-#endif
 }
 
 #ifndef FLASH_NO_BLANK_CHECK
@@ -202,11 +234,7 @@ flash_err_t R_FLASH_Erase(flash_block_address_t block_start_address, uint32_t nu
 FLASH_PE_MODE_SECTION
 flash_err_t R_FLASH_BlankCheck(uint32_t address, uint32_t num_bytes, flash_res_t *result)
 {
-#if (FLASH_TYPE == FLASH_TYPE_2)
-    return(flash_api_blankcheck(address, num_bytes, result));
-#else
     return(r_flash_blankcheck(address, num_bytes, result));
-#endif
 }
 
 #endif
@@ -221,14 +249,8 @@ flash_err_t R_FLASH_BlankCheck(uint32_t address, uint32_t num_bytes, flash_res_t
 FLASH_PE_MODE_SECTION
 flash_err_t R_FLASH_Write(uint32_t src_address, uint32_t dest_address, uint32_t num_bytes)
 {
-
     /* Call the MCU specific write function which handles control commands for the target MCU */
-#if (FLASH_TYPE == FLASH_TYPE_2)
-    return(flash_api_write(src_address, dest_address,  num_bytes));
-#else
     return(r_flash_write(src_address, dest_address,  num_bytes));
-#endif
-
 }
 
 
@@ -242,12 +264,7 @@ FLASH_PE_MODE_SECTION
 flash_err_t R_FLASH_Control(flash_cmd_t cmd, void *pcfg)
 {
     /* Call the MCU specific control function which handles control commands for the target MCU */
-#if (FLASH_TYPE == 2)
-    return(flash_api_control(cmd, pcfg));
-#else
     return(r_flash_control(cmd, pcfg));
-#endif
-
 }
 
 
@@ -260,14 +277,12 @@ flash_err_t R_FLASH_Control(flash_cmd_t cmd, void *pcfg)
 * Return Value : Version of this module.
 ***********************************************************************************************************************/
 FLASH_PE_MODE_SECTION
-R_BSP_PRAGMA_INLINE(R_FLASH_GetVersion)
 uint32_t R_FLASH_GetVersion (void)
 {
     /* These version macros are defined in r_flash_if.h. */
     return ((((uint32_t)FLASH_RX_VERSION_MAJOR) << 16) | (uint32_t)FLASH_RX_VERSION_MINOR);
 }
 
-#if (FLASH_TYPE != 2)
 /******************************************************************************
 * Function Name: flash_lock_state
 * Description  : Attempt to grab the flash state to perform an operation
@@ -320,7 +335,6 @@ void flash_release_state (void)
     /* Release hold on lock */
     flash_softwareUnlock(&g_flash_lock);
 }
-#endif // (FLASH_TYPE != 2)
 
 /***********************************************************************************************************************
 * Function Name: flash_softwareLock

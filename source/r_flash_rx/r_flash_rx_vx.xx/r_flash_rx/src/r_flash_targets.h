@@ -14,7 +14,7 @@
 * following link:
 * http://www.renesas.com/disclaimer 
 *
-* Copyright (C) 2017 Renesas Electronics Corporation. All rights reserved.
+* Copyright (C) 2017-2019 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * File Name    : r_flash_targets.h
@@ -24,25 +24,24 @@
 /***********************************************************************************************************************
 * History : DD.MM.YYYY Version Description
 *           02.08.2017 1.00    First Release
+*           27.02.2018 1.10    Added RX66T
+*           23.10.2018 1.20    Added RX72T
+*         : 19.04.2019 4.00    Removed support for flash type 2.
+*         : 07.06.2019 4.10    Added RX23W
+*         : 19.07.2019 4.20    Added RX72M
 ***********************************************************************************************************************/
 
 #ifndef FLASH_TARGETS_HEADER_FILE
 #define FLASH_TARGETS_HEADER_FILE
 
 #include <stdbool.h>
-#if (FLASH_CFG_USE_FIT_BSP == 1)
 #include "platform.h"       // provides variable types and BSP equates
-#else
-#include "r_mcu_config.h"   // provides variable types and MCU_xxx equates when BSP not used
-#endif
 
 /***********************************************************************************************************************
 Macro definitions
 ***********************************************************************************************************************/
 
 /* WHEN BSP IS USED, MAP FLASH MCU_xxx EQUATES TO BSP EQUATES HERE */
-
-#if (FLASH_CFG_USE_FIT_BSP == 1)    // set in r_flash_rx_config.h
 
 #define MCU_CFG_PART_MEMORY_SIZE    BSP_CFG_MCU_PART_MEMORY_SIZE
 #define MCU_ROM_SIZE_BYTES          BSP_ROM_SIZE_BYTES
@@ -61,40 +60,6 @@ Macro definitions
 #elif defined(BSP_MCU_RX130)
     #define MCU_RX130
     #define MCU_RX13_ALL
-#elif defined(BSP_MCU_RX610)
-    #define MCU_RX610
-    #define MCU_RX61_ALL
-#elif defined(BSP_MCU_RX621) || defined(BSP_MCU_RX62N)
-    #define MCU_RX621
-    #define MCU_RX62N
-    #define MCU_RX62_ALL
-#elif defined(BSP_MCU_RX62T)
-    #define MCU_RX62T
-    #define MCU_RX62_ALL
-#elif defined(BSP_MCU_RX62G)
-    #define MCU_RX62G
-    #define MCU_RX62_ALL
-#elif defined(BSP_MCU_RX630)
-    #define MCU_RX630
-    #define MCU_RX63_ALL
-#elif defined(BSP_MCU_RX631)
-    #define MCU_RX631
-    #define MCU_RX63_ALL
-#elif defined(BSP_MCU_RX63N)
-    #define MCU_RX63N
-    #define MCU_RX63_ALL
-#elif defined(BSP_MCU_RX63T)
-    #define MCU_RX63T
-    #define MCU_RX63_ALL
-#elif defined(BSP_MCU_RX210)
-    #define MCU_RX210
-    #define MCU_RX21_ALL
-#elif defined(BSP_MCU_RX21A)
-    #define MCU_RX21A
-    #define MCU_RX21_ALL
-#elif defined(BSP_MCU_RX220)
-    #define MCU_RX220
-    #define MCU_RX22_ALL
 #elif defined(BSP_MCU_RX231)
     #define MCU_RX231
     #define MCU_RX23_ALL
@@ -103,6 +68,9 @@ Macro definitions
     #define MCU_RX23_ALL
 #elif defined(BSP_MCU_RX23T)
     #define MCU_RX23T
+    #define MCU_RX23_ALL
+#elif defined(BSP_MCU_RX23W)
+    #define MCU_RX23W
     #define MCU_RX23_ALL
 #elif defined(BSP_MCU_RX24T)
     #define MCU_RX24T
@@ -117,22 +85,24 @@ Macro definitions
     #define MCU_RX651
     #define MCU_RX65N
     #define MCU_RX65_ALL
+#elif defined(BSP_MCU_RX66T)
+    #define MCU_RX66T
+    #define MCU_RX66_ALL
 #elif defined(BSP_MCU_RX71M)
     #define MCU_RX71M
     #define MCU_RX71_ALL
+#elif defined(BSP_MCU_RX72T)
+    #define MCU_RX72T
+    #define MCU_RX72_ALL
+#elif defined(BSP_MCU_RX72M)
+    #define MCU_RX72M
+    #define MCU_RX72_ALL
 #else
     #error "!!! No 'targets' folder for this MCU Group !!!"
 #endif
 
 #define MCU_CFG_ICLK_HZ             BSP_ICLK_HZ
-
-#if defined(MCU_RX62_ALL) || defined(MCU_RX610)
-#define MCU_CFG_FCLK_HZ             BSP_PCLK_HZ
-#else
 #define MCU_CFG_FCLK_HZ             BSP_FCLK_HZ
-#endif
-
-#endif /* WHEN BSP IS NOT USED, FLASH MCU_xxx EQUATES ARE SET IN MCU_CONFIG.H */
 
 
 
