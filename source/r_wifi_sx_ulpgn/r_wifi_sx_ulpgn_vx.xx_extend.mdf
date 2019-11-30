@@ -43,7 +43,7 @@
             <option id="WIFI_CFG_SCI_SECOND_CHANNEL.11" display="11" value="11"/>
             <option id="WIFI_CFG_SCI_SECOND_CHANNEL.12" display="12" value="12"/>
             <constraint display="Value must be an decimal value">testInteger("${WIFI_CFG_SCI_SECOND_CHANNEL}")</constraint>
-            <constraint display="Value must be in the range 0~12">("${WIFI_CFG_SCI_SECOND_CHANNEL}" &gt;= 0) &amp;&amp; ("${WIFI_CFG_SCI_SECOND_CHANNEL}" &lt;= 12) &amp;&amp; </constraint>
+            <constraint display="Value must be in the range 0~12">("${WIFI_CFG_SCI_SECOND_CHANNEL}" &gt;= 0) &amp;&amp; ("${WIFI_CFG_SCI_SECOND_CHANNEL}" &lt;= 12)</constraint>
             <description>SCI Channel number for SX-ULPGN Second Command Port for AT command communication</description>
         </property>
         <property id="WIFI_CFG_SCI_INTERRUPT_LEVEL" display="Interrupt Level for WIFI_CFG_SCI_CHANNEL" default="14" type="textbox">
