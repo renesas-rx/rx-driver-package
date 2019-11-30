@@ -2,8 +2,8 @@
 #include <string.h>
 
 #include "platform.h"
-#include "r_wifi_esp32_if.h"
-#include "r_wifi_esp32_private.h"
+#include "r_wifi_sx_ulpgn_if.h"
+#include "r_wifi_sx_ulpgn_private.h"
 
 
 uint32_t g_wifi_queue_ticket_no;

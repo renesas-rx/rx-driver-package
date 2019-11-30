@@ -1,19 +1,18 @@
-#include <stdio.h>
+﻿#include <stdio.h>
 #include <string.h>
 
 #include "FreeRTOS.h"
 #include "platform.h"
 #include "r_sci_rx_if.h"
 #include "r_byteq_if.h"
-#include "r_wifi_esp32_if.h"
-#include "r_wifi_esp32_private.h"
+#include "r_wifi_esp8266_if.h"
+#include "r_wifi_esp8266_private.h"
 
-#define ESP32_DATA_RECEIVE         "+IPD,%d,%d:"
-#define ESP32_READ_MAC             "+CIPSTAMAC"
-#define ESP32_READ_IP              "+CIPSTA"
-#define ESP32_READ_DNS             "+CIPDOMAIN"
-#define ESP32_READ_APLIST          "+CWLAP"
-#define ESP32_READ_SYFLASH         "+SYSFLASH"
+#define ESP8266_DATA_RECEIVE         "+IPD,%d,%d:"
+#define ESP8266_READ_MAC             "+CIPSTAMAC_CUR"
+#define ESP8266_READ_IP              "+CIPSTA_CUR"
+#define ESP8266_READ_DNS             "+CIPDOMAIN"
+#define ESP8266_READ_APLIST          "+CWLAP"
 
 #if(1 == WIFI_CFG_USE_CALLBACK_FUNCTION)
 void WIFI_CFG_CALLBACK_FUNCTION_NAME(void *p_args);
@@ -64,7 +63,7 @@ int32_t wifi_start_recv_task( void )
 
     /* Create wifi driver at response tasks. */
 	xReturned = xTaskCreate( wifi_recv_task,                               /* The function that implements the task. */
-                 "esp32_recv",                                     /* Just a text name for the task to aid debugging. */
+                 "esp8266_recv",                                     /* Just a text name for the task to aid debugging. */
                  1024,
                  ( void * ) 0,                                    /* The task parameter, not used in this case. */
 				 tskIDLE_PRIORITY + 6,
@@ -165,28 +164,8 @@ static void wifi_recv_task( void * pvParameters )
 		    				g_wifi_response_recv_status = WIFI_RECV_STATE_PL_WAIT_COLON;
 		    			break;
 		    			case '>':
-		    				pqueue = wifi_get_current_running_queue();
-		    				if(WIFI_COMMAND_SET_SOCKET_SEND_START == pqueue->at_command_id)
-		    				{
-		    					wifi_set_result_to_current_running_queue( WIFI_RETURN_ENUM_OK_GO_SEND );
-								memset(presponse_buff, 0, g_wifi_uart[WIFI_UART_COMMAND_PORT].response_buff_size);
-								g_wifi_response_recv_count = 0;
-								g_wifi_response_last_string_recv_count = 0;
-								g_wifi_response_recv_status = WIFI_RECV_STATE_START;
-		    				}
-		    				else if(WIFI_COMMAND_SET_SYSFALSH_WRITE_START == pqueue->at_command_id)
-		    				{
-		    					wifi_set_result_to_current_running_queue( WIFI_RETURN_ENUM_OK_GO_WRITE );
-								memset(presponse_buff, 0, g_wifi_uart[WIFI_UART_COMMAND_PORT].response_buff_size);
-								g_wifi_response_recv_count = 0;
-								g_wifi_response_last_string_recv_count = 0;
-								g_wifi_response_recv_status = WIFI_RECV_STATE_START;
-		    				}
-		    				else
-		    				{
-			    				g_wifi_response_recv_status = WIFI_RECV_STATE_OT_WAIT_CR;
-		    				}
-			    			break;
+		    				g_wifi_response_recv_status = WIFI_RECV_STATE_GT_WAIT_SP;
+			    	    break;
 		    			default:
 		    				g_wifi_response_recv_status = WIFI_RECV_STATE_OT_WAIT_CR;
 		    			break;
@@ -211,7 +190,7 @@ static void wifi_recv_task( void * pvParameters )
 		    		{
 		    			case ':':
 		    				pwkstr1 = strchr((const char *)presponse_buff,'+');
-		    				sscanf_ret = sscanf((const char *)pwkstr1,ESP32_DATA_RECEIVE,&socket_no,&len);
+		    				sscanf_ret = sscanf((const char *)pwkstr1,ESP8266_DATA_RECEIVE,&socket_no,&len);
 							if(sscanf_ret == 2)
 							{
 								g_wifi_socket[socket_no].receive_num = len;
@@ -275,28 +254,28 @@ static void wifi_recv_task( void * pvParameters )
 
 				    		pqueue = wifi_get_current_running_queue();
 				    		tmp_recvcnt = strlen((const char *)presponse_buff) + 1;
-				    		if (0 == strcmp((const char *)presponse_buff,ESP32_READ_MAC))
+				    		if (0 == strcmp((const char *)presponse_buff,ESP8266_READ_MAC))
 	    					{
 			    				if(WIFI_COMMAND_GET_MACADDRESS == pqueue->at_command_id)
 								{
 			    					wifi_analyze_get_macaddress_string(&presponse_buff[tmp_recvcnt]);
 								}
 	    					}
-				    		else if (0 == strcmp((const char *)presponse_buff,ESP32_READ_IP))
+				    		else if (0 == strcmp((const char *)presponse_buff,ESP8266_READ_IP))
 				    		{
 			    				if(WIFI_COMMAND_GET_IPADDRESS == pqueue->at_command_id)
 								{
-									wifi_analyze_ipaddress_string(&presponse_buff[tmp_recvcnt]);
+			    					wifi_analyze_ipaddress_string(&presponse_buff[tmp_recvcnt]);
 								}
 				    		}
-				    		else if (0 == strcmp((const char *)presponse_buff,ESP32_READ_DNS))
+				    		else if (0 == strcmp((const char *)presponse_buff,ESP8266_READ_DNS))
 				    		{
 			    				if(WIFI_COMMAND_SET_DNSQUERY == pqueue->at_command_id)
 								{
 			    					wifi_analyze_get_dnsquery_string(&presponse_buff[tmp_recvcnt]);
 								}
 				    		}
-				    		else if (0 == strcmp((const char *)presponse_buff,ESP32_READ_APLIST))
+				    		else if (0 == strcmp((const char *)presponse_buff,ESP8266_READ_APLIST))
 				    		{
 			    				if(WIFI_COMMAND_GET_APLIST == pqueue->at_command_id)
 								{
@@ -306,17 +285,6 @@ static void wifi_recv_task( void * pvParameters )
 								{
 								}
 		    				}
-							else if (0 == strcmp((const char *)presponse_buff,ESP32_READ_SYFLASH))
-							{
-			    				if(WIFI_COMMAND_GET_SYSFLASH == pqueue->at_command_id)
-								{
-			    					wifi_analyze_get_sysflash_list_string(&presponse_buff[tmp_recvcnt]);
-								}
-							}
-							else
-							{
-							}
-
 							memset(presponse_buff, 0, g_wifi_uart[WIFI_UART_COMMAND_PORT].response_buff_size);
 							g_wifi_response_recv_count = 0;
 							g_wifi_response_last_string_recv_count = 0;
@@ -327,7 +295,29 @@ static void wifi_recv_task( void * pvParameters )
 		    			break;
 		    		}
 		    		break;
-
+		    	case WIFI_RECV_STATE_GT_WAIT_SP:
+		    		switch(data)
+		    		{
+		    		    case ' ':
+		    	        	pqueue = wifi_get_current_running_queue();
+		    		        if(WIFI_COMMAND_SET_SOCKET_SEND_START == pqueue->at_command_id)
+		    	        	{
+		    		            wifi_set_result_to_current_running_queue( WIFI_RETURN_ENUM_OK_GO_SEND );
+		    			        memset(presponse_buff, 0, g_wifi_uart[WIFI_UART_COMMAND_PORT].response_buff_size);
+		            			g_wifi_response_recv_count = 0;
+		    		            g_wifi_response_last_string_recv_count = 0;
+		    		            g_wifi_response_recv_status = WIFI_RECV_STATE_START;
+		    	        	}
+		    		        else
+		    		        {
+		    		        	g_wifi_response_recv_status = WIFI_RECV_STATE_OT_WAIT_CR;
+		    		        }
+		    		    break;
+		    		    default:
+		    		    	g_wifi_response_recv_status = WIFI_RECV_STATE_OT_WAIT_CR;
+		    		    break;
+		    		}
+		    		break;
 	    		case WIFI_RECV_STATE_OT_WAIT_CR:	/* other string */
 		    		switch(data)
 		    		{
@@ -390,6 +380,13 @@ static void wifi_recv_task( void * pvParameters )
 								if(WIFI_COMMAND_SET_SOCKET_SEND_DATA == pqueue->at_command_id)
 								{
 									wifi_set_result_to_current_running_queue( WIFI_RETURN_ENUM_SEND_FAIL );
+								}
+							}
+							else if(NULL != strstr((const char *)presponse_buff,WIFI_RETURN_TEXT_FAIL))
+							{
+								if(WIFI_COMMAND_SET_WIFI_CONNECT == pqueue->at_command_id)
+								{
+									wifi_set_result_to_current_running_queue( WIFI_RETURN_ENUM_FAIL );
 								}
 							}
 							else if(NULL != strstr((const char *)presponse_buff,WIFI_RETURN_TEXT_READY))
@@ -649,19 +646,5 @@ static void wifi_analyze_get_dnsquery_string(uint8_t *pstring)
 	if(4 == sscanf((const char *)pstring,"%d.%d.%d.%d\r\n",&temp_ip[0],&temp_ip[1],&temp_ip[2],&temp_ip[3]))
 	{
 		g_wifi_dnsaddress = WIFI_IPV4BYTE_TO_ULONG(temp_ip[0], temp_ip[1], temp_ip[2], temp_ip[3]);
-	}
-}
-
-static void wifi_analyze_get_sysflash_list_string(uint8_t *pstring)
-{
-	char *pstr1;
-	char *pstr2;
-	uint8_t len;
-	pstr1 = (char *)pstring;
-	pstr2 = strchr((const char *)pstr1, ',');
-	pstr2++;
-	if(pstr2[0] == 0xf1 && pstr2[1] == 0xf1)
-	{
-		g_wifi_sysflash_header_listnum = (((uint16_t)pstr2[3]) << 8) | pstr2[2];
 	}
 }

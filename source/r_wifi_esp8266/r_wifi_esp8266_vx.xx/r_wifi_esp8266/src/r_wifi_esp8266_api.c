@@ -1,4 +1,4 @@
-#include <stdio.h>
+﻿#include <stdio.h>
 #include <string.h>
 
 #include "FreeRTOS.h"
@@ -7,12 +7,12 @@
 
 #include "r_sci_rx_if.h"
 #include "r_byteq_if.h"
-#include "r_wifi_esp32_if.h"
-#include "r_wifi_esp32_private.h"
+#include "r_wifi_esp8266_if.h"
+#include "r_wifi_esp8266_private.h"
 #include "r_sci_rx_if.h"
 
 #if !defined(WIFI_CFG_SCI_CHANNEL)
-#error "Error! Need to define WIFI_CFG_SCI_CHANNEL in r_wifi_esp32_config.h"
+#error "Error! Need to define WIFI_CFG_SCI_CHANNEL in r_wifi_esp8266_config.h"
 #elif WIFI_CFG_SCI_CHANNEL == (0)
 #define R_SCI_PinSet_wifi_serial_default()   R_SCI_PinSet_SCI0()
 #define SCI_CH_wifi_serial_default           SCI_CH0
@@ -79,7 +79,7 @@
 #define SCI_TX_BUSIZ_DEFAULT                 SCI_CFG_CH12_TX_BUFSIZ
 #define SCI_RX_BUSIZ_DEFAULT                 SCI_CFG_CH12_RX_BUFSIZ
 #else
-#error "Error! Invalid setting for WIFI_CFG_SCI_CHANNEL in r_wifi_esp32_config.h"
+#error "Error! Invalid setting for WIFI_CFG_SCI_CHANNEL in r_wifi_esp8266_config.h"
 #endif
 
 #define MUTEX_TX (1 << 0)
@@ -121,13 +121,11 @@ uint8_t g_wifi_at_command_buff[WIFI_AT_COMMAND_BUFF_SIZE];
 uint8_t g_wifi_at_response_buff[WIFI_AT_RESPONSE_BUFF_SIZE];
 
 wifi_at_communication_info_t g_wifi_uart[WIFI_NUMBER_OF_USE_UART];
+
 uint32_t g_wifi_tx_busiz_command;
 uint32_t g_wifi_tx_busiz_data;
 uint32_t g_wifi_rx_busiz_command;
 uint32_t g_wifi_rx_busiz_data;
-
-uint8_t g_wifi_flash_write_certificates_num = 0;
-uint16_t g_wifi_sysflash_header_listnum;
 
 static void wifi_uart_callback_command_port(void *pArgs);
 static void timeout_init(int32_t socket_no, uint16_t timeout_ms);
@@ -153,7 +151,7 @@ static const TickType_t xMaxSemaphoreBlockTime = pdMS_TO_TICKS( 60000UL );
 
 uint32_t g_wifi_sci_err_flag;
 
-wifi_err_t R_WIFI_ESP32_Open(void)
+wifi_err_t R_WIFI_ESP8266_Open(void)
 {
 	int32_t ret;
 	uint8_t *pcbuff;
@@ -250,6 +248,12 @@ wifi_err_t R_WIFI_ESP32_Open(void)
 	if(WIFI_SUCCESS == api_ret)
 	{
 	    /* Phase 4 Serial initialize */
+	    WIFI_RESET_DDR(WIFI_CFG_RESET_PORT, WIFI_CFG_RESET_PIN) = 1;
+		WIFI_RESET_DR(WIFI_CFG_RESET_PORT, WIFI_CFG_RESET_PIN) = 0;
+		vTaskDelay(2);
+		WIFI_RESET_DR(WIFI_CFG_RESET_PORT, WIFI_CFG_RESET_PIN) = 1;
+		vTaskDelay(2000);
+
 		ret = wifi_serial_open(WIFI_UART_BAUDRATE_DEFAULT);
 		if(0 == ret)
 		{
@@ -273,19 +277,6 @@ wifi_err_t R_WIFI_ESP32_Open(void)
 		else
 		{
 			api_ret = WIFI_ERR_SERIAL_OPEN;
-		}
-	}
-	if(WIFI_SUCCESS == api_ret)
-	{
-		WIFI_RESET_DDR(WIFI_CFG_RESET_PORT, WIFI_CFG_RESET_PIN) = 1;
-		WIFI_RESET_DR(WIFI_CFG_RESET_PORT, WIFI_CFG_RESET_PIN) = 0;
-		R_BSP_SoftwareDelay(2,BSP_DELAY_MILLISECS);
-		WIFI_RESET_DR(WIFI_CFG_RESET_PORT, WIFI_CFG_RESET_PIN) = 1;
-
-		ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, NULL, 10000, WIFI_RETURN_ENUM_READY, WIFI_COMMAND_SET_REBOOT, 0xff);
-		if(ret != 0)
-		{
-			api_ret = WIFI_ERR_MODULE_COM;
 		}
 	}
 	if(WIFI_SUCCESS == api_ret)
@@ -327,25 +318,8 @@ wifi_err_t R_WIFI_ESP32_Open(void)
 		R_SCI_Control(g_wifi_uart[WIFI_UART_COMMAND_PORT].wifi_uart_sci_handle, SCI_CMD_EN_CTS_IN, NULL);
 		R_BSP_SoftwareDelay(1000, BSP_DELAY_MILLISECS); /* Wait Module baudrate change */
 #endif
-		/* Disconnect from currently connected Access Point, */
-		ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, "AT+CWQAP\r\n", 10000, WIFI_RETURN_ENUM_OK, WIFI_COMMAND_SET_WIFI_DISCONNECT, 0xff);
-		if(ret != 0)
-		{
-			api_ret = WIFI_ERR_MODULE_COM;
-		}
-	}
-	if(WIFI_SUCCESS == api_ret)
-	{
-		/* Startup Auto connection is disabled. */
-		ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, "AT+CWAUTOCONN=0\r\n", 10000, WIFI_RETURN_ENUM_OK, WIFI_COMMAND_SET_WIFI_AUTOCONNECT, 0xff);
-		if(ret != 0)
-		{
-			api_ret = WIFI_ERR_MODULE_COM;
-		}
-	}
-	if(WIFI_SUCCESS == api_ret)
-	{
-		ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, "AT+CIPDNS=0\r\n", 10000, WIFI_RETURN_ENUM_OK, WIFI_COMMAND_SET_DNS_SRV_ADDRESS, 0xff);
+
+		ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, "AT+CIPDNS_CUR=0\r\n", 10000, WIFI_RETURN_ENUM_OK, WIFI_COMMAND_SET_DNS_SRV_ADDRESS, 0xff);
 		if(ret != 0)
 		{
 			api_ret = WIFI_ERR_MODULE_COM;
@@ -412,14 +386,14 @@ wifi_err_t R_WIFI_ESP32_Open(void)
 	return api_ret;
 }
 
-wifi_err_t R_WIFI_ESP32_Close(void)
+wifi_err_t R_WIFI_ESP8266_Close(void)
 {
 	int i;
 	wifi_err_t api_ret = WIFI_SUCCESS;
 
-	if(0 == R_WIFI_ESP32_IsConnected())
+	if(0 == R_WIFI_ESP8266_IsConnected())
 	{
-		R_WIFI_ESP32_Disconnect();
+		R_WIFI_ESP8266_Disconnect();
 	}
 	wifi_serial_close();
 	wifi_delete_recv_task();
@@ -433,7 +407,7 @@ wifi_err_t R_WIFI_ESP32_Close(void)
 	return api_ret;
 }
 
-wifi_err_t R_WIFI_ESP32_SetDnsServerAddress(uint32_t dnsaddress1, uint32_t dnsaddress2)
+wifi_err_t R_WIFI_ESP8266_SetDnsServerAddress(uint32_t dnsaddress1, uint32_t dnsaddress2)
 {
 	int32_t ret;
 	wifi_err_t api_ret = WIFI_SUCCESS;
@@ -454,11 +428,11 @@ wifi_err_t R_WIFI_ESP32_SetDnsServerAddress(uint32_t dnsaddress1, uint32_t dnsad
 	{
 		if(dnsaddress1 == 0)
 		{
-			strcpy((char *)pcbuff,"AT+CIPDNS=1\r\n");
+			strcpy((char *)pcbuff,"AT+CIPDNS_CUR=1\r\n");
 		}
 		else if((dnsaddress2 != 0) && (dnsaddress2 != dnsaddress1))
 		{
-			sprintf((char *)pcbuff,"AT+CIPDNS=1,\"%d.%d.%d.%d\",\"%d.%d.%d.%d\"\r\n",
+			sprintf((char *)pcbuff,"AT+CIPDNS_CUR=1,\"%d.%d.%d.%d\",\"%d.%d.%d.%d\"\r\n",
 					WIFI_ULONG_TO_IPV4BYTE_1(dnsaddress1), WIFI_ULONG_TO_IPV4BYTE_2(dnsaddress1),
 					WIFI_ULONG_TO_IPV4BYTE_3(dnsaddress1), WIFI_ULONG_TO_IPV4BYTE_4(dnsaddress1),
 					WIFI_ULONG_TO_IPV4BYTE_1(dnsaddress2), WIFI_ULONG_TO_IPV4BYTE_2(dnsaddress2),
@@ -466,7 +440,7 @@ wifi_err_t R_WIFI_ESP32_SetDnsServerAddress(uint32_t dnsaddress1, uint32_t dnsad
 		}
 		else
 		{
-			sprintf((char *)pcbuff,"AT+CIPDNS=1,\"%d.%d.%d.%d\"\r\n",
+			sprintf((char *)pcbuff,"AT+CIPDNS_CUR=1,\"%d.%d.%d.%d\"\r\n",
 					WIFI_ULONG_TO_IPV4BYTE_1(dnsaddress1), WIFI_ULONG_TO_IPV4BYTE_2(dnsaddress1),
 					WIFI_ULONG_TO_IPV4BYTE_3(dnsaddress1), WIFI_ULONG_TO_IPV4BYTE_4(dnsaddress1));
 		}
@@ -485,7 +459,7 @@ wifi_err_t R_WIFI_ESP32_SetDnsServerAddress(uint32_t dnsaddress1, uint32_t dnsad
 }
 
 
-wifi_err_t R_WIFI_ESP32_Connect (uint8_t *pssid, uint8_t *ppass, uint32_t security, uint8_t dhcp_enable, wifi_ip_configuration_t *pipconfig)
+wifi_err_t R_WIFI_ESP8266_Connect (uint8_t *pssid, uint8_t *ppass, uint32_t security, uint8_t dhcp_enable, wifi_ip_configuration_t *pipconfig)
 {
 	int32_t i;
 	int32_t ret;
@@ -501,7 +475,7 @@ wifi_err_t R_WIFI_ESP32_Connect (uint8_t *pssid, uint8_t *ppass, uint32_t securi
 	{
 		return WIFI_ERR_NOT_OPEN;
 	}
-	if( 0 == R_WIFI_ESP32_IsConnected())
+	if( 0 == R_WIFI_ESP8266_IsConnected())
 	{
 		/* Nothing to do. */
 		return WIFI_SUCCESS;
@@ -517,7 +491,7 @@ wifi_err_t R_WIFI_ESP32_Connect (uint8_t *pssid, uint8_t *ppass, uint32_t securi
 		if(0 == dhcp_enable)
 		{
 			/* DHCP Not Use */
-			ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, "AT+CWDHCP=0,1\r\n", 10000, WIFI_RETURN_ENUM_OK, WIFI_COMMAND_SET_DHCP_MODE, 0xff);
+			ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, "AT+CWDHCP_CUR=1,0\r\n", 10000, WIFI_RETURN_ENUM_OK, WIFI_COMMAND_SET_DHCP_MODE, 0xff);
 			if(ret != 0)
 			{
 				api_ret = WIFI_ERR_MODULE_COM;
@@ -543,7 +517,7 @@ wifi_err_t R_WIFI_ESP32_Connect (uint8_t *pssid, uint8_t *ppass, uint32_t securi
 		else
 		{
 			/* DHCP Use */
-			ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, "AT+CWDHCP=1,1\r\n", 10000, WIFI_RETURN_ENUM_OK, WIFI_COMMAND_SET_DHCP_MODE, 0xff);
+			ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, "AT+CWDHCP_CUR=1,1\r\n", 10000, WIFI_RETURN_ENUM_OK, WIFI_COMMAND_SET_DHCP_MODE, 0xff);
 			if(ret != 0)
 			{
 				api_ret = WIFI_ERR_MODULE_COM;
@@ -552,7 +526,7 @@ wifi_err_t R_WIFI_ESP32_Connect (uint8_t *pssid, uint8_t *ppass, uint32_t securi
 	}
 	if(WIFI_SUCCESS == api_ret)
 	{
-		sprintf(pcbuff,"AT+CWJAP=\"%s\",\"%s\"\r\n",pssid,ppass);
+		sprintf(pcbuff,"AT+CWJAP_CUR=\"%s\",\"%s\"\r\n",pssid,ppass);
 		ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, pcbuff, 30000, WIFI_RETURN_ENUM_OK, WIFI_COMMAND_SET_WIFI_CONNECT, 0xff);
 		if(ret != 0)
 		{
@@ -569,7 +543,7 @@ wifi_err_t R_WIFI_ESP32_Connect (uint8_t *pssid, uint8_t *ppass, uint32_t securi
 		}
 		else
 		{
-			ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, "AT+CIPSTA?\r\n", 10000, WIFI_RETURN_ENUM_OK, WIFI_COMMAND_GET_IPADDRESS, 0xff);
+			ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, "AT+CIPSTA_CUR?\r\n", 10000, WIFI_RETURN_ENUM_OK, WIFI_COMMAND_GET_IPADDRESS, 0xff);
 			if(ret != 0)
 			{
 				api_ret = WIFI_ERR_MODULE_COM;
@@ -602,7 +576,7 @@ wifi_err_t R_WIFI_ESP32_Connect (uint8_t *pssid, uint8_t *ppass, uint32_t securi
 }
 
 
-wifi_err_t R_WIFI_ESP32_Disconnect (void)
+wifi_err_t R_WIFI_ESP8266_Disconnect (void)
 {
 	int32_t i;
 	int32_t ret;
@@ -637,7 +611,7 @@ wifi_err_t R_WIFI_ESP32_Disconnect (void)
 	return api_ret;
 }
 
-int32_t R_WIFI_ESP32_IsConnected (void)
+int32_t R_WIFI_ESP8266_IsConnected (void)
 {
 	int32_t ret = -1;
 
@@ -648,7 +622,7 @@ int32_t R_WIFI_ESP32_IsConnected (void)
 	return ret;
 }
 
-wifi_err_t R_WIFI_ESP32_GetMacAddress (uint8_t *pmacaddress)
+wifi_err_t R_WIFI_ESP8266_GetMacAddress (uint8_t *pmacaddress)
 {
 	int32_t ret;
 	uint8_t mutex_flag;
@@ -670,7 +644,7 @@ wifi_err_t R_WIFI_ESP32_GetMacAddress (uint8_t *pmacaddress)
 
     if(WIFI_SUCCESS == api_ret)
 	{
-		ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, "AT+CIPSTAMAC?\r\n", 10000, WIFI_RETURN_ENUM_OK, WIFI_COMMAND_GET_MACADDRESS, 0xff);
+		ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, "AT+CIPSTAMAC_CUR?\r\n", 10000, WIFI_RETURN_ENUM_OK, WIFI_COMMAND_GET_MACADDRESS, 0xff);
 		if(ret != 0)
 		{
 			api_ret = WIFI_ERR_MODULE_COM;
@@ -684,7 +658,7 @@ wifi_err_t R_WIFI_ESP32_GetMacAddress (uint8_t *pmacaddress)
 	return api_ret;
 }
 
-wifi_err_t R_WIFI_ESP32_GetIpAddress (wifi_ip_configuration_t *pipconfig)
+wifi_err_t R_WIFI_ESP8266_GetIpAddress (wifi_ip_configuration_t *pipconfig)
 {
 	int32_t ret;
 	uint8_t mutex_flag;
@@ -707,7 +681,7 @@ wifi_err_t R_WIFI_ESP32_GetIpAddress (wifi_ip_configuration_t *pipconfig)
 
     if(WIFI_SUCCESS == api_ret)
 	{
-		ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, "AT+CIPSTA?\r\n", 10000, WIFI_RETURN_ENUM_OK, WIFI_COMMAND_GET_IPADDRESS, 0xff);
+		ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, "AT+CIPSTA_CUR?\r\n", 10000, WIFI_RETURN_ENUM_OK, WIFI_COMMAND_GET_IPADDRESS, 0xff);
 		if(ret != 0)
 		{
 			api_ret = WIFI_ERR_MODULE_COM;
@@ -721,7 +695,7 @@ wifi_err_t R_WIFI_ESP32_GetIpAddress (wifi_ip_configuration_t *pipconfig)
 	return api_ret;
 }
 
-wifi_err_t R_WIFI_ESP32_Scan (wifi_scan_result_t *pap_results, uint32_t maxnetworks, uint32_t *exist_ap_list)
+wifi_err_t R_WIFI_ESP8266_Scan (wifi_scan_result_t *pap_results, uint32_t maxnetworks, uint32_t *exist_ap_list)
 {
     int32_t ret;
 	uint8_t mutex_flag;
@@ -765,7 +739,7 @@ wifi_err_t R_WIFI_ESP32_Scan (wifi_scan_result_t *pap_results, uint32_t maxnetwo
 	return api_ret;
 }
 
-int32_t R_WIFI_ESP32_SocketCreate(uint32_t type, uint32_t ipversion)
+int32_t R_WIFI_ESP8266_SocketCreate(uint32_t type, uint32_t ipversion)
 {
 	int32_t i;
 	int32_t ret;
@@ -776,7 +750,7 @@ int32_t R_WIFI_ESP32_SocketCreate(uint32_t type, uint32_t ipversion)
 	{
 		return WIFI_ERR_PARAMETER;
 	}
-	if( 0 != R_WIFI_ESP32_IsConnected())
+	if( 0 != R_WIFI_ESP8266_IsConnected())
 	{
 		return WIFI_ERR_NOT_CONNECT;
 	}
@@ -798,7 +772,7 @@ int32_t R_WIFI_ESP32_SocketCreate(uint32_t type, uint32_t ipversion)
 				g_wifi_socket[i].protocol = type;
 				g_wifi_socket[i].socket_status = WIFI_SOCKET_STATUS_SOCKET;
 				g_wifi_socket[i].ssl_flag = 0;
-				g_wifi_socket[i].ssl_type = g_wifi_flash_write_certificates_num;
+				g_wifi_socket[i].ssl_type = 0;
 				R_BYTEQ_Flush(g_wifi_socket[i].socket_byteq_hdl);
 				break;
 			}
@@ -823,60 +797,9 @@ int32_t R_WIFI_ESP32_SocketCreate(uint32_t type, uint32_t ipversion)
 	return ret;
 }
 
-wifi_err_t R_WIFI_ESP32_SocketOptRequireTls (int32_t socket_no)
-{
-	int32_t ret;
-	uint8_t mutex_flag;
-	wifi_err_t api_ret = WIFI_SUCCESS;
 
-	if( (socket_no >= WIFI_CFG_CREATABLE_SOCKETS) || (socket_no < 0) ||
-			(g_wifi_socket[socket_no].socket_status != WIFI_SOCKET_STATUS_SOCKET) ||
-			(g_wifi_socket[socket_no].protocol != WIFI_SOCKET_IP_PROTOCOL_TCP))
-	{
-		api_ret = WIFI_ERR_SOCKET_NUM;
-	}
-	if(WIFI_SUCCESS == api_ret)
-	{
-		api_ret = R_WIFI_ESP32_SetSslConfiguration(socket_no, 0, 0, 0);
-	}
-	return api_ret;
-}
 
-wifi_err_t R_WIFI_ESP32_SetSslConfiguration (int32_t socket_no, uint8_t ssl_type, uint8_t cert_key_id, uint8_t ca_id)
-{
-	int32_t ret;
-	uint8_t mutex_flag;
-	wifi_err_t api_ret = WIFI_SUCCESS;
-	uint8_t ssltype;
-
-	if( (socket_no >= WIFI_CFG_CREATABLE_SOCKETS) || (socket_no < 0) || (ssl_type > 3) ||
-			(g_wifi_socket[socket_no].socket_status != WIFI_SOCKET_STATUS_SOCKET) ||
-			(g_wifi_socket[socket_no].protocol != WIFI_SOCKET_IP_PROTOCOL_TCP))
-	{
-		return WIFI_ERR_SOCKET_NUM;
-	}
-
-	mutex_flag = (MUTEX_TX | MUTEX_RX);
-	if(0 != wifi_take_mutex(mutex_flag))
-	{
-		api_ret = WIFI_ERR_TAKE_MUTEX;
-	}
-
-	if(WIFI_SUCCESS == api_ret)
-	{
-		g_wifi_socket[socket_no].ssl_flag = 1;
-		g_wifi_socket[socket_no].ssl_type |= ssl_type;
-		g_wifi_socket[socket_no].ssl_cert_key_id = cert_key_id;
-		g_wifi_socket[socket_no].ssl_ca_id = ca_id;
-	}
-	if(WIFI_ERR_TAKE_MUTEX != api_ret)
-	{
-		wifi_give_mutex(mutex_flag);
-	}
-	return api_ret;
-}
-
-wifi_err_t R_WIFI_ESP32_SocketConnect (int32_t socket_no, uint32_t ipaddr, uint16_t port)
+wifi_err_t R_WIFI_ESP8266_SocketConnect (int32_t socket_no, uint32_t ipaddr, uint16_t port)
 {
 	int32_t ret;
 	uint8_t mutex_flag;
@@ -890,7 +813,7 @@ wifi_err_t R_WIFI_ESP32_SocketConnect (int32_t socket_no, uint32_t ipaddr, uint1
 	{
 		return  WIFI_ERR_SOCKET_NUM;
 	}
-	if( 0 != R_WIFI_ESP32_IsConnected())
+	if( 0 != R_WIFI_ESP8266_IsConnected())
 	{
 		return WIFI_ERR_NOT_CONNECT;
 	}
@@ -902,8 +825,7 @@ wifi_err_t R_WIFI_ESP32_SocketConnect (int32_t socket_no, uint32_t ipaddr, uint1
 	}
 	if(WIFI_SUCCESS == api_ret)
 	{
-		if(0 == g_wifi_socket[socket_no].ssl_flag)
-		{
+
 			sprintf((char *)g_wifi_uart[WIFI_UART_COMMAND_PORT].command_buff,"AT+CIPSTART=%d,\"TCP\",\"%d.%d.%d.%d\",%d\r\n",
 					socket_no,
 					WIFI_ULONG_TO_IPV4BYTE_1(ipaddr), WIFI_ULONG_TO_IPV4BYTE_2(ipaddr),
@@ -915,35 +837,6 @@ wifi_err_t R_WIFI_ESP32_SocketConnect (int32_t socket_no, uint32_t ipaddr, uint1
 			{
 				api_ret = WIFI_ERR_MODULE_COM;
 			}
-		}
-		else
-		{
-			if(0 == g_wifi_socket[socket_no].ssl_type)
-			{
-				sprintf((char *)g_wifi_uart[WIFI_UART_COMMAND_PORT].command_buff,"AT+CIPSSLCCONF=%d,%d\r\n",
-						socket_no, 0 );
-			}
-			else
-			{
-				sprintf((char *)g_wifi_uart[WIFI_UART_COMMAND_PORT].command_buff,"AT+CIPSSLCCONF=%d,%d,%d,%d\r\n",
-						socket_no, g_wifi_socket[socket_no].ssl_type, g_wifi_socket[socket_no].ssl_cert_key_id, g_wifi_socket[socket_no].ssl_ca_id );
-			}
-			ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, g_wifi_uart[WIFI_UART_COMMAND_PORT].command_buff, 10000, WIFI_RETURN_ENUM_OK, WIFI_COMMAND_SET_SSLCONFIG, socket_no);
-			if( 0 != ret )
-			{
-				api_ret = WIFI_ERR_MODULE_COM;
-			}
-			if(WIFI_SUCCESS == api_ret)
-			{
-				sprintf((char *)g_wifi_uart[WIFI_UART_COMMAND_PORT].command_buff,"AT+CIPSTART=%d,\"SSL\",\"%d.%d.%d.%d\",%d\r\n",
-						socket_no, (uint8_t)(ipaddr>>24),(uint8_t)(ipaddr>>16),(uint8_t)(ipaddr>>8),(uint8_t)(ipaddr),port);
-				ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, g_wifi_uart[WIFI_UART_COMMAND_PORT].command_buff, 20000, WIFI_RETURN_ENUM_OK, WIFI_COMMAND_SET_SOCKET_CONNECT, socket_no);
-				if( 0 != ret )
-				{
-					api_ret = WIFI_ERR_MODULE_COM;
-				}
-			}
-		}
 	}
 	if(WIFI_SUCCESS == api_ret)
 	{
@@ -957,7 +850,7 @@ wifi_err_t R_WIFI_ESP32_SocketConnect (int32_t socket_no, uint32_t ipaddr, uint1
 }
 
 
-int32_t R_WIFI_ESP32_SocketSend (int32_t socket_no, uint8_t *pdata, int32_t length, uint32_t timeout_ms)
+int32_t R_WIFI_ESP8266_SocketSend (int32_t socket_no, uint8_t *pdata, int32_t length, uint32_t timeout_ms)
 {
 	volatile int32_t timeout;
 	volatile int32_t sended_length;
@@ -975,7 +868,7 @@ int32_t R_WIFI_ESP32_SocketSend (int32_t socket_no, uint8_t *pdata, int32_t leng
 		return  WIFI_ERR_PARAMETER;
 	}
 
-	if( 0 != R_WIFI_ESP32_IsConnected())
+	if( 0 != R_WIFI_ESP8266_IsConnected())
 	{
 		return WIFI_ERR_NOT_CONNECT;
 	}
@@ -1086,7 +979,7 @@ int32_t R_WIFI_ESP32_SocketSend (int32_t socket_no, uint8_t *pdata, int32_t leng
 	return api_ret;
 }
 
-int32_t R_WIFI_ESP32_SocketRecv (int32_t socket_no, uint8_t *pdata, int32_t length, uint32_t timeout_ms)
+int32_t R_WIFI_ESP8266_SocketRecv (int32_t socket_no, uint8_t *pdata, int32_t length, uint32_t timeout_ms)
 {
 	uint32_t recvcnt;
 	uint32_t recv_length;
@@ -1102,7 +995,7 @@ int32_t R_WIFI_ESP32_SocketRecv (int32_t socket_no, uint8_t *pdata, int32_t leng
 		return  WIFI_ERR_PARAMETER;
 	}
 
-	if( 0 != R_WIFI_ESP32_IsConnected())
+	if( 0 != R_WIFI_ESP8266_IsConnected())
 	{
 		return WIFI_ERR_NOT_CONNECT;
 	}
@@ -1164,7 +1057,7 @@ int32_t R_WIFI_ESP32_SocketRecv (int32_t socket_no, uint8_t *pdata, int32_t leng
 }
 
 
-wifi_err_t R_WIFI_ESP32_SocketShutdown (int32_t socket_no)
+wifi_err_t R_WIFI_ESP8266_SocketShutdown (int32_t socket_no)
 {
 	wifi_err_t api_ret = WIFI_SUCCESS;
 	int32_t subroutain_ret;
@@ -1203,7 +1096,7 @@ wifi_err_t R_WIFI_ESP32_SocketShutdown (int32_t socket_no)
 
 }
 
-wifi_err_t R_WIFI_ESP32_SocketClose (int32_t socket_no)
+wifi_err_t R_WIFI_ESP8266_SocketClose (int32_t socket_no)
 {
 	wifi_err_t api_ret = WIFI_SUCCESS;
 
@@ -1218,7 +1111,7 @@ wifi_err_t R_WIFI_ESP32_SocketClose (int32_t socket_no)
 
 	if(g_wifi_socket[socket_no].socket_create_flag == 1)
 	{
-		R_WIFI_ESP32_SocketShutdown (socket_no);
+		R_WIFI_ESP8266_SocketShutdown (socket_no);
 		R_BYTEQ_Flush(g_wifi_socket[socket_no].socket_byteq_hdl);
 		g_wifi_socket[socket_no].ipversion = 0;
 		g_wifi_socket[socket_no].protocol = 0;
@@ -1232,7 +1125,7 @@ wifi_err_t R_WIFI_ESP32_SocketClose (int32_t socket_no)
 }
 
 
-wifi_err_t R_WIFI_ESP32_DnsQuery (uint8_t *pdomain_name, uint32_t *pipaddress)
+wifi_err_t R_WIFI_ESP8266_DnsQuery (uint8_t *pdomain_name, uint32_t *pipaddress)
 {
 	int32_t func_ret;
 	uint8_t mutex_flag;
@@ -1242,7 +1135,7 @@ wifi_err_t R_WIFI_ESP32_DnsQuery (uint8_t *pdomain_name, uint32_t *pipaddress)
     {
     	return WIFI_ERR_PARAMETER;
     }
-	if( 0 != R_WIFI_ESP32_IsConnected())
+	if( 0 != R_WIFI_ESP8266_IsConnected())
 	{
 		return WIFI_ERR_NOT_CONNECT;
 	}
@@ -1276,7 +1169,7 @@ wifi_err_t R_WIFI_ESP32_DnsQuery (uint8_t *pdomain_name, uint32_t *pipaddress)
 }
 
 
-wifi_err_t R_WIFI_ESP32_Ping (uint32_t ipaddr, uint16_t count, uint32_t intervalms)
+wifi_err_t R_WIFI_ESP8266_Ping (uint32_t ipaddr, uint16_t count, uint32_t intervalms)
 {
 	int32_t func_ret;
 	uint8_t mutex_flag;
@@ -1287,7 +1180,7 @@ wifi_err_t R_WIFI_ESP32_Ping (uint32_t ipaddr, uint16_t count, uint32_t interval
 	{
 		return WIFI_ERR_PARAMETER;
 	}
-	if( 0 != R_WIFI_ESP32_IsConnected())
+	if( 0 != R_WIFI_ESP8266_IsConnected())
 	{
 		return WIFI_ERR_NOT_CONNECT;
 	}
@@ -1329,471 +1222,10 @@ wifi_err_t R_WIFI_ESP32_Ping (uint32_t ipaddr, uint16_t count, uint32_t interval
 	return api_ret;
 }
 
-wifi_err_t R_WIFI_ESP32_RegistSSLClientCertAndKey (uint8_t *p_cert, int32_t cert_len, uint8_t *p_key, int32_t key_len)
+uint32_t R_WIFI_ESP8266_GetVersion(void)
 {
-	wifi_err_t api_ret;
-	if( (p_cert == NULL) || (cert_len <= 0 ) || (p_key == NULL) || (key_len <= 0))
-	{
-		return  WIFI_ERR_PARAMETER;
-	}
-	api_ret = R_WIFI_ESP32_RegistServerCertificate (2, p_cert, cert_len, 0);
-	if(WIFI_SUCCESS == api_ret)
-	{
-		api_ret = R_WIFI_ESP32_RegistServerCertificate (3, p_key, key_len, 0);
-	}
-	if(WIFI_SUCCESS == api_ret)
-	{
-		g_wifi_flash_write_certificates_num = 1;
-	}
-	return api_ret;
-}
-
-int32_t R_WIFI_ESP32_ReadSSLClientCertAndKeyNum (void)
-{
-	int32_t api_ret = 0;
-	int32_t key_num = 0;
-	int32_t cert_num = 0;
-
-	cert_num = R_WIFI_ESP32_ReadServerCertificateNum (2);
-	if( 0 < cert_num)
-	{
-		key_num = R_WIFI_ESP32_ReadServerCertificateNum (3);
-		if( 0 < key_num)
-		{
-			api_ret = key_num;
-			if(api_ret < cert_num)
-			{
-				api_ret = cert_num;
-			}
-		}
-	}
-	if(0 < api_ret)
-	{
-		g_wifi_flash_write_certificates_num = 1;
-	}
-	else
-	{
-		g_wifi_flash_write_certificates_num = 0;
-	}
-
-	return api_ret;
-}
-
-wifi_err_t R_WIFI_ESP32_SocketOptSetTrustRootCertificate (int32_t socket_no, uint8_t *p_rootcert, int32_t rootcert_len)
-{
-	wifi_err_t api_ret = WIFI_SUCCESS;
-	int32_t ret;
-	uint8_t ssltype;
-	if( (socket_no >= WIFI_CFG_CREATABLE_SOCKETS) || (socket_no < 0) || (p_rootcert == NULL) || (rootcert_len <= 0 ))
-	{
-		return  WIFI_ERR_PARAMETER;
-	}
-	api_ret = R_WIFI_ESP32_RegistTrustRootCertificate (p_rootcert, rootcert_len);
-	if(WIFI_SUCCESS == api_ret)
-	{
-		api_ret = R_WIFI_ESP32_SetSslConfiguration (0, 2, 0, 0);
-		if( 0 != ret )
-		{
-			api_ret = WIFI_ERR_MODULE_COM;
-		}
-	}
-	if(WIFI_SUCCESS == api_ret)
-	{
-		g_wifi_socket[socket_no].ssl_type = ssltype;
-	}
-	return api_ret;
-
-}
-
-wifi_err_t R_WIFI_ESP32_RegistTrustRootCertificate (uint8_t *p_rootcert, int32_t rootcert_len)
-{
-	wifi_err_t api_ret = WIFI_SUCCESS;
-	if( (p_rootcert == NULL) || (rootcert_len <= 0 ))
-	{
-		return  WIFI_ERR_PARAMETER;
-	}
-	api_ret = R_WIFI_ESP32_RegistServerCertificate (1, p_rootcert, rootcert_len, 0);
-	if(WIFI_SUCCESS == api_ret)
-	{
-	}
-	return api_ret;
-}
-
-wifi_err_t R_WIFI_ESP32_RegistServerCertificate (uint32_t datatype, uint8_t *pdata, int32_t length, uint32_t timeout_ms)
-{
-	volatile int32_t timeout;
-	volatile int32_t sended_length;
-	int32_t current_send_length;
-	int32_t api_ret = WIFI_SUCCESS;
-	int32_t ret;
-	sci_err_t ercd;
-	int8_t get_queue;
-	wifi_return_code_t result;
-	uint8_t mutex_flag;
-	uint32_t ticket_no;
-
-	uint8_t *buff;
-	uint32_t file_header_len;
-	uint32_t write_total_len;
-	uint32_t padding_len;
-
-
-	if( (pdata == NULL) || (length < 0 ))
-	{
-		return  WIFI_ERR_PARAMETER;
-	}
-	if( (datatype >= 4) || (datatype < 1))
-	{
-		return  WIFI_ERR_PARAMETER;
-	}
-
-	if( WIFI_SYSTEM_CLOSE == g_wifi_system_state)
-	{
-		return WIFI_ERR_NOT_OPEN;
-	}
-
-
-	mutex_flag = MUTEX_TX | MUTEX_RX;
-    if(0 == wifi_take_mutex(mutex_flag))
-	{
-		sended_length = 0;
-
-		buff = (uint8_t *)pvPortMalloc( length + 16 ) ;
-		if(NULL == buff)
-		{
-			/* Give back the socketInUse mutex. */
-			wifi_give_mutex(mutex_flag);
-			return -1;
-		}
-		/* Magic Code */
-		buff[0x00] = 0xF1;
-		buff[0x01] = 0xF1;
-
-		/* Item count = 1 */
-		buff[0x02] = 0x01;
-		buff[0x03] = 0x00;
-
-		/* length =  */
-	//	buff[0x04] = 0x01;
-	//	buff[0x05] = 0x00;
-	//	buff[0x06] = 0x00;
-	//	buff[0x07] = 0x00;
-
-		/* Type */
-		buff[0x08] = datatype;
-
-		/* ID (fix 0) */
-		buff[0x09] = 0x00;
-
-		/* content len */
-		buff[0x0A] = (uint8_t)length;
-		buff[0x0B] = (uint8_t)(length >> 8);
-
-		/* raw data */
-		memcpy(&buff[0x0C], pdata, length);
-
-		/* padding */
-		padding_len = ((4 - (length % 4)) % 4);
-		if(0 < padding_len)
-		{
-			memset(&buff[0x0C + length],0xff,padding_len);
-		}
-		file_header_len = length + 4 + padding_len;
-
-		/* length =  */
-		buff[0x04] = (uint8_t)file_header_len;
-		buff[0x05] = (uint8_t)(file_header_len >> 8);
-		buff[0x06] = (uint8_t)(file_header_len >> 16);
-		buff[0x07] = (uint8_t)(file_header_len >> 24);
-
-		write_total_len = file_header_len + 8;
-
-		switch(datatype)
-		{
-		case 0x01:
-			sprintf((char *)g_wifi_uart[WIFI_UART_COMMAND_PORT].command_buff, "AT+SYSFLASH=1,\"client_ca\",0,%d\r\n" ,write_total_len);
-			break;
-		case 0x02:
-			sprintf((char *)g_wifi_uart[WIFI_UART_COMMAND_PORT].command_buff, "AT+SYSFLASH=1,\"client_cert\",0,%d\r\n" ,write_total_len);
-			break;
-		case 0x03:
-			sprintf((char *)g_wifi_uart[WIFI_UART_COMMAND_PORT].command_buff, "AT+SYSFLASH=1,\"client_key\",0,%d\r\n" ,write_total_len);
-			break;
-		}
-		ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, g_wifi_uart[WIFI_UART_COMMAND_PORT].command_buff, 10000, WIFI_RETURN_ENUM_OK_GO_WRITE, WIFI_COMMAND_SET_SYSFALSH_WRITE_START, 0xff);
-
-		if(ret != 0)
-		{
-			api_ret = WIFI_ERR_MODULE_COM;
-			vPortFree(buff);
-			wifi_give_mutex(mutex_flag);
-			return WIFI_ERR_MODULE_COM;
-		}
-
-		while(sended_length < write_total_len)
-		{
-			if(write_total_len - sended_length > g_wifi_tx_busiz_data)
-			{
-				current_send_length = g_wifi_tx_busiz_data;
-			}
-			else
-			{
-				current_send_length = write_total_len - sended_length;
-			}
-			timeout = 0;
-
-			timeout_init(WIFI_UART_COMMAND_PORT, 20000);
-			ticket_no = wifi_set_request_in_queue( WIFI_COMMAND_SET_SYSFALSH_WRITE_DATA, 0 );
-			g_wifi_uart[WIFI_UART_COMMAND_PORT].tx_end_flag = 0;
-			ercd = R_SCI_Send(g_wifi_uart[WIFI_UART_COMMAND_PORT].wifi_uart_sci_handle, buff+sended_length, current_send_length);
-			if(SCI_SUCCESS != ercd)
-			{
-				break;
-			}
-
-			while(1)
-			{
-				if(0 != g_wifi_uart[WIFI_UART_COMMAND_PORT].tx_end_flag)
-				{
-					break;
-				}
-			}
-			sended_length += current_send_length;
-		}
-		while(1)
-		{
-			get_queue = wifi_get_result_from_queue( ticket_no, &result );
-			if(0 == get_queue )
-			{
-				break;
-			}
-
-			if(-1 == check_timeout(WIFI_UART_COMMAND_PORT, 0))
-			{
-				timeout = 1;
-				break;
-			}
-		}
-		if(timeout == 1)
-		{
-			vPortFree(buff);
-			wifi_give_mutex(mutex_flag);
-			return -1;
-		}
-		if(result != WIFI_RETURN_ENUM_OK)
-		{
-			vPortFree(buff);
-			wifi_give_mutex(mutex_flag);
-			return -1;
-		}
-		/* Give back the socketInUse mutex. */
-		vPortFree(buff);
-		wifi_give_mutex(mutex_flag);
-    }
-    else
-    {
-    	api_ret = WIFI_ERR_TAKE_MUTEX;
-    }
-	return api_ret;
-}
-
-int32_t R_WIFI_ESP32_ReadServerCertificateNum (uint32_t datatype)
-{
-	int32_t api_ret = 0;
-	int32_t ret;
-	uint8_t mutex_flag;
-
-	if( (datatype >= 4) || (datatype < 1))
-	{
-		return  WIFI_ERR_PARAMETER;
-	}
-
-	if( WIFI_SYSTEM_CLOSE == g_wifi_system_state)
-	{
-		return WIFI_ERR_NOT_OPEN;
-	}
-
-
-	mutex_flag = MUTEX_TX | MUTEX_RX;
-    if(0 == wifi_take_mutex(mutex_flag))
-	{
-		switch(datatype)
-		{
-		case 0x01:
-			sprintf((char *)g_wifi_uart[WIFI_UART_COMMAND_PORT].command_buff, "AT+SYSFLASH=2,\"client_ca\",0,6\r\n");
-			break;
-		case 0x02:
-			sprintf((char *)g_wifi_uart[WIFI_UART_COMMAND_PORT].command_buff, "AT+SYSFLASH=2,\"client_cert\",0,6\r\n");
-			break;
-		case 0x03:
-			sprintf((char *)g_wifi_uart[WIFI_UART_COMMAND_PORT].command_buff, "AT+SYSFLASH=2,\"client_key\",0,6\r\n");
-			break;
-		}
-		g_wifi_sysflash_header_listnum = 0;
-		ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, g_wifi_uart[WIFI_UART_COMMAND_PORT].command_buff, 10000, WIFI_RETURN_ENUM_OK, WIFI_COMMAND_GET_SYSFLASH, 0xff);
-
-		if(ret != 0)
-		{
-			api_ret = WIFI_ERR_MODULE_COM;
-		}
-		else
-		{
-			api_ret = g_wifi_sysflash_header_listnum;
-		}
-
-		/* Give back the socketInUse mutex. */
-		wifi_give_mutex(mutex_flag);
-    }
-    else
-    {
-    	api_ret = WIFI_ERR_TAKE_MUTEX;
-    }
-	return api_ret;
-}
-
-
-wifi_err_t R_WIFI_ESP32_DeleteServerCertificate (uint32_t datatype, uint8_t *pdata, int32_t length, uint32_t timeout_ms)
-{
-	volatile int32_t timeout;
-	volatile int32_t sended_length;
-	int32_t current_send_length;
-	int32_t api_ret;
-	int32_t ret;
-	sci_err_t ercd;
-	int8_t get_queue;
-	wifi_return_code_t result;
-	uint8_t mutex_flag;
-	uint32_t ticket_no;
-
-	uint8_t *buff;
-	uint32_t file_header_len;
-	uint32_t write_total_len;
-	uint32_t padding_len;
-
-
-	if( (pdata == NULL) || (length < 0 ))
-	{
-		return  WIFI_ERR_PARAMETER;
-	}
-	if( (datatype >= 4) || (datatype < 1))
-	{
-		return  WIFI_ERR_PARAMETER;
-	}
-
-	if( WIFI_SYSTEM_CLOSE == g_wifi_system_state)
-	{
-		return WIFI_ERR_NOT_OPEN;
-	}
-
-
-	mutex_flag = MUTEX_TX | MUTEX_RX;
-    if(0 == wifi_take_mutex(mutex_flag))
-	{
-		sended_length = 0;
-
-		buff = (uint8_t *)pvPortMalloc( length + 16 + 512 ) ;
-		if(NULL == buff)
-		{
-			/* Give back the socketInUse mutex. */
-			wifi_give_mutex(mutex_flag);
-			return -1;
-		}
-		/* Magic Code */
-		buff[0x00] = 0xF1;
-		buff[0x01] = 0xF1;
-
-		/* Item count = 1 */
-		buff[0x02] = 0x01;
-		buff[0x03] = 0x00;
-
-		/* length =  */
-	//	buff[0x04] = 0x01;
-	//	buff[0x05] = 0x00;
-	//	buff[0x06] = 0x00;
-	//	buff[0x07] = 0x00;
-
-		/* Type */
-		buff[0x08] = datatype;
-
-		/* ID (fix 0) */
-		buff[0x09] = 0x00;
-
-		/* content len */
-		buff[0x0A] = (uint8_t)length;
-		buff[0x0B] = (uint8_t)(length >> 8);
-
-		/* raw data */
-		memcpy(&buff[0x0C], pdata, length);
-
-		/* padding */
-		padding_len = ((4 - (length % 4)) % 4);
-		if(0 < padding_len)
-		{
-			memset(&buff[0x0C + length],0xff,padding_len);
-		}
-		file_header_len = length + 4 + padding_len;
-
-
-		/* length =  */
-		buff[0x04] = (uint8_t)file_header_len;
-		buff[0x05] = (uint8_t)(file_header_len >> 8);
-		buff[0x06] = (uint8_t)(file_header_len >> 16);
-		buff[0x07] = (uint8_t)(file_header_len >> 24);
-
-		write_total_len = file_header_len + 8;
-
-		padding_len = ((4096 - (write_total_len % 4096)) % 4096);
-		write_total_len += padding_len;
-
-		switch(datatype)
-		{
-		case 0x01:
-			sprintf((char *)g_wifi_uart[WIFI_UART_COMMAND_PORT].command_buff, "AT+SYSFLASH=0,\"client_ca\",0,%d\r\n" ,write_total_len);
-			break;
-		case 0x02:
-			sprintf((char *)g_wifi_uart[WIFI_UART_COMMAND_PORT].command_buff, "AT+SYSFLASH=0,\"client_cert\",0,%d\r\n" ,write_total_len);
-			break;
-		case 0x03:
-			sprintf((char *)g_wifi_uart[WIFI_UART_COMMAND_PORT].command_buff, "AT+SYSFLASH=0,\"client_key\",0,%d\r\n" ,write_total_len);
-			break;
-		}
-		ret = wifi_execute_at_command(WIFI_UART_COMMAND_PORT, g_wifi_uart[WIFI_UART_COMMAND_PORT].command_buff, 10000, WIFI_RETURN_ENUM_OK_GO_WRITE, WIFI_COMMAND_SET_SYSFALSH_WRITE_START, 0xff);
-
-		if(ret != 0)
-		{
-			api_ret = WIFI_ERR_MODULE_COM;
-			vPortFree(buff);
-			wifi_give_mutex(mutex_flag);
-			return WIFI_ERR_MODULE_COM;
-		}
-
-		if(timeout == 1)
-		{
-			vPortFree(buff);
-			wifi_give_mutex(mutex_flag);
-			return -1;
-		}
-		if(result != WIFI_RETURN_ENUM_OK)
-		{
-			vPortFree(buff);
-			wifi_give_mutex(mutex_flag);
-			return -1;
-		}
-		/* Give back the socketInUse mutex. */
-		vPortFree(buff);
-		wifi_give_mutex(mutex_flag);
-    }
-    else
-    {
-    	api_ret = WIFI_ERR_TAKE_MUTEX;
-    }
-	return api_ret;
-}
-
-uint32_t R_WIFI_ESP32_GetVersion(void)
-{
-    /* These version macros are defined in r_wifi_esp32_if.h. */
-    return ((((uint32_t)WIFI_ESP32_VERSION_MAJOR) << 16) | (uint32_t)WIFI_ESP32_VERSION_MINOR);
+    /* These version macros are defined in r_wifi_esp8266_if.h. */
+    return ((((uint32_t)WIFI_ESP8266_VERSION_MAJOR) << 16) | (uint32_t)WIFI_ESP8266_VERSION_MINOR);
 }
 
 static int32_t wifi_execute_at_command(uint8_t serial_ch_id, uint8_t *ptextstring, uint16_t timeout_ms, wifi_return_code_t expect_code,  wifi_command_list_t command, int32_t socket_no)

@@ -10,7 +10,7 @@
     <formatVersion>2.00</formatVersion>
     <fileTemplate></fileTemplate>
     <configuration>
-        <property id="WIFI_CFG_SCI_CHANNEL" display="SCI Channel number for ESP32 AT command communication" default="0" type="combobox">
+        <property id="WIFI_CFG_SCI_CHANNEL" display="SCI Channel number for ESP8266 AT command communication" default="3" type="combobox">
             <option id="WIFI_CFG_SCI_CHANNEL.0" display="0" value="0"/>
             <option id="WIFI_CFG_SCI_CHANNEL.1" display="1" value="1"/>
             <option id="WIFI_CFG_SCI_CHANNEL.2" display="2" value="2"/>
@@ -26,7 +26,7 @@
             <option id="WIFI_CFG_SCI_CHANNEL.12" display="12" value="12"/>
             <constraint display="Value must be an decimal value">testInteger("${WIFI_CFG_SCI_CHANNEL}")</constraint>
             <constraint display="Value must be in the range 0~12">("${WIFI_CFG_SCI_CHANNEL}" &gt;= 0) &amp;&amp; ("${WIFI_CFG_SCI_CHANNEL}" &lt;= 12)</constraint>
-            <description>SCI channel for ESP32 AT command communication.</description>
+            <description>SCI channel for ESP8266 AT command communication.</description>
         </property>
         <property id="WIFI_CFG_SCI_INTERRUPT_LEVEL" display="Interrupt Level for WIFI_CFG_SCI_CHANNEL" default="14" type="textbox">
             <constraint display="Value must be an decimal value">testInteger("${WIFI_CFG_SCI_INTERRUPT_LEVEL}")</constraint>
@@ -39,13 +39,13 @@
             <description>Communication baudrate for WIFI_CFG_SCI_CHANNEL.
 </description>
         </property>
-        <property id="WIFI_CFG_SCI_USE_FLOW_CONTROL" display="FlowControl select" default="1" type="combobox">
+        <property id="WIFI_CFG_SCI_USE_FLOW_CONTROL" display="FlowControl select" default="0" type="combobox">
             <option id="WIFI_CFG_SCI_USE_FLOW_CONTROL.0" display="0" value="0"/>
             <option id="WIFI_CFG_SCI_USE_FLOW_CONTROL.1" display="1" value="1"/>
             <description>0: Not Use
 1:Use (CTS is SCI peripheral function pin,)</description>
         </property>
-        <property id="WIFI_CFG_RESET_PORT" display="General-purpose port PDR register connected to the ESP32 EN pin" default="D" type="combobox">
+        <property id="WIFI_CFG_RESET_PORT" display="General-purpose port PDR register connected to the ESP8266 EN pin" default="1" type="combobox">
             <option id="WIFI_CFG_RESET_PORT.0" display="PORT0" value="0"/>
             <option id="WIFI_CFG_RESET_PORT.1" display="PORT1" value="1"/>
             <option id="WIFI_CFG_RESET_PORT.2" display="PORT2" value="2"/>
@@ -72,7 +72,7 @@
             <option id="WIFI_CFG_RESET_PORT.Q" display="PORTQ" value="Q"/>
             <description>Configure EN port</description>
         </property>
-        <property id="WIFI_CFG_RESET_PIN" display="General-purpose port PODR register connected to the ESP32 EN pin" default="0" type="textbox">
+        <property id="WIFI_CFG_RESET_PIN" display="General-purpose port PODR register connected to the ESP8266 EN pin" default="7" type="textbox">
             <constraint display="Value must be an decimal value">testInteger("${WIFI_CFG_RESET_PIN}")</constraint>
             <constraint display="Value must be in the range 0~7">("${WIFI_CFG_RESET_PIN}" &gt;= 0) &amp;&amp; ("${WIFI_CFG_RESET_PIN}" &lt;= 7)</constraint>
             <description>Configure EN pin</description>
@@ -82,7 +82,7 @@
             <constraint display="Value must be in the range 1~5">("${WIFI_CFG_CREATABLE_SOCKETS}" &gt;= 1) &amp;&amp; ("${WIFI_CFG_CREATABLE_SOCKETS}" &lt;= 5)</constraint>
             <description>Creatable Sockets number</description>
         </property>
-        <property id="WIFI_CFG_SOCKETS_RECEIVE_BUFFER_SIZE" display="Socket Reveicve buffer size" default="4096" type="textbox">
+        <property id="WIFI_CFG_SOCKETS_RECEIVE_BUFFER_SIZE" display="Socket Reveicve buffer size" default="8192" type="textbox">
             <constraint display="Value must be an decimal value">testInteger("${WIFI_CFG_SOCKETS_RECEIVE_BUFFER_SIZE}")</constraint>
             <constraint display="Value must be in the range 1~16384">("${WIFI_CFG_SOCKETS_RECEIVE_BUFFER_SIZE}" &gt;= 1) &amp;&amp; ("${WIFI_CFG_SOCKETS_RECEIVE_BUFFER_SIZE}" &lt;= 16384)</constraint>
             <description>Socket Reveicve buffer size</description>

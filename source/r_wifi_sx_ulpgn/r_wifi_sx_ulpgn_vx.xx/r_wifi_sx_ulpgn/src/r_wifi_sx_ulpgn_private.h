@@ -1,22 +1,25 @@
-#ifndef R_WIFI_ESP32_PRIVATE_H
-#define R_WIFI_ESP32_PRIVATE_H
+#ifndef R_WIFI_SX_ULPGN_PRIVATE_H
+#define R_WIFI_SX_ULPGN_PRIVATE_H
 
-#include "r_wifi_esp32_if.h"
-
+#include "r_wifi_sx_ulpgn_if.h"
+ 
 /* Configuration */
-#define WIFI_NUMBER_OF_USE_UART			(1)
+#define WIFI_NUMBER_OF_USE_UART			(2)
 
 #define WIFI_UART_COMMAND_PORT			(0)
+#define WIFI_UART_DATA_PORT			    (1)
 
-/* Tranceiver port pin macros.  */
+/* Reset port pin macros.  */
 #define WIFI_RESET_DDR(x, y)               (WIFI_RESET_DDR_PREPROC(x, y))
 #define WIFI_RESET_DDR_PREPROC(x, y)       ((PORT ## x .PDR.BIT.B ## y))
 #define WIFI_RESET_DR(x, y)               (WIFI_RESET_DR_PREPROC(x, y))
 #define WIFI_RESET_DR_PREPROC(x, y)       ((PORT ## x .PODR.BIT.B ## y))
-#define WIFI_RTS_DDR(x, y)                (WIFI_RTS_DDR_PREPROC(x, y))
-#define WIFI_RTS_DDR_PREPROC(x, y)        ((PORT ## x .PDR.BIT.B ## y))
-#define WIFI_RTS_DR(x, y)                (WIFI_RTS_DR_PREPROC(x, y))
-#define WIFI_RTS_DR_PREPROC(x, y)        ((PORT ## x .PODR.BIT.B ## y))
+
+/* RTS port pin macros.  */
+#define WIFI_RTS_DDR(x, y)               (WIFI_RTS_DDR_PREPROC(x, y))
+#define WIFI_RTS_DDR_PREPROC(x, y)       ((PORT ## x .PDR.BIT.B ## y))
+#define WIFI_RTS_DR(x, y)               (WIFI_RTS_DR_PREPROC(x, y))
+#define WIFI_RTS_DR_PREPROC(x, y)       ((PORT ## x .PODR.BIT.B ## y))
 
 #define WIFI_RETURN_TEXT_OK          "OK\r\n"
 #define WIFI_RETURN_TEXT_ERROR       "ERROR\r\n"
@@ -25,31 +28,22 @@
 #define WIFI_RETURN_TEXT_SEND_BYTE   " bytes\r\n"
 #define WIFI_RETURN_TEXT_SEND_OK     "SEND OK\r\n"
 #define WIFI_RETURN_TEXT_SEND_FAIL   "SEND FAIL\r\n"
-#define WIFI_RETURN_TEXT_BUSY        "busy p...\r\n"
+#define WIFI_RETURN_TEXT_CONNECT     "CONNECT\r\n"
+#define WIFI_RETURN_TEXT_BUSY        "BUSY\r\n"
+#define WIFI_RETURN_TEXT_NOCARRIER   "NO CARRIER\r\n"
+#define WIFI_RETURN_TEXT_NOANSWER    "NO ANSWER\r\n"
+
 
 
 #define WIFI_AT_COMMAND_BUFF_SIZE		256
 #define WIFI_AT_RESPONSE_BUFF_SIZE		256
 
-#define WIFI_SOCKET_SENDABLE_DATASIZE   2048
+#define WIFI_SOCKET_SENDABLE_DATASIZE   1420
 
 #define WIFI_UART_BAUDRATE_DEFAULT      115200
 
-/* Debug output */
-#define DEBUGLOG  0
 
-typedef enum
-{
-	WIFI_RECV_STATE_START            = 0x0000,	/* No Receive                        */
-	WIFI_RECV_STATE_CR_WAIT_LF       = 0x1001,	/* '\r'               : Waiting '\n' */
-	WIFI_RECV_STATE_PL_WAIT_COLON    = 0x2001,	/* '+'                : Waiting ':'  */
-	WIFI_RECV_STATE_SOCKET_DATA      = 0x2002,	/* Socket Data Receive               */
-	WIFI_RECV_STATE_PL_WAIT_CR       = 0x2102,	/* '+XXX:'            : Waiting '\r' */
-	WIFI_RECV_STATE_PL_WAIT_LF       = 0x2103,	/* '+XXX:YYY\r'       : Waiting '\n' */
-	WIFI_RECV_STATE_GT_WAIT_SP       = 0x3001,	/* '>'                : Waiting ' '  */
-	WIFI_RECV_STATE_OT_WAIT_CR       = 0xF001,	/* '(Other String)'   : Waiting '\r' */
-	WIFI_RECV_STATE_OT_WAIT_LF       = 0xF00F,	/* '(Other String)\r' : Waiting '\n' */
-}wifi_recv_status_t;
+#define DEBUGLOG 2
 
 
 typedef enum
@@ -57,12 +51,9 @@ typedef enum
 	WIFI_RETURN_ENUM_OK            = 0,
 	WIFI_RETURN_ENUM_ERROR,
 	WIFI_RETURN_ENUM_READY,
-	WIFI_RETURN_ENUM_OK_GO_SEND,
-	WIFI_RETURN_ENUM_SEND_BYTE,
-	WIFI_RETURN_ENUM_SEND_OK,
-	WIFI_RETURN_ENUM_SEND_FAIL,
-//	WIFI_RETURN_ENUM_BUSY,
-	WIFI_RETURN_ENUM_OK_GO_WRITE,
+	WIFI_RETURN_ENUM_CONNECT,
+	WIFI_RETURN_ENUM_BUSY,
+	WIFI_RETURN_ENUM_NOCARRIER,
 	WIFI_RETURN_ENUM_PROCESSING,
 	WIFI_RETURN_ENUM_INTERNAL_TIMEOUT,
 	WIFI_RETURN_ENUM_MAX,
@@ -90,8 +81,16 @@ typedef enum
 	WIFI_COMMAND_NONE = 0,
 	WIFI_COMMAND_SET_REBOOT,
 	WIFI_COMMAND_SET_ECHO_OFF,
+	WIFI_COMMAND_SET_UART_CHANGE_TO_2,
+	WIFI_COMMAND_SET_UART_CHANGE_TO_21,
 	WIFI_COMMAND_SET_UART_HISPEED,
+	WIFI_COMMAND_SET_UART_FLOW_TIMEOUT,
+	WIFI_COMMAND_SET_ESCAPE_GUARD_TIME,
+	WIFI_COMMAND_SET_BUFFER_THRESHOLD,
 	WIFI_COMMAND_SET_WIFI_DISCONNECT,
+	WIFI_COMMAND_SET_AT_RECV_TIMEOUT,
+	WIFI_COMMAND_SET_AUTOCLOSE,
+	WIFI_COMMAND_SET_AUTO_TRANSPARENT_MODE,
 	WIFI_COMMAND_SET_DNS_SRV_ADDRESS,
 	WIFI_COMMAND_SET_STATIC_IP,
 	WIFI_COMMAND_SET_WIFI_AUTOCONNECT,
@@ -102,19 +101,22 @@ typedef enum
 	WIFI_COMMAND_SET_DNSQUERY,
 	WIFI_COMMAND_SET_PING,
 	WIFI_COMMAND_SET_SSLCONFIG,
+	WIFI_COMMAND_SET_SOCKET_CREATE,
 	WIFI_COMMAND_SET_SOCKET_CONNECT,
 	WIFI_COMMAND_SET_SOCKET_SEND_START,
 	WIFI_COMMAND_SET_SOCKET_SEND_DATA,
 	WIFI_COMMAND_SET_SOCKET_CLOSE,
+	WIFI_COMMAND_SET_SOCKET_CHANGE,
+	WIFI_COMMAND_SET_TRANSPARENT_MODE,
+	WIFI_COMMAND_SET_COMMAND_MODE,
+	WIFI_COMMAND_GET_SOCKET_STATUS,
 	WIFI_COMMAND_GET_MODULE_VERSION,
 	WIFI_COMMAND_GET_UART_BAUDRATE,
 	WIFI_COMMAND_GET_APLIST,
 	WIFI_COMMAND_GET_MACADDRESS,
 	WIFI_COMMAND_GET_IPADDRESS,
-	WIFI_COMMAND_GET_SYSFLASH,
-	WIFI_COMMAND_SET_SYSFALSH_ERASE,
-	WIFI_COMMAND_SET_SYSFALSH_WRITE_START,
-	WIFI_COMMAND_SET_SYSFALSH_WRITE_DATA,
+	WIFI_COMMAND_GET_SENT_RECV_SIZE,
+	WIFI_COMMAND_GET_CURRENT_SSID,
 	WIFI_COMMAND_LIST_MAX
 }wifi_command_list_t;
 
@@ -187,18 +189,30 @@ extern wifi_socket_t g_wifi_socket[WIFI_CFG_CREATABLE_SOCKETS];
 extern uint8_t g_wifi_macaddress[6];
 extern wifi_ip_configuration_t g_wifi_ipconfig;
 extern uint32_t g_wifi_dnsaddress;
+extern uint32_t g_wifi_dnsquery_subcount;
+
 
 extern wifi_scan_result_t *gp_wifi_ap_results;
 extern uint32_t g_wifi_aplistmax;
 extern uint32_t g_wifi_aplist_stored_num;
 extern uint32_t g_wifi_aplist_count;
+extern uint32_t g_wifi_aplist_subcount;
 
-extern uint16_t g_wifi_sysflash_header_listnum;
+extern uint8_t g_wifi_current_ssid[33];
+
+extern uint32_t g_wifi_atustat_recv;
+extern uint32_t g_wifi_atustat_sent;
+
 extern wifi_at_execute_queue_t g_wifi_at_execute_queue[10];
 extern uint8_t g_wifi_set_queue_index;
 extern uint8_t g_wifi_get_queue_index;
 
 extern uint32_t g_wifi_sci_err_flag;
+
+extern uint8_t g_wifi_socket_status;
+extern uint8_t  g_wifi_transparent_mode;
+
+extern const uint8_t * const wifi_socket_status_tbl[];
 
 void wifi_init_at_execute_queue(void);
 uint32_t    wifi_set_request_in_queue( wifi_command_list_t command, int32_t socket );
@@ -209,4 +223,4 @@ int32_t wifi_start_recv_task( void );
 void wifi_delete_recv_task( void );
 
 
-#endif /*#define R_WIFI_ESP32_PRIVATE_H */
+#endif /*#define R_WIFI_SX_ULPGN_PRIVATE_H */

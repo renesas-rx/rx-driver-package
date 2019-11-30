@@ -1,8 +1,8 @@
-#ifndef R_WIFI_ESP32_PRIVATE_H
-#define R_WIFI_ESP32_PRIVATE_H
+﻿#ifndef R_WIFI_ESP8266_PRIVATE_H
+#define R_WIFI_ESP8266_PRIVATE_H
 
-#include "r_wifi_esp32_if.h"
-
+#include "r_wifi_esp8266_if.h"
+ 
 /* Configuration */
 #define WIFI_NUMBER_OF_USE_UART			(1)
 
@@ -26,6 +26,7 @@
 #define WIFI_RETURN_TEXT_SEND_OK     "SEND OK\r\n"
 #define WIFI_RETURN_TEXT_SEND_FAIL   "SEND FAIL\r\n"
 #define WIFI_RETURN_TEXT_BUSY        "busy p...\r\n"
+#define WIFI_RETURN_TEXT_FAIL        "FAIL\r\n"
 
 
 #define WIFI_AT_COMMAND_BUFF_SIZE		256
@@ -61,8 +62,8 @@ typedef enum
 	WIFI_RETURN_ENUM_SEND_BYTE,
 	WIFI_RETURN_ENUM_SEND_OK,
 	WIFI_RETURN_ENUM_SEND_FAIL,
+	WIFI_RETURN_ENUM_FAIL,
 //	WIFI_RETURN_ENUM_BUSY,
-	WIFI_RETURN_ENUM_OK_GO_WRITE,
 	WIFI_RETURN_ENUM_PROCESSING,
 	WIFI_RETURN_ENUM_INTERNAL_TIMEOUT,
 	WIFI_RETURN_ENUM_MAX,
@@ -111,10 +112,6 @@ typedef enum
 	WIFI_COMMAND_GET_APLIST,
 	WIFI_COMMAND_GET_MACADDRESS,
 	WIFI_COMMAND_GET_IPADDRESS,
-	WIFI_COMMAND_GET_SYSFLASH,
-	WIFI_COMMAND_SET_SYSFALSH_ERASE,
-	WIFI_COMMAND_SET_SYSFALSH_WRITE_START,
-	WIFI_COMMAND_SET_SYSFALSH_WRITE_DATA,
 	WIFI_COMMAND_LIST_MAX
 }wifi_command_list_t;
 
@@ -193,7 +190,6 @@ extern uint32_t g_wifi_aplistmax;
 extern uint32_t g_wifi_aplist_stored_num;
 extern uint32_t g_wifi_aplist_count;
 
-extern uint16_t g_wifi_sysflash_header_listnum;
 extern wifi_at_execute_queue_t g_wifi_at_execute_queue[10];
 extern uint8_t g_wifi_set_queue_index;
 extern uint8_t g_wifi_get_queue_index;
@@ -209,4 +205,4 @@ int32_t wifi_start_recv_task( void );
 void wifi_delete_recv_task( void );
 
 
-#endif /*#define R_WIFI_ESP32_PRIVATE_H */
+#endif /*#define R_WIFI_ESP8266_PRIVATE_H */

@@ -33,10 +33,10 @@
             <constraint display="Value must be in the range 1~15">("${WIFI_CFG_SCI_INTERRUPT_LEVEL}" &gt;= 1) &amp;&amp; ("${WIFI_CFG_SCI_INTERRUPT_LEVEL}" &lt;= 15)</constraint>
             <description>Interrupt Level for WIFI_CFG_SCI_CHANNEL</description>
         </property>
-        <property id="WIFI_CFG_SCI_BOUDRATE" display="Communication boudrate for WIFI_CFG_SCI_CHANNEL" default="937500" type="textbox">
-            <constraint display="Value must be an decimal value" actionOnFail="disable">testInteger("${WIFI_CFG_SCI_BOUDRATE}")</constraint>
-            <constraint display="Value must be in the range 115200~3750000">("${WIFI_CFG_SCI_BOUDRATE}" &gt;= 115200) &amp;&amp; ("${WIFI_CFG_SCI_BOUDRATE}" &lt;= 3750000)</constraint>
-            <description>Communication boudrate for WIFI_CFG_SCI_CHANNEL.
+        <property id="WIFI_CFG_SCI_BAUDRATE" display="Communication baudrate for WIFI_CFG_SCI_CHANNEL" default="937500" type="textbox">
+            <constraint display="Value must be an decimal value" actionOnFail="disable">testInteger("${WIFI_CFG_SCI_BAUDRATE}")</constraint>
+            <constraint display="Value must be in the range 115200~3750000">("${WIFI_CFG_SCI_BAUDRATE}" &gt;= 115200) &amp;&amp; ("${WIFI_CFG_SCI_BAUDRATE}" &lt;= 3750000)</constraint>
+            <description>Communication baudrate for WIFI_CFG_SCI_CHANNEL.
 </description>
         </property>
         <property id="WIFI_CFG_SCI_USE_FLOW_CONTROL" display="FlowControl select" default="1" type="combobox">

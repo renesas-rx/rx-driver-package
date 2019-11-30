@@ -1,15 +1,15 @@
-#ifndef R_WIFI_ESP32_IF_H
-#define R_WIFI_ESP32_IF_H
+﻿#ifndef R_WIFI_ESP8266_IF_H
+#define R_WIFI_ESP8266_IF_H
 
 //#include "FreeRTOS.h"
 #include "platform.h"
 #include "r_sci_rx_if.h"
 #include "r_byteq_if.h"
-#include "r_wifi_esp32_config.h"
+#include "r_wifi_esp8266_config.h"
 
 /* Driver Version Number. */
-#define WIFI_ESP32_VERSION_MAJOR           (1)
-#define WIFI_ESP32_VERSION_MINOR           (00)
+#define WIFI_ESP8266_VERSION_MAJOR           (1)
+#define WIFI_ESP8266_VERSION_MINOR           (00)
 
 
 #define WIFI_SOCKET_IP_PROTOCOL_TCP (6)
@@ -86,32 +86,25 @@ typedef struct
 	uint32_t socket_no;
 }wifi_err_event_t;
 
-wifi_err_t R_WIFI_ESP32_Open(void);
-wifi_err_t R_WIFI_ESP32_Close(void);
-wifi_err_t R_WIFI_ESP32_Scan(wifi_scan_result_t *ap_results,uint32_t maxnetworks, uint32_t *exist_ap_count);
-wifi_err_t R_WIFI_ESP32_SetDnsServerAddress(uint32_t dnsaddress1, uint32_t dnsaddress2);
-wifi_err_t R_WIFI_ESP32_Connect (uint8_t *pssid, uint8_t *ppass, uint32_t security, uint8_t dhcp_enable, wifi_ip_configuration_t *pipconfig);
-wifi_err_t R_WIFI_ESP32_Disconnect (void);
-int32_t    R_WIFI_ESP32_IsConnected (void);
-wifi_err_t R_WIFI_ESP32_GetMacAddress (uint8_t *pmacaddress);
-wifi_err_t R_WIFI_ESP32_GetIpAddress (wifi_ip_configuration_t *pipconfig);
-int32_t    R_WIFI_ESP32_SocketCreate(uint32_t type, uint32_t ipversion);
-wifi_err_t R_WIFI_ESP32_SocketConnect(int32_t socket_no, uint32_t ipaddr, uint16_t port);
-wifi_err_t R_WIFI_ESP32_SocketClose(int32_t socket_no);
-int32_t    R_WIFI_ESP32_SocketSend (int32_t socket_no, uint8_t *pdata, int32_t length, uint32_t timeout_ms);
-int32_t    R_WIFI_ESP32_SocketRecv (int32_t socket_no, uint8_t *pdata, int32_t length, uint32_t timeout_ms);
-wifi_err_t R_WIFI_ESP32_SocketShutdown (int32_t socket_no);
-wifi_err_t R_WIFI_ESP32_SocketOptRequireTls (int32_t socket_no);
-wifi_err_t R_WIFI_ESP32_DnsQuery (uint8_t *pdomain_name, uint32_t *pipaddress);
-wifi_err_t R_WIFI_ESP32_Ping (uint32_t ipaddr, uint16_t count, uint32_t intervalms);
-wifi_err_t R_WIFI_ESP32_RegistServerCertificate (uint32_t datatype, uint8_t *pdata, int32_t length, uint32_t timeout_ms);
-wifi_err_t R_WIFI_ESP32_DeleteServerCertificate (uint32_t datatype, uint8_t *pdata, int32_t length, uint32_t timeout_ms);
-wifi_err_t R_WIFI_ESP32_RegistSSLClientCertAndKey (uint8_t *p_cert, int32_t cert_len, uint8_t *p_key, int32_t key_len);
-wifi_err_t R_WIFI_ESP32_RegistTrustRootCertificate (uint8_t *p_rootcert, int32_t rootcert_len);
-wifi_err_t R_WIFI_ESP32_SocketOptSetTrustRootCertificate (int32_t socket_no, uint8_t *p_rootcert, int32_t rootcert_len);
-int32_t R_WIFI_ESP32_ReadServerCertificateNum (uint32_t datatype);
-int32_t R_WIFI_ESP32_ReadSSLClientCertAndKeyNum (void);
-uint32_t   R_WIFI_ESP32_GetVersion(void);
+wifi_err_t R_WIFI_ESP8266_Open(void);
+wifi_err_t R_WIFI_ESP8266_Close(void);
+wifi_err_t R_WIFI_ESP8266_Scan(wifi_scan_result_t *ap_results,uint32_t maxnetworks, uint32_t *exist_ap_count);
+wifi_err_t R_WIFI_ESP8266_SetDnsServerAddress(uint32_t dnsaddress1, uint32_t dnsaddress2);
+wifi_err_t R_WIFI_ESP8266_Connect (uint8_t *pssid, uint8_t *ppass, uint32_t security, uint8_t dhcp_enable, wifi_ip_configuration_t *pipconfig);
+wifi_err_t R_WIFI_ESP8266_Disconnect (void);
+int32_t    R_WIFI_ESP8266_IsConnected (void);
+wifi_err_t R_WIFI_ESP8266_GetMacAddress (uint8_t *pmacaddress);
+wifi_err_t R_WIFI_ESP8266_GetIpAddress (wifi_ip_configuration_t *pipconfig);
+int32_t    R_WIFI_ESP8266_SocketCreate(uint32_t type, uint32_t ipversion);
+wifi_err_t R_WIFI_ESP8266_SocketConnect(int32_t socket_no, uint32_t ipaddr, uint16_t port);
+wifi_err_t R_WIFI_ESP8266_SocketClose(int32_t socket_no);
+int32_t    R_WIFI_ESP8266_SocketSend (int32_t socket_no, uint8_t *pdata, int32_t length, uint32_t timeout_ms);
+int32_t    R_WIFI_ESP8266_SocketRecv (int32_t socket_no, uint8_t *pdata, int32_t length, uint32_t timeout_ms);
+wifi_err_t R_WIFI_ESP8266_SocketShutdown (int32_t socket_no);
+
+wifi_err_t R_WIFI_ESP8266_DnsQuery (uint8_t *pdomain_name, uint32_t *pipaddress);
+wifi_err_t R_WIFI_ESP8266_Ping (uint32_t ipaddr, uint16_t count, uint32_t intervalms);
+uint32_t   R_WIFI_ESP8266_GetVersion(void);
 
 
-#endif /* #define R_WIFI_ESP32_IF_H */
+#endif /* #define R_WIFI_ESP8266_IF_H */
