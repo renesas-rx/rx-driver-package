@@ -6,15 +6,12 @@
     <toolchain>
         <brand>Renesas</brand>
         <product>RXC</product>
-        <version>3.00.00</version>
+        <version>3.01.00</version>
     </toolchain>
 
     <!-- only one target entry allowed; multiple sub tags permitted -->
     <target>
-        <family>RX</family>
-        <series>RX600</series>
-        <group>RX651</group>
-        <group>RX65N</group>
+        <family omit_series="true">RX</family>
     </target>
 
     <!-- only one package entry allowed -->
@@ -22,7 +19,7 @@
     <package>
         <type>fitmodule</type>
         <name>r_simple_glcdc_config_rx</name>
-        <version>0.80</version>
+        <version>0.81</version>
         <zipsource>r_simple_glcdc_config_rx_v0.80.zip</zipsource>
         <dependency>
             <module>r_glcdc_rx</module>

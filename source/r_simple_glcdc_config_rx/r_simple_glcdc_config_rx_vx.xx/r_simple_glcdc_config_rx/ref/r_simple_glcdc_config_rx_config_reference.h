@@ -17,7 +17,7 @@
 * Copyright (C) 2013-2019 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
-* File Name     : r_glcdc_config_rx_config.h
+* File Name     : r_simple_glcdc_config_rx_config.h
 * Description   : Configures the GLCDC driver
 ************************************************************************************************************************
 * History : DD.MM.YYYY Version Description
@@ -32,7 +32,16 @@
 Configuration Options
 ***********************************************************************************************************************/
 
-/* no configuration for this module */
+#define XSIZE_PHYS 480
+#define YSIZE_PHYS 272
+#define XSIZE_OUTOF_DISPLAY 32
+
+#define _BRIGHTNESS 0x200
+#define _CONTRAST   0x80
+#define DISP_SIGNAL_PORT_DIRECTION 			PORT6.PDR.BIT.B3
+#define DISP_SIGNAL_PORT_OUTPUT_DATA 		PORT6.PODR.BIT.B3
+#define BACKLIGHT_SIGNAL_PORT_DIRECTION 	PORT6.PDR.BIT.B6
+#define BACKLIGHT_SIGNAL_PORT_OUTPUT_DATA 	PORT6.PODR.BIT.B3
 
 
 #endif /* GLCDC_CONFIG_CONFIG_H */

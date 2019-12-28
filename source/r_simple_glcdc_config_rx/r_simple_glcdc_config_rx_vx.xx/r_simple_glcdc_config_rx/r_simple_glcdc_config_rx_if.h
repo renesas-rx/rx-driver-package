@@ -29,48 +29,7 @@
 #include <string.h>
 
 #include "platform.h"
-
-#define LCD_X_INITCONTROLLER 0x01 /* Initializing the display controller */
-#define LCD_X_SETLUTENTRY    0x04 /* Setting an entry of the LUT */
-#define LCD_X_ON             0x05 /* Switching the display on */
-
-#define XSIZE_PHYS 480
-#define YSIZE_PHYS 272
-
-//
-// Timing
-//
-#define SYNC_H       4
-#define SYNC_V       1
-#define BGSYNC_HP    2
-#define BGSYNC_VP    2
-#define BGHSIZE_HP  (BGSYNC_HP + SYNC_H)
-#define BGVSIZE_VP  (BGSYNC_VP + SYNC_V)
-#define GRC_VS      (BGVSIZE_VP - BGSYNC_VP)
-#define GRC_HS      (BGHSIZE_HP - BGSYNC_HP)
-
-// Color depth
-//
-#define BITS_PER_PIXEL 8  // Allowed values: 1, 4, 8, 16, 32
-
-//
-// Frame buffer
-//
-#define FRAMEBUFFER_START 0x800000  // Begin of Expansion RAM
-
-//
-// Buffer size and stride
-//
-#define BYTES_PER_LINE   ((BITS_PER_PIXEL * XSIZE_PHYS) / 8)
-#define LINE_OFFSET      (((BYTES_PER_LINE + 63) / 64) * 64)
-#define VXSIZE_PHYS      ((LINE_OFFSET * 8) / BITS_PER_PIXEL)
-#define BYTES_PER_BUFFER (LINE_OFFSET * YSIZE_PHYS)
-
-//
-// Brightness & COntrast
-//
-#define _BRIGHTNESS 0x200
-#define _CONTRAST   0x80
+#include "r_simple_glcdc_config_rx_config.h"
 
 void R_SIMPLE_GLCDC_CONFIG_Open(void);
 void R_SIMPLE_GLCDC_CONFIG_Close(void);
