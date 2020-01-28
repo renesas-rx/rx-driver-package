@@ -23,3 +23,4 @@ So please download tested FIT Modules from [Renesas official website](https://ww
 - r_wifi_esp32
 - r_wifi_esp8266
 - r_wifi_sx_ulpgn
+- r_st7735_lcd_driver_rx
