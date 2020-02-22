@@ -54,8 +54,8 @@
         <incdir>r_emwin_rx/lib/GUI</incdir>
         <library>
             <family omit_series="true">RX</family>
-            <libdir endian="big" path="rel">r_emwin_rx/lib/emWinLib.lib</libdir>
-            <libdir endian="little" path="rel">r_emwin_rx/lib/emWinLib.lib</libdir>
+            <libdir endian="big" path="rel">r_emwin_rx/lib/GUI/emWinLib.lib</libdir>
+            <libdir endian="little" path="rel">r_emwin_rx/lib/GUI/emWinLib.lib</libdir>
         </library>
     </package>
 
