@@ -23,13 +23,19 @@ Purpose     : Config / System dependent externals for GUI
 
 #include "GUI.h"
 
+#include "platform.h"
 #include "r_cmt_rx_if.h"
+#include "r_emwin_rx_config.h"
 
 /*********************************************************************
 *
 *       Global data
 */
 volatile GUI_TIMER_TIME OS_TimeMS;
+#if (BSP_CFG_RTOS_USED) == 1
+static xSemaphoreHandle xQueueMutex;
+static xSemaphoreHandle xSemaTxDone;
+#endif
 
 /*********************************************************************
 *
@@ -126,10 +132,41 @@ void GUI_X_ErrorOut(const char *s) { GUI_USE_PARA(s); }
 *  needs to be in GUIConf.h
 */
 
-void GUI_X_InitOS(void)    {  }
-void GUI_X_Unlock(void)    {  }
-void GUI_X_Lock(void)      {  }
-U32  GUI_X_GetTaskId(void) { return 1; }
+void GUI_X_InitOS(void)
+{
+#if (BSP_CFG_RTOS_USED) == 1
+	  /* Create Mutex lock */
+	  xQueueMutex = xSemaphoreCreateMutex();
+	  configASSERT (xQueueMutex != NULL);
+
+	  /* Queue Semaphore */
+	  vSemaphoreCreateBinary( xSemaTxDone );
+	  configASSERT ( xSemaTxDone != NULL );
+#endif
+}
+void GUI_X_Unlock(void)
+{
+#if (BSP_CFG_RTOS_USED) == 1
+	xSemaphoreGive( xQueueMutex );
+#endif
+}
+
+void GUI_X_Lock(void)     
+{
+#if (BSP_CFG_RTOS_USED) == 1
+	if(xQueueMutex == NULL)
+	{
+	  GUI_X_InitOS();
+	}
+	xSemaphoreTake( xQueueMutex, portMAX_DELAY );
+#endif
+}
+U32  GUI_X_GetTaskId(void)
+{
+#if (BSP_CFG_RTOS_USED) == 1
+	return ((U32) xTaskGetCurrentTaskHandle());
+#endif
+}
 
 
 /*********************************************************************
@@ -141,8 +178,18 @@ U32  GUI_X_GetTaskId(void) { return 1; }
 *                 GUI_X_SignalEvent()
 */
 
-void GUI_X_WaitEvent(void)            {  }
-void GUI_X_SignalEvent(void)          {  }
+void GUI_X_WaitEvent(void)
+{
+#if (BSP_CFG_RTOS_USED) == 1
+    while( xSemaphoreTake(xSemaTxDone, portMAX_DELAY ) != pdTRUE );
+#endif
+}
+void GUI_X_SignalEvent(void)
+{
+#if (BSP_CFG_RTOS_USED) == 1
+	xSemaphoreGive( xSemaTxDone );
+#endif
+}
 void GUI_X_WaitEventTimed(int Period) {  }
 
 /*************************** End of file ****************************/
