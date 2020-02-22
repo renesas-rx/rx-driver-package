@@ -27,6 +27,9 @@
 #ifndef EMWIN_RX_CONFIG_HEADER_FILE
 #define EMWIN_RX_CONFIG_HEADER_FILE
 
+#define RX65N_ENVISION_KIT 1
+#define RX72N_ENVISION_KIT 2
+
 /***********************************************************************************************************************
 Configuration Options
 ***********************************************************************************************************************/
@@ -36,17 +39,20 @@ Configuration Options
 
 #define EMWIN_GUI_NUM_BYTES (1024 * 80)
 
+#if ((EMWIN_BOARD) == (RX72N_ENVISION_KIT))
 #define EMWIN_GUI_FRAME_BUFFER1 0x00800000
 #define EMWIN_GUI_FRAME_BUFFER2 0x00840000
-
-#if (EMWIN_BOARD) == (RX72N_ENVISION_KIT)
 #define EMWIN_DISP_SIGNAL_PIN         GPIO_PORT_B_PIN_3
 #define EMWIN_BACKLIGHT_PIN           GPIO_PORT_6_PIN_7
 #define EMWIN_TOUCH_IC_RESET_PIN      GPIO_PORT_6_PIN_6
-#elif  (EMWIN_BOARD) == (RX65N_ENVISION_KIT)
+#elif ((EMWIN_BOARD) == (RX65N_ENVISION_KIT))
+#define EMWIN_GUI_FRAME_BUFFER1 0x00000000
+#define EMWIN_GUI_FRAME_BUFFER2 0x00800000
 #define EMWIN_DISP_SIGNAL_PIN         GPIO_PORT_6_PIN_3
 #define EMWIN_BACKLIGHT_PIN           GPIO_PORT_6_PIN_6
 #define EMWIN_TOUCH_IC_RESET_PIN      GPIO_PORT_0_PIN_7
+#else
+#error "please define your board number at r_emwin_rx_config.h"
 #endif
 
 #endif /* EMWIN_RX_CONFIG_HEADER_FILE */
