@@ -14,6 +14,7 @@ MODULE_NAME_LIST = 	r_bsp r_byteq r_can_rx r_cmt_rx r_cmtw_rx\
 					r_usb_hhid r_usb_hhid_mini r_usb_hmsc r_usb_hmsc_mini\
 					r_usb_pcdc r_usb_pcdc_mini r_usb_phid r_usb_phid_mini\
 					r_usb_pmsc r_usb_pmsc_mini r_vbatt_rx r_wdt_rx r_wifi_esp32 r_wifi_esp8266 r_wifi_sx_ulpgn\
+					r_st7735_lcd_driver\
 
 all:
 	for i in $(MODULE_NAME_LIST); do \

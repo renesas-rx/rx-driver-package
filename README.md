@@ -6,7 +6,8 @@ So please download tested FIT Modules from [Renesas official website](https://ww
 # These software
 - can be used for any users.
 - can be re-distributed by any users.
-- can be integrated with specified open source code.
+- can be integrated with specified open source code. 
+    - Amazon FreeRTOS has been now allowed, Renesas would accept other open source.
 - use condition is basically MIT License, and details are shown in [PDF file in FIT Modules directory](https://github.com/renesas-rx/rx-driver-package/tree/master/FITModules).
 
 # early prototype of FIT Modules
@@ -22,3 +23,4 @@ So please download tested FIT Modules from [Renesas official website](https://ww
 - r_wifi_esp32
 - r_wifi_esp8266
 - r_wifi_sx_ulpgn
+- r_st7735_lcd_driver_rx
