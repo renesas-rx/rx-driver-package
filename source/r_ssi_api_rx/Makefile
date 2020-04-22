@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_ssi_api_rx
-VERSION = 		v1.24
+VERSION = 		v2.01
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules

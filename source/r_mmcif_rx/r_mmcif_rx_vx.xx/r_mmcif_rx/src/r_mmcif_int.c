@@ -19,7 +19,7 @@
 /**********************************************************************************************************************
 * System Name  : MMC Driver
 * File Name    : r_mmcif_int.c
-* Version      : 1.05.00
+* Version      : 1.07.00
 * Device       : RX64M (LQFP-176)
 * Abstract     : API & Sub module
 * Tool-Chain   : For RX64M Group
@@ -34,6 +34,7 @@
 *              : 03.09.2014 1.00    First Release
 *              : 20.05.2019 1.05    Added support for GNUC and ICCRX.
 *                                   Fixed coding style.
+*              : 22.11.2019 1.07    Modified comment of API function to Doxygen style.
 **********************************************************************************************************************/
 
 /**********************************************************************************************************************
@@ -293,17 +294,29 @@ mmc_status_t r_mmcif_get_intstatus(uint32_t channel)
 
 
 /**********************************************************************************************************************
-* Outline      : Register MMC_CEINT Interrupt Callback Function
-* Function Name: R_MMCIF_IntCallback
-* Description  : Registers the callback function of MMC_CEINT interrupt.
-*              : If the MMC_CEINT interrupt are occurred, calls callback function.
-* Arguments    : uint32_t           channel                 ;   MMC Channel No.
-*              : mmc_status_t       (*callback)(int32_t)    ;   Callback function
-* Return Value : MMC_SUCCESS                                ;   Successful operation
-*              : MMC_ERR                                    ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_MMCIF_IntCallback
+ *****************************************************************************************************************/ /**
+ * @brief This function registers an MMC protocol status interrupt callback function.
+ * @param[in] channel
+ *             Channel number : The number of the MMCIF channel used (numbering starts at 0)
+ * @param[in] (*callback)(int32_t)
+ *            Callback function to be registered.\n 
+ *            If a null pointer is specified, no callback function is registered. If a callback function is to be used,
+ *            register a callback function before the R_MMCIF_Mount() function is executed.\n 
+ *            The value 0 is always stored in (int32_t).
+ * @retval    MMC_SUCCESS Successful operation
+ * @retval    MMC_ERR     General error
+ * @details   This function registers an MMC protocol status interrupt callback function.\n 
+ *            The callback function registered by this function is called as a subroutine from the interrupt handler 
+ *            when an interrupt occurs due to a change in the MMC protocol status (ACCIO or ERRIO).
+ * @note      Initialization by the R_MMCIF_Open() function is required before this function is executed.\n 
+ *            The stack wait state clear operation and other processing is performed in registered callback function.\n
+ *            The callback function registered by this function differs from the MMC card insertion interrupt 
+ *            callback function.\n 
+ *            The callback function registered by this function is not called when an MMC card insertion 
+ *            interrupt occurs.\n 
+ *            Note that the error code cannot be acquired with the R_MMCIF_Get_ErrCode() function.
+ */
 mmc_status_t R_MMCIF_IntCallback(uint32_t channel, mmc_status_t (*callback)(int32_t))
 {
     mmc_mmchndl_t       *p_hndl = 0;

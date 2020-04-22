@@ -56,6 +56,8 @@
 *                              Fixed coding style. 
 *           20.06.2019 2.76    Added support for RX23W.
 *           30.07.2019 2.77    Added support for RX72M.
+*           22.11.2019 2.78    Added support for RX72N.
+*                              Added support for RX66N.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -100,7 +102,7 @@ void rtc_init (void)
     }
 
     /* Enable the sub-clock for RTC */
-#if defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX72M)
+#if defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX72M) || defined(BSP_MCU_RX66N) || defined(BSP_MCU_RX72N)
     RTC.RCR4.BIT.RCKSEL = 0;            // do not use main clock
 #endif
     RTC.RCR3.BIT.RTCEN = 1;             // enable sub-clock

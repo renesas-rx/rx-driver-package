@@ -34,6 +34,9 @@
 *                              Bug fix: R_WDT_Open(), R_IWDT_Open() invalidated if either module is in auto-start mode.
 *           20.05.2019 3.00    Added support for GNUC and ICCRX.
 *           15.08.2019 3.20    Fixed warnings in IAR.
+*         : 25.11.2019 3.30    Added support for RX13T.
+*                              Modified comment of API function to Doxygen style.
+*                              Fixed to comply with GSCE Coding Standards Rev.6.00.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -57,7 +60,7 @@ Private global variables and functions
 ***********************************************************************************************************************/
 #if ((BSP_CFG_OFS0_REG_VALUE & OFS0_IWDT_DISABLED) == OFS0_IWDT_DISABLED) /* Register start mode */
 /* State variable for this package. */
-static bool already_opened = false;
+static bool s_already_opened = false;
 
 /* Internal functions. */
 static iwdt_err_t iwdt_init_register_start_mode(iwdt_config_t *p_cfg);
@@ -71,21 +74,21 @@ static inline void release_hw_lock(void);
 
 /***********************************************************************************************************************
 * Function Name: R_IWDT_Open
-* Description  : This function configures the IWDT counter options by initializing
-*                the associated registers. This API is affected in Register start mode only.
-* Arguments    : p_cfg -
-*                    Pointer to configuration structure of type iwdt_ config_t.
-* Return Value : IWDT_SUCCESS -
-*                    IWDT is initialized successful.
-*                IWDT_ERR_OPEN_IGNORED -
-*                    The calling to this function is ignored because it is already called.
-*                IWDT_ERR_INVALID_ARG -
-*                    An element of the pCfg structure contains an invalid value.
-*                IWDT_ERR_NULL_PTR -
-*                    pCfg pointer is NULL.
-*                IWDT_ERR_BUSY -
-*                    IWDT resource cannot be taken. Try to call this function again.
-***********************************************************************************************************************/
+********************************************************************************************************************//**
+* @brief This function configures the IWDT counter options by initializing the associated registers. It is unavailable
+* if the IWDT is initialized by the OFS0 register in r_bsp_config.h (Auto-Start mode).\n
+* This function must be called before calling any other API functions.
+* @param[in] p_cfg Pointer to configuration structure of type iwdt_ config_t.
+* See Section 3 in the application note for details.
+* @retval IWDT_SUCCESS IWDT initialized
+* @retval IWDT_ERR_OPEN_IGNORED The module has already been opened
+* @retval IWDT_ERR_INVALID_ARG An element of the p_cfg structure contains an invalid value
+* @retval IWDT_ERR_NULL_PTR p_cfg pointer is NULL
+* @retval IWDT_ERR_BUSY IWDT resource is locked
+* @details Sets all configurable options for the Independent Watchdog Timer.
+* @note
+* See Section 3 in the application note for details.
+*/
 #if ((BSP_CFG_OFS0_REG_VALUE & OFS0_IWDT_DISABLED) == OFS0_IWDT_DISABLED) /* Register start mode */
 iwdt_err_t R_IWDT_Open (void * const p_cfg)
 {
@@ -118,7 +121,7 @@ iwdt_err_t R_IWDT_Open (void * const p_cfg)
     }
 
     /* Lock obtained, we can change state */
-    if (true == already_opened)
+    if (true == s_already_opened)
     {
         /* Open function is already called */
         release_hw_lock();
@@ -129,7 +132,7 @@ iwdt_err_t R_IWDT_Open (void * const p_cfg)
     err = iwdt_init_register_start_mode((iwdt_config_t *)p_cfg);
 
     /* Update status */
-    already_opened = true;
+    s_already_opened = true;
 
     release_hw_lock();
     return err;
@@ -149,8 +152,7 @@ End of function R_IWDT_Open
 static iwdt_err_t iwdt_init_register_start_mode(iwdt_config_t *p_cfg)
 {
     /* Set Time-out period, Clock Division Ratio, Window Start/End Position */
-    IWDT.IWDTCR.WORD = ((((uint16_t)p_cfg->timeout) | ((uint16_t)p_cfg->iwdtclk_div)) | \
-        (((uint16_t)p_cfg->window_start) | ((uint16_t)p_cfg->window_end)));
+    IWDT.IWDTCR.WORD = ((((uint16_t)p_cfg->timeout) | ((uint16_t)p_cfg->iwdtclk_div)) | (((uint16_t)p_cfg->window_start) | ((uint16_t)p_cfg->window_end)));
 
     /* Set reset output or NMI output */
     IWDT.IWDTRCR.BYTE = (uint8_t)p_cfg->timeout_control;
@@ -239,24 +241,27 @@ End of function iwdt_parameter_check
 
 /***********************************************************************************************************************
 * Function Name: R_IWDT_Control
-* Description  : This function performs getting IWDT status (underflow error status,
-                  refresh error status and IWDT counter value) and refreshing the down-counter of IWDT.
-                 It is used in both Auto start mode and Register start mode.
-* Arguments    : cmd -
-*                    Command to refresh IWDT counter or get IWDT status
-*                p_status -
-*                    Stores the counter status.
-* Return Value : IWDT_SUCCESS -
-*                    Setting to appropriate register for performing a refreshing successfully.
-*                IWDT_ERR_INVALID_ARG -
-*                    Invalid argument.
-*                IWDT_ERR_NULL_PTR -
-*                    p_status is NULL.
-*                IWDT_ERR_NOT_OPENED -
-*                    Open function is not called yet.
-*                IWDT_ERR_BUSY -
-*                    IWDT resource cannot be taken. Try to call this function again.
-***********************************************************************************************************************/
+********************************************************************************************************************//**
+* @brief This function performs getting the IWDT status and refreshing the down-counter of IWDT. This function may be
+* used in both Auto-Start and Register-Start modes.
+* @param[in] cmd Command to run.
+* See Section 3 in the application note for details.
+* @param[in] p_status Pointer to the storage of the counter and status flags.
+* @retval IWDT_SUCCESS Command completed successfully
+* @retval IWDT_ERR_INVALID_ARG Invalid argument
+* @retval IWDT_ERR_NULL_PTR p_status is NULL
+* @retval IWDT_ERR_NOT_OPENED Open function has not yet been called
+* @retval IWDT_ERR_BUSY IWDT resource is locked
+* @details If command IWDT_CMD_REFRESH_COUNTING is selected, the watchdog counter is initialized to its start value
+* and counting continues.\n If command IWDT_CMD_GET_STATUS is selected, the IWDT status register is loaded into
+* *p_status. The high order 2 bits indicate whether a refresh error occurred (refresh called outside of legal window)
+*  or an underflow occurred (counter expired). The remaining bits indicate the current counter value.
+* @note This second argument is ignored for command IWDT_CMD_REFRESH_COUNTING. When initializing the watchdog timer
+* with the IWDT_CMD_REFRESH_COUNTING command, up to four count cycles is required (the number of cycles of the
+* IWDT-dedicated clock (IWDTCLK) for one count cycle varies depending on the clock division ratio specified in the
+* Open). Therefore, an execution of the IWDT_CMD_REFRESH_COUNTING command should be completed four count cycles
+* before the end position of the refresh-permitted period or a counter underflow.
+*/
 iwdt_err_t R_IWDT_Control(iwdt_cmd_t const cmd, uint16_t * p_status)
 {
     bool ret = false;
@@ -284,7 +289,7 @@ iwdt_err_t R_IWDT_Control(iwdt_cmd_t const cmd, uint16_t * p_status)
 
     /* Lock obtained */
 #if ((BSP_CFG_OFS0_REG_VALUE & OFS0_IWDT_DISABLED) == OFS0_IWDT_DISABLED) /* Register start mode */
-    if (false == already_opened)
+    if (false == s_already_opened)
     {
         /* Open function has not called yet */
         release_hw_lock();
@@ -324,14 +329,16 @@ End of function R_IWDT_Control
 
 /***********************************************************************************************************************
 * Function Name: R_IWDT_GetVersion
-* Description  : Returns the current version of this module. The version number is encoded where the top 2 bytes are the
-*                major version number and the bottom 2 bytes are the minor version number.
-* Arguments    : none
-* Return Value : Version of this module.
-***********************************************************************************************************************/
+********************************************************************************************************************//**
+* @brief This function returns the driver version number at runtime.
+* @return Version number.
+* @details Returns the version of this module. The version number is encoded such that the top 2 bytes are the major
+* version number and the bottom 2 bytes are the minor version number.
+* @note None.
+*/
 uint32_t  R_IWDT_GetVersion (void)
 {
-    uint32_t const version = (IWDT_RX_VERSION_MAJOR << 16) | IWDT_RX_VERSION_MINOR;
+    uint32_t  version = (IWDT_RX_VERSION_MAJOR << 16) | IWDT_RX_VERSION_MINOR;
 
     return version;
 }

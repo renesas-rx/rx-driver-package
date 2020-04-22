@@ -41,6 +41,11 @@
 *           20.05.2019 4.00    Added support for GNUC and ICCRX.
 *           28.06.2019 4.10    Added support for RX23W.
 *           15.08.2019 4.20    Added support for RX72M.
+*           25.11.2019 4.30    Modified comment of API function to Doxygen style.
+*                              Added support for atomic control.
+*                              Removed support for Generation 1 devices.
+*           30.12.2019 4.40    Added support for RX72N, RX66N.
+*                              Added support for RX65N, RX72M Amplifier Stabilization Wait Control.
 ******************************************************************************/
 /*****************************************************************************
 Includes   <System Includes> , "Project Includes"
@@ -69,24 +74,24 @@ static void power_on(void);
 static void power_off(void);
 static dac_err_t dac_set_options(dac_cfg_t *p_cfg);
 
-/*****************************************************************************
+
+/***********************************************************************************************************************
 * Function Name: R_DAC_Open
-* Description  : Initializes the DAC peripheral
-* Arguments    : p_cfg -
-*                     pointer to configuration structure
-* Return Value : DAC_SUCCESS -
-*                    DAC initialized successfully
-*                DAC_ERR_NULL_PTR
-*                    p_cfg is NULL
-*                DAC_ERR_INVALID_ARG
-*                    illegal unit number (RX64M, RX71M, RX65N, RX651, RX72M)
-*                DAC_ERR_LOCK_FAILED -
-*                    DAC already opened
-*                DAC_ERR_ADC_NOT_POWERED -
-*                    Cannot sync because ADC is not powered
-*                DAC_ERR_ADC_CONVERTING
-*                    Cannot sync with ADC because it is doing a conversion
-******************************************************************************/
+********************************************************************************************************************//**
+* @brief This function applies power to the DAC module, initializes the associated registers, and configures
+* MCU-specific options.
+* @param[in] p_cfg Pointer to the configuration structure.
+* @retval DAC_SUCCESS Successful; DAC initialized
+* @retval DAC_ERR_NULL_PTR p_cfg pointer is NULL
+* @retval DAC_ERR_LOCK_FAILED Failed to lock DAC module; already opened
+* @retval DAC_ERR_INVALID_ARG Invalid unit number for sync_unit
+* @retval DAC_ERR_ADC_NOT_POWERED Cannot sync because ADC is not powered
+* @retval DAC_ERR_ADC_CONVERTING Cannot sync because ADC is converting
+* @details This function applies power to the DAC module, initializes the associated registers, and configures
+*  MCU-specific options.
+* @note
+* See Section 3 in the application note for details.
+*/
 dac_err_t R_DAC_Open(dac_cfg_t *p_cfg)
 {
 dac_err_t err;
@@ -97,7 +102,8 @@ dac_err_t err;
     {
         return DAC_ERR_NULL_PTR;
     }
-#if defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX72M)
+#if defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX72M) \
+ || defined(BSP_MCU_RX72N) || defined(BSP_MCU_RX66N)
     if (p_cfg->sync_unit > 1)
     {
         return DAC_ERR_INVALID_ARG;
@@ -112,7 +118,7 @@ dac_err_t err;
     power_on();
 
     /* Select output for DA Module*/
-#if defined(BSP_MCU_RX66_ALL) || defined(BSP_MCU_RX72T)
+#if defined(BSP_MCU_RX66T) || defined(BSP_MCU_RX72T)
 
     /* Turn off all output select*/
     DA.DADSELR.BYTE = 0;
@@ -176,7 +182,7 @@ dac_err_t err;
             break;
         }
     }
-#endif   /* End of #if (defined(BSP_MCU_RX66_ALL) */
+#endif   /* End of #if (defined(BSP_MCU_RX66T) */
 
     /* Set registers to default state */
     /* channel output disabled */
@@ -232,7 +238,8 @@ static dac_err_t dac_set_options(dac_cfg_t *p_cfg)
         return DAC_ERR_INVALID_ARG;
     }
 #else
-    if ((p_cfg->ref_voltage != DAC_REFV_AVCC0_AVSS0) && (p_cfg->ref_voltage != DAC_REFV_INTERNAL_AVSS0) && (p_cfg->ref_voltage != DAC_REFV_VREFH_VREFL))
+    if ((p_cfg->ref_voltage != DAC_REFV_AVCC0_AVSS0) && (p_cfg->ref_voltage != DAC_REFV_INTERNAL_AVSS0) && \
+(p_cfg->ref_voltage != DAC_REFV_VREFH_VREFL))
     {
         return DAC_ERR_INVALID_ARG;
     }
@@ -248,7 +255,8 @@ static dac_err_t dac_set_options(dac_cfg_t *p_cfg)
 
     /* OPTION: SYNCHRONIZE WITH ADC */
 
-#if defined(BSP_MCU_RX113) || defined(BSP_MCU_RX130) || defined(BSP_MCU_RX231) || defined(BSP_MCU_RX230) || defined(BSP_MCU_RX23W) || defined(BSP_MCU_RX63_ALL) 
+#if defined(BSP_MCU_RX113) || defined(BSP_MCU_RX130) || defined(BSP_MCU_RX231) || defined(BSP_MCU_RX230) \
+ || defined(BSP_MCU_RX23W)
     if (p_cfg->sync_with_adc == false)
     {
         DA.DAADSCR.BIT.DAADST = 0;      // do not sync with ADC
@@ -265,7 +273,8 @@ static dac_err_t dac_set_options(dac_cfg_t *p_cfg)
     {
         DA.DAADSCR.BIT.DAADST = 1;      // set sync with ADC
     }
-#elif defined(BSP_MCU_RX64_ALL) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX66_ALL) || defined(BSP_MCU_RX72T) || defined(BSP_MCU_RX72M)
+#elif defined(BSP_MCU_RX64_ALL) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX66T) \
+ || defined(BSP_MCU_RX72T) || defined(BSP_MCU_RX72M) || defined(BSP_MCU_RX72N) || defined(BSP_MCU_RX66N)
     if (false == p_cfg->sync_with_adc )
     {
         /* Not sync with ADC */
@@ -273,7 +282,8 @@ static dac_err_t dac_set_options(dac_cfg_t *p_cfg)
     }
     else
     {
-#if defined(BSP_MCU_RX64_ALL) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX72M)
+#if defined(BSP_MCU_RX64_ALL) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX72M) \
+ || defined(BSP_MCU_RX72N) || defined(BSP_MCU_RX66N)
         /*
          * This function returns an error because unit0 can not be selected
          * when synchronous conversion is enabled.
@@ -301,7 +311,7 @@ static dac_err_t dac_set_options(dac_cfg_t *p_cfg)
         {
             err = DAC_ERR_ADC_NOT_POWERED;
         }
-#elif defined(BSP_MCU_RX66_ALL) || defined(BSP_MCU_RX72T)
+#elif defined(BSP_MCU_RX66T) || defined(BSP_MCU_RX72T)
 
         /* Checking value of MSTPA23 bit & ADST bit */
         if ((0 == SYSTEM.MSTPCRA.BIT.MSTPA23) && (1 == S12AD2.ADCSR.BIT.ADST))
@@ -323,7 +333,7 @@ static dac_err_t dac_set_options(dac_cfg_t *p_cfg)
 
         if (DAC_SUCCESS == err)
         {
-#if !(defined(BSP_MCU_RX66_ALL) || defined(BSP_MCU_RX72T)) 
+#if !(defined(BSP_MCU_RX66T) || defined(BSP_MCU_RX72T))
             DA.DAADUSR.BIT.AMADSEL1 = p_cfg->sync_unit;
 #endif
             /* Set sync with ADC */
@@ -350,8 +360,9 @@ static dac_err_t dac_set_options(dac_cfg_t *p_cfg)
 #endif
 
     /* OPTION: TURN CHANNEL CONVERTER OFF WHEN CHANNEL OUTPUT IS DISABLED */
-#if defined(BSP_MCU_RX21_ALL) || defined(BSP_MCU_RX63_ALL) || defined(BSP_MCU_RX64_ALL) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) \
- || defined(BSP_MCU_RX66_ALL) || defined(BSP_MCU_RX72T) || defined(BSP_MCU_RX72M)
+#if defined(BSP_MCU_RX64_ALL) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) \
+ || defined(BSP_MCU_RX66T) || defined(BSP_MCU_RX72T) || defined(BSP_MCU_RX72M) || defined(BSP_MCU_RX72N) \
+ || defined(BSP_MCU_RX66N)
 
     DA.DACR.BIT.DAE = (uint8_t)((true == p_cfg->ch_conv_off_when_output_off ) ? 0 : 1);
 #endif
@@ -371,10 +382,23 @@ static dac_err_t dac_set_options(dac_cfg_t *p_cfg)
 static void power_on(void)
 {
 
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) 
+bsp_int_ctrl_t int_ctrl;
+#endif
+
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);  // unlock
+
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) 
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
 
     /* power on DAC */
     MSTP(DA) = 0;
+
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) 
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
+
     R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);   // re-lock
 
     return;
@@ -391,10 +415,23 @@ static void power_on(void)
 static void power_off(void)
 {
 
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) 
+bsp_int_ctrl_t int_ctrl;
+#endif
+
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);  // unlock
+
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) 
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
 
     /* power off DAC */
     MSTP(DA) = 1;
+
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) 
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
+
     R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);   // re-lock
 
     return;
@@ -402,18 +439,18 @@ static void power_off(void)
 /* End of function power_off */
 
 
-/*****************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_DAC_Write
-* Description  : Puts data in DAC data register for conversion on a DAC channel.
-* Arguments    : chan -
-*                    channel referred to
-*                data -
-*                    data to be written to register
-* Return Value : DAC_SUCCESS -
-*                    data written to register
-*                DAC_ERR_BAD_CHAN -
-*                    channel number invalid for part
-******************************************************************************/
+********************************************************************************************************************//**
+* @brief This function writes data to channel data register.
+* @param[in] chan Channel to write to
+* @param[in] data Data to write.
+* @retval DAC_SUCCESS Data written to channel register successfully
+* @retval DAC_ERR_BAD_CHAN Non-existent channel number
+* @details Writes data to the channel register for conversion. Depending upon the MCU, this data may be 8-, 10-, or
+* 12-bits in length. The data must be aligned properly for the selected format before issuing a Write().
+* @note None
+*/
 dac_err_t R_DAC_Write(uint8_t const chan, uint16_t data)
 {
 dac_err_t   err=DAC_SUCCESS;
@@ -448,21 +485,31 @@ dac_err_t   err=DAC_SUCCESS;
 *************************************************************************/
 
 
-/*****************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_DAC_Control
-* Description  : This function is used for special hardware configuration and
-*                operational control.
-* Arguments    : chan -
-*                    channel(s) to operate on
-*                cmd -
-*                    command to run
-* Return Value : DAC_SUCCESS -
-*                    Command completed successfully.
-*                DAC_ERR_INVALID_CMD -
-*                    Unknown command
-*                DAC_ERR_BAD_CHAN -
-*                    channel number invalid
-******************************************************************************/
+********************************************************************************************************************//**
+* @brief This function is used to enable/disable channel features.
+* @param[in] chan Channel to operate on.
+* @param[in] cmd Command to run.
+* @retval DAC_SUCCESS Successful; channel initialized
+* @retval DAC_ERR_BAD_CHAN Non-existent channel number
+* @retval DAC_ERR_INVALID_CMD Invalid command
+* @details The output of conversion data written in data register by Write() function is enable by OUTPUT command while
+* Amp is enable by AMP command, The output permission must be set after enabling amp.
+* @note
+* Amp output is generated after R_DAC_Write(DAC_CHx, 0x0) is executed.\n
+* When amp out is in use ( DAC_CMD_AMP_ON command running), set true in ch_conv_off_when_output_off.\n
+* When using an amp, follow the process below.\n
+* 1. Execute DAC_CMD_AMP_ON command in R_DAC_Control function.\n
+* 2. Execute DAC_CMD_OUTPUT_ON command in R_DAC_Control function\n
+* 3. Wait more than 3us\n
+* 4. Write D/A output value in R_DAC_Write function.\n
+* The DAC_CMD_OUTPUT_ON and DAC_CMD_OUTPUT_OFF commands must be executed while the A/D converter (1) to be synchronized
+*  with is stopped when the D/A A/D synchronous conversion is enabled.\n
+* Note 1. For RX64M/RX651/RX65N/RX71M, unit 1 of the A/D converter is to be stopped, and for RX24U, unit 2 is to be
+* stopped. The other MCUs do not need to specify the unit to be stopped since they only have one unit.
+*
+*/
 dac_err_t R_DAC_Control(uint8_t const chan, dac_cmd_t const cmd)
 {
 dac_err_t   err=DAC_SUCCESS;
@@ -515,7 +562,8 @@ dac_err_t   err=DAC_SUCCESS;
 #endif
     break;
 
-#if defined(BSP_MCU_RX64_ALL) || defined(BSP_MCU_RX71M)
+#if defined(BSP_MCU_RX64_ALL) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX72M) \
+ || defined(BSP_MCU_RX72N) || defined(BSP_MCU_RX66N)
     case (DAC_CMD_AMP_ON):
         if (chan == DAC_CH0)
         {
@@ -539,6 +587,29 @@ dac_err_t   err=DAC_SUCCESS;
     break;
 #endif
 
+#if defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX72M) || defined(BSP_MCU_RX72N) || defined(BSP_MCU_RX66N)
+    case (DAC_CMD_ASW_ON):
+        if (chan == DAC_CH0)
+        {
+            DA.DAASWCR.BIT.DAASW0 = 1;
+        }
+        else
+        {
+            DA.DAASWCR.BIT.DAASW1 = 1;
+        }
+    break;
+
+    case (DAC_CMD_ASW_OFF):
+        if (chan == DAC_CH0)
+        {
+            DA.DAASWCR.BIT.DAASW0 = 0;
+        }
+        else
+        {
+            DA.DAASWCR.BIT.DAASW1 = 0;
+        }
+    break;
+#endif
     default:
     {
         err = DAC_ERR_INVALID_CMD;
@@ -553,14 +624,17 @@ dac_err_t   err=DAC_SUCCESS;
 *************************************************************************/
 
 
-/*****************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_DAC_Close
-* Description  : Shuts down the DAC peripheral
-*
-* Arguments    : none
-* Return Value : DAC_SUCCESS -
-*                    Peripheral disabled
-******************************************************************************/
+********************************************************************************************************************//**
+* @brief This function removes power from the DAC peripheral.
+* @retval DAC_SUCCESS Successful; channels closed
+* @retval DAC_ERR_UNLOCK_FAILED Failed to unlock DAC module
+* @details Disables DAC channel output and powers down the peripheral.
+* @note When the D/A A/D synchronous conversion (sync_with_adc = true) is enabled, if the A/D converter (1) is to be
+* placed in the module stop state, first, execute the R_DAC_Close function.\n
+* Note 1. The intended A/D converter is unit 1 for RX64M/RX651/RX65N/RX71M and unit 2 for RX24U.
+*/
 dac_err_t R_DAC_Close(void)
 {
     /* Stop conversion/disable channels */
@@ -575,22 +649,30 @@ dac_err_t R_DAC_Close(void)
     /* Right justified */
     DA.DADPR.BIT.DPSEL = 0;
 #if defined(BSP_MCU_RX113) || defined(BSP_MCU_RX130) || defined(BSP_MCU_RX231) || defined(BSP_MCU_RX230) \
- || defined(BSP_MCU_RX63_ALL) || defined(BSP_MCU_RX64_ALL) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) \
- || defined(BSP_MCU_RX24U) || defined(BSP_MCU_RX66_ALL) || defined(BSP_MCU_RX72T) || defined(BSP_MCU_RX23W) || defined(BSP_MCU_RX72M) 
+ || defined(BSP_MCU_RX64_ALL) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) \
+ || defined(BSP_MCU_RX24U) || defined(BSP_MCU_RX66T) || defined(BSP_MCU_RX72T) \
+ || defined(BSP_MCU_RX23W) || defined(BSP_MCU_RX72M) || defined(BSP_MCU_RX72N) || defined(BSP_MCU_RX66N)
     /* Not sync with ADC */
     DA.DAADSCR.BIT.DAADST = 0;
 #endif
 
-#if defined(BSP_MCU_RX64_ALL) || defined(BSP_MCU_RX71M)
+#if defined(BSP_MCU_RX64_ALL) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX72M) \
+ || defined(BSP_MCU_RX72N) || defined(BSP_MCU_RX66N)
     DA.DAAMPCR.BIT.DAAMP0 = 0;          // not used AMP0
     DA.DAAMPCR.BIT.DAAMP1 = 0;          // not used AMP1
 #endif
 
-#if defined(BSP_MCU_RX64_ALL) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX72M)
+#if defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX72M) || defined(BSP_MCU_RX72N) || defined(BSP_MCU_RX66N)
+    DA.DAASWCR.BIT.DAASW0 = 0;          // not used ASW0
+    DA.DAASWCR.BIT.DAASW1 = 0;          // not used ASW1
+#endif
+
+#if defined(BSP_MCU_RX64_ALL) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX72M) \
+ || defined(BSP_MCU_RX72N) || defined(BSP_MCU_RX66N)
     DA.DAADUSR.BIT.AMADSEL1 = 0;        // not sync unit1
 #endif
 
-#if defined(BSP_MCU_RX66_ALL) || defined(BSP_MCU_RX72T)
+#if defined(BSP_MCU_RX66T) || defined(BSP_MCU_RX72T)
     /* Turn DAC output select off */
     DA.DADSELR.BYTE = 0;
 #endif
@@ -604,17 +686,18 @@ dac_err_t R_DAC_Close(void)
 * End of function R_DAC_Close
 *************************************************************************/
 
-/*****************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_DAC_GetVersion
-* Description  : Returns the version of this module. The version number is 
-*                encoded such that the top two bytes are the major version
-*                number and the bottom two bytes are the minor version number.
-* Arguments    : none
-* Return Value : version number
-******************************************************************************/
+********************************************************************************************************************//**
+* @brief This function returns the driver version number at runtime.
+* @return Version number.
+* @details Returns the version of this module. The version number is encoded such that the top 2 bytes are the major
+* version number and the bottom 2 bytes are the minor version number.
+* @note None
+*/
 uint32_t  R_DAC_GetVersion(void)
 {
-uint32_t const version = (DAC_VERSION_MAJOR << 16) | DAC_VERSION_MINOR;
+    uint32_t const version = (DAC_VERSION_MAJOR << 16) | DAC_VERSION_MINOR;
 
     return version;
 }

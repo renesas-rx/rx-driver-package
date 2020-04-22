@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_lpc_rx
-VERSION = 		v1.41
+VERSION = 		v2.00
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules

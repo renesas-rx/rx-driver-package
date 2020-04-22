@@ -24,7 +24,7 @@
 /*******************************************************************************
 * System Name  : QSPI single master driver
 * File Name    : r_qspi_smstr_target_dev_port.c
-* Version      : 1.13
+* Version      : 1.14
 * Device       : RX
 * Abstract     : Source file dedicated to RX72M for QSPI single master driver
 * Tool-Chain   : Renesas RXC Toolchain v3.01.00
@@ -36,6 +36,8 @@
 /*******************************************************************************
 * History      : DD.MM.YYYY Version  Description
 *              : 30.07.2019 1.13     First Release
+*              : 22.11.2019 1.14     Added support for atomic control.
+*              : 22.11.2019 1.14     Modified comment of API function to Doxygen style.
 *******************************************************************************/
 
 /*******************************************************************************
@@ -618,6 +620,11 @@ void r_qspi_smstr_clk_reset(uint8_t channel)
 *******************************************************************************/
 void r_qspi_smstr_module_enable(uint8_t channel)
 {
+#if defined(QSPI_SMSTR_CFG_CH0_INCLUDED)
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+#endif
+#endif
     /* Enable writing to registers. */
 #ifdef QSPI_SMSTR_CFG_USE_FIT
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
@@ -634,7 +641,13 @@ void r_qspi_smstr_module_enable(uint8_t channel)
     {
         case 0:
 #if defined(QSPI_SMSTR_CFG_CH0_INCLUDED)
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
             MSTP(QSPI) = 0;
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
             if (0 == MSTP(QSPI))
             {
                 /* Wait for the write completion. */
@@ -671,6 +684,11 @@ void r_qspi_smstr_module_enable(uint8_t channel)
 *******************************************************************************/
 void r_qspi_smstr_module_disable(uint8_t channel)
 {
+#if defined(QSPI_SMSTR_CFG_CH0_INCLUDED)
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+#endif
+#endif
     /* Enable writing to registers. */
     QSPI_PRCR = QSPI_PRCR_ENABLE;
     if (QSPI_PRCR_ENABLE == QSPI_PRCR)
@@ -683,7 +701,13 @@ void r_qspi_smstr_module_disable(uint8_t channel)
     {
         case 0:
 #if defined(QSPI_SMSTR_CFG_CH0_INCLUDED)
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
             MSTP(QSPI) = 1;
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
             if (1 == MSTP(QSPI))
             {
                 /* Wait for the write completion. */
@@ -993,13 +1017,16 @@ void r_qspi_smstr_int_spri_ier_set(uint8_t channel)
 }
 
 
-/*******************************************************************************
-* Function Name: R_QSPI_SMstr_Int_Spti_Ier_Clear
-* Description  : Clears the ICU.IERm.IENj bit of SPTI to 0.
-* Arguments    : channel -
-*                    Which channel to use
-* Return Value : none
-*******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_QSPI_SMstr_Int_Spti_Ier_Clear
+ *****************************************************************************************************************/ /**
+ * @brief This function is used to clear the ICU.IERm.IENj bit of the transmit buffer-empty interrupt (SPTI).
+ * @param[in] channel
+ *             QSPI channel number
+ * @details   Use this function when disabling interrupts from within the handler of the SPTI interrupt generated at 
+ *            DMAC transfer-end. \n
+ * @note      Do not use this function for software transfers or DTC transfers. Doing so could disrupt the transfer.
+ */
 void R_QSPI_SMstr_Int_Spti_Ier_Clear(uint8_t channel)
 {
     switch (channel)
@@ -1035,13 +1062,16 @@ void R_QSPI_SMstr_Int_Spti_Ier_Clear(uint8_t channel)
 }
 
 
-/*******************************************************************************
-* Function Name: R_QSPI_SMstr_Int_Spri_Ier_Clear
-* Description  : Clears the ICU.IERm.IENj bit of SPRI to 0.
-* Arguments    : channel -
-*                    Which channel to use
-* Return Value : none
-*******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_QSPI_SMstr_Int_Spri_Ier_Clear
+ *****************************************************************************************************************/ /**
+ * @brief This function is used to clear the ICU.IERm.IENj bit of the receive buffer-full interrupt (SPRI).
+ * @param[in] channel
+ *             QSPI channel number
+ * @details   Use this function when disabling interrupts from within the handler of the SPRI interrupt generated at 
+ *            DMAC transfer-end. \n
+ * @note      Do not use this function for software transfers or DTC transfers. Doing so could disrupt the transfer.
+ */
 void R_QSPI_SMstr_Int_Spri_Ier_Clear(uint8_t channel)
 {
     switch (channel)
@@ -1077,16 +1107,21 @@ void R_QSPI_SMstr_Int_Spri_Ier_Clear(uint8_t channel)
 }
 
 
-/*******************************************************************************
-* Function Name: R_QSPI_SMstr_Int_Spti_Dmacdtc_Flag_Set
-* Description  : Sets DMAC/DTC transfer end flag for SPTI.
-* Arguments    : channel -
-*                    Which channel to use
-* Return Value : QSPI_SMSTR_SUCCESS -
-*                    Successful operation
-*                QSPI_SMSTR_ERR_PARAM -
-*                    Parameter error
-*******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_QSPI_SMstr_Int_Spti_Dmacdtc_flag_Set
+ *****************************************************************************************************************/ /**
+ * @brief This function is used to set the DMAC or DTC transfer-end flag for data transmission.
+ * @param[in] channel
+ *             QSPI channel number
+ * @param[in] flg
+ *             Flag. The settings are as follows.\n
+ *             QSPI_SET_TRANS_STOP : DMAC or DTC transfer-end\n
+ *             (QSPI_SET_TRANS_START : DMAC or DTC transfer-start: Setting by the user is prohibited.)
+ * @retval    QSPI_SMSTR_SUCCESS     Successful operation
+ * @retval    QSPI_SMSTR_ERR_PARAM   Parameter error
+ * @details   Set QSPI_SET_TRANS_STOP from within the handler of the SPTI interrupt generated at DMAC transfer-end.
+ * @note      Do not use this function for software transfers or DTC transfers. Doing so could disrupt the transfer.
+ */
 qspi_smstr_status_t R_QSPI_SMstr_Int_Spti_Dmacdtc_Flag_Set(uint8_t channel, qspi_smstr_trans_flg_t flg)
 {
     if ((QSPI_SET_TRANS_STOP != flg) && (QSPI_SET_TRANS_START != flg))
@@ -1100,16 +1135,21 @@ qspi_smstr_status_t R_QSPI_SMstr_Int_Spti_Dmacdtc_Flag_Set(uint8_t channel, qspi
 }
 
 
-/*******************************************************************************
-* Function Name: R_QSPI_SMstr_Int_Spri_Dmacdtc_Flag_Set
-* Description  : Sets DMAC/DTC transfer end flag for SPRI.
-* Arguments    : channel -
-*                    Which channel to use
-* Return Value : QSPI_SMSTR_SUCCESS -
-*                    Successful operation
-*                QSPI_SMSTR_ERR_PARAM -
-*                    Parameter error
-*******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_QSPI_SMstr_Int_Spri_Dmacdtc_flag_Set
+ *****************************************************************************************************************/ /**
+ * @brief This function is used to set the DMAC or DTC transfer-end flag for data reception.
+ * @param[in] channel
+ *             QSPI channel number
+ * @param[in] flg
+ *             Flag. The settings are as follows.\n
+ *             QSPI_SET_TRANS_STOP : DMAC or DTC transfer-end\n
+ *             (QSPI_SET_TRANS_START  : DMAC or DTC transfer-start: Setting by the user is prohibited.)
+ * @retval    QSPI_SMSTR_SUCCESS     Successful operation
+ * @retval    QSPI_SMSTR_ERR_PARAM   Parameter error
+ * @details   Set QSPI_SET_TRANS_STOP from within the handler of the SPRI interrupt generated at DMAC transfer-end.
+ * @note      Do not use this function for software transfers or DTC transfers. Doing so could disrupt the transfer.
+ */
 qspi_smstr_status_t R_QSPI_SMstr_Int_Spri_Dmacdtc_Flag_Set(uint8_t channel, qspi_smstr_trans_flg_t flg)
 {
     if ((QSPI_SET_TRANS_STOP != flg) && (QSPI_SET_TRANS_START != flg))
@@ -1123,12 +1163,13 @@ qspi_smstr_status_t R_QSPI_SMstr_Int_Spri_Dmacdtc_Flag_Set(uint8_t channel, qspi
 }
 
 
-/*******************************************************************************
-* Function Name: R_QSPI_SMstr_1ms_Interval
-* Description  : 1ms Interval Timer call function.
-* Arguments    : none
-* Return Value : none
-*******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_QSPI_SMstr_1ms_Interval
+ *****************************************************************************************************************/ /**
+ * @brief This function increments the internal timer counter each time it is called.
+ * @details   Increments the internal timer counter while waiting for the DMAC transfer or DTC transfer to finish.
+ * @note      Use a timer or the like to call this function at 1 millisecond (ms) intervals.
+ */
 void R_QSPI_SMstr_1ms_Interval(void)
 {
     uint8_t channel = 0;

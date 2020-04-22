@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer
  *
- * Copyright (C) 2015(2018) Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2015(2020) Renesas Electronics Corporation. All rights reserved.
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_usb_phid_if.h
@@ -27,6 +27,7 @@
  *         : 30.09.2017 1.22 Deleted typedef struct"usb_request_t" and typedef"USB_CB_TRN_t".
  *                           Deleted export global functions.
  *         : 31.03.2018 1.23 Supporting Smart Configurator
+ *         : 01.03.2020 1.30 RX72N/RX66N is added and uITRON is supported.
  ***********************************************************************************************************************/
 
 #ifndef USB_PHID_IF_H
@@ -79,3 +80,7 @@
 #define USB_PHID_MXPS_ECHO              (64u)
 
 #endif /* USB_PHID_IF_H */
+
+/***********************************************************************************************************************
+End  Of File
+***********************************************************************************************************************/

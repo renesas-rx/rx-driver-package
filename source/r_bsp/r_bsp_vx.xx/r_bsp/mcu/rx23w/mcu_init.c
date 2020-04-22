@@ -23,6 +23,7 @@
 /**********************************************************************************************************************
 * History : DD.MM.YYYY Version  Description
 *         : 29.03.2019 1.00     First Release
+*         : 31.07.2019 1.01     Fixed the initial value of port setting of Port 1, 2, and 3.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -42,9 +43,9 @@ Macro definitions
 #if   (BSP_PACKAGE_PINS == 85)
     /* HW Manual Table 21.3 */
     #define BSP_PRV_PORT0_NE_PIN_MASK     (0x57)
-    #define BSP_PRV_PORT1_NE_PIN_MASK     (0x0F)
-    #define BSP_PRV_PORT2_NE_PIN_MASK     (0x19)
-    #define BSP_PRV_PORT3_NE_PIN_MASK     (0x1C)
+    #define BSP_PRV_PORT1_NE_PIN_MASK     (0x03)
+    #define BSP_PRV_PORT2_NE_PIN_MASK     (0x18)
+    #define BSP_PRV_PORT3_NE_PIN_MASK     (0x00)
     #define BSP_PRV_PORT4_NE_PIN_MASK     (0x00)
     #define BSP_PRV_PORTB_NE_PIN_MASK     (0x54)
     #define BSP_PRV_PORTC_NE_PIN_MASK     (0x02)
@@ -54,9 +55,9 @@ Macro definitions
 #elif (BSP_PACKAGE_PINS == 56)
     /* HW Manual Table 21.4 */
     #define BSP_PRV_PORT0_NE_PIN_MASK     (0xDF)
-    #define BSP_PRV_PORT1_NE_PIN_MASK     (0x0F)
-    #define BSP_PRV_PORT2_NE_PIN_MASK     (0x3F)
-    #define BSP_PRV_PORT3_NE_PIN_MASK     (0x1C)
+    #define BSP_PRV_PORT1_NE_PIN_MASK     (0x03)
+    #define BSP_PRV_PORT2_NE_PIN_MASK     (0x3E)
+    #define BSP_PRV_PORT3_NE_PIN_MASK     (0x00)
     #define BSP_PRV_PORT4_NE_PIN_MASK     (0x1D)
     #define BSP_PRV_PORTB_NE_PIN_MASK     (0x7C)
     #define BSP_PRV_PORTC_NE_PIN_MASK     (0x02)

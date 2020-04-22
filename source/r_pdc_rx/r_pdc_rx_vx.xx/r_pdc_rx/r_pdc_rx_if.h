@@ -18,7 +18,7 @@
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_pdc_rx_if.h
- * Version      : 2.04
+ * Version      : 2.05
  * Description  : PDC module device driver
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
@@ -29,6 +29,7 @@
  *         : 20.05.2019 2.03     Changed Minor version to 2.03.
  *         : 30.07.2019 2.04     Changed Minor version to 2.04.
  *                               Added changes for RX72M.
+ *         : 22.11.2019 2.05     Changed Minor version to 2.05.
  ***********************************************************************************************************************/
 /* Guards against multiple inclusion. */
 #ifndef PDC_RX_IF_H
@@ -48,9 +49,13 @@
 /***********************************************************************************************************************
  Macro definitions
  ***********************************************************************************************************************/
+#if R_BSP_VERSION_MAJOR < 5
+    #error "This module must use BSP module of Rev.5.00 or higher. Please use the BSP module of Rev.5.00 or higher."
+#endif
+
 /* Version Number of API. */
     #define PDC_RX_VERSION_MAJOR  (2)
-    #define PDC_RX_VERSION_MINOR  (4)
+    #define PDC_RX_VERSION_MINOR  (5)
 
 /* Selects the active sense of the VSYNC signal. */
     #define PDC_VSYNC_SIGNAL_POLARITY_HIGH    (0)

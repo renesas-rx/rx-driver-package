@@ -32,6 +32,8 @@
 /*******************************************************************************
 * History      : DD.MM.YYYY Version  Description
 *              : 28.06.2019 1.00     Initial revision
+*              : 30.12.2019 2.30     Added support for atomic control.
+*                                    Fixed to comply with GSCE Coding Standards Rev.6.00.
 *******************************************************************************/
 
 /*******************************************************************************
@@ -105,7 +107,7 @@ bool r_dmaca_channel_valid_check(uint8_t channel)
         {
             /* The channel number is valid. */
             ret = true;
-        break;
+            break;
         }
 
         case DMACA_CH4:
@@ -116,7 +118,7 @@ bool r_dmaca_channel_valid_check(uint8_t channel)
         {
             /* The channel number is invalid. */
             ret = false;
-        break;
+            break;
         }
     }
 
@@ -274,7 +276,7 @@ dmaca_return_t r_dmaca_int_disable(uint8_t channel)
 
             /* Clear the DMAC0I priority level. */
             IPR(DMAC, DMAC0I) = 0;
-        break;
+            break;
         }
 
         case DMACA_CH1:
@@ -284,7 +286,7 @@ dmaca_return_t r_dmaca_int_disable(uint8_t channel)
 
             /* Clear the DMAC1I priority level. */
             IPR(DMAC, DMAC1I) = 0;
-        break;
+            break;
         }
 
         case DMACA_CH2:
@@ -294,7 +296,7 @@ dmaca_return_t r_dmaca_int_disable(uint8_t channel)
 
             /* Clear the DMAC2I priority level. */
             IPR(DMAC, DMAC2I) = 0;
-        break;
+            break;
         }
 
         case DMACA_CH3:
@@ -304,7 +306,7 @@ dmaca_return_t r_dmaca_int_disable(uint8_t channel)
 
             /* Clear the DMAC3I priority level. */
             IPR(DMAC, DMAC3I) = 0;
-        break;
+            break;
         }
 
         case DMACA_CH4:
@@ -315,7 +317,7 @@ dmaca_return_t r_dmaca_int_disable(uint8_t channel)
         {
             /* The channel number is invalid. */
             return DMACA_ERR_INVALID_CH;
-        break;
+            break;
         }
     }
 
@@ -356,7 +358,7 @@ dmaca_return_t r_dmaca_int_enable(uint8_t channel, uint8_t priority)
 
             /* Set the DMAC0I interrupt Enable bit. */
             R_BSP_InterruptRequestEnable(VECT(DMAC,DMAC0I));
-        break;
+            break;
         }
 
         case DMACA_CH1:
@@ -366,7 +368,7 @@ dmaca_return_t r_dmaca_int_enable(uint8_t channel, uint8_t priority)
 
             /* Set the DMAC1I interrupt Enable bit. */
             R_BSP_InterruptRequestEnable(VECT(DMAC,DMAC1I));
-        break;
+            break;
         }
 
         case DMACA_CH2:
@@ -376,7 +378,7 @@ dmaca_return_t r_dmaca_int_enable(uint8_t channel, uint8_t priority)
 
             /* Set the DMAC2I interrupt Enable bit. */
             R_BSP_InterruptRequestEnable(VECT(DMAC,DMAC2I));
-        break;
+            break;
         }
 
         case DMACA_CH3:
@@ -386,7 +388,7 @@ dmaca_return_t r_dmaca_int_enable(uint8_t channel, uint8_t priority)
 
             /* Set the DMAC3I interrupt Enable bit. */
             R_BSP_InterruptRequestEnable(VECT(DMAC,DMAC3I));
-        break;
+            break;
         }
 
         case DMACA_CH4:
@@ -397,7 +399,7 @@ dmaca_return_t r_dmaca_int_enable(uint8_t channel, uint8_t priority)
         {
             /* The channel number is invalid. */
             return DMACA_ERR_INVALID_CH;
-        break;
+            break;
         }
     }
 
@@ -421,11 +423,22 @@ dmaca_return_t r_dmaca_int_enable(uint8_t channel, uint8_t priority)
 *******************************************************************************/
 void r_dmaca_module_enable(void)
 {
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+bsp_int_ctrl_t int_ctrl;
+#endif
     /* Enable writing to MSTP registers. */
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
 
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
+
     /* Release from module stop state. */
     MSTP(DMAC) = 0;
+
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
 
     /* Disable writing to MSTP registers. */
     R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);
@@ -444,12 +457,22 @@ void r_dmaca_module_enable(void)
 *******************************************************************************/
 void r_dmaca_module_disable(void)
 {
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+bsp_int_ctrl_t int_ctrl;
+#endif
     /* Enable writing to MSTP registers. */
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
+
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
 
     /* Set to module stop state. */
     MSTP(DMAC) = 1;
 
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
     /* Disable writing to MSTP registers. */
     R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);
 

@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer
  *
- * Copyright (C) 2014(2019) Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2014(2020) Renesas Electronics Corporation. All rights reserved.
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_usb_pmsc_driver.c
@@ -35,6 +35,7 @@
  *                           Add "usb_pmsc_err_csw_ok()".
  *         : 31.03.2018 1.23 Supporting Smart Configurator
  *         : 31.05.2019 1.26 Added support for GNUC and ICCRX.
+ *         : 01.03.2020 1.30 RX72N/RX66N is added and uITRON is supported.
  ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -51,6 +52,11 @@
 #include "r_usb_patapi.h"
 #include "r_usb_pmsc.h"
 #include "r_usb_pmsc_if.h"
+
+#if (BSP_CFG_RTOS_USED != 0)        /* Use RTOS */
+#include "r_rtos_abstract.h"
+#include "r_usb_cstd_rtos.h"
+#endif /* (BSP_CFG_RTOS_USED != 0) */
 
 /***********************************************************************************************************************
  Macro definitions
@@ -83,7 +89,7 @@ static usb_utr_t        g_usb_pmsc_utr;
 /* Mass Storage Device Class sequence */
 static uint8_t          g_usb_pmsc_seq;
 
-#if (BSP_CFG_RTOS_USED == 0)
+#if (BSP_CFG_RTOS_USED == 0)        /* Non-OS */
 /* Transfer Complete Flag */
 static uint8_t          g_usb_pmsctrans_complete;
 #endif  /* (BSP_CFG_RTOS_USED == 0) */
@@ -113,9 +119,13 @@ usb_pmsc_cbm_t  g_usb_pmsc_message;
  Arguments       : none
  Return value    : none
  ***********************************************************************************************************************/
+#if (BSP_CFG_RTOS_USED == 4)        /* Renesas RI600V4 & RI600PX */
+void usb_pmsc_task (VP_INT b)
+#else  /* (BSP_CFG_RTOS_USED == 4) */
 void usb_pmsc_task(void)
+#endif /* (BSP_CFG_RTOS_USED == 4) */
 {
-#if (BSP_CFG_RTOS_USED == 0)
+#if (BSP_CFG_RTOS_USED == 0)        /* Non-OS */
     static uint8_t  is_init = USB_NO;
 
     if (USB_NO == is_init)
@@ -261,9 +271,9 @@ void usb_pmsc_task(void)
     g_usb_pmsctrans_complete = USB_FALSE;
 #endif /*(BSP_CFG_RTOS_USED == 0)*/
 
-#if (BSP_CFG_RTOS_USED == 1)
+#if (BSP_CFG_RTOS_USED != 0)        /* Use RTOS */
     static uint8_t  is_init = USB_NO;
-    usb_er_t    err;
+    rtos_err_t  err;
     usb_int_t   *p_mess;
 
     if (USB_NO == is_init)
@@ -277,8 +287,8 @@ void usb_pmsc_task(void)
     /* WAIT_LOOP */
     while(1)
     {
-        err = USB_TRCV_MSG(USB_PMSC_MBX, (usb_msg_t **)&p_mess, (usb_tm_t)1000);
-        if (USB_OK == err)
+        err = rtos_receive_mailbox (&g_rtos_usb_pmsc_mbx_id, (void **)&p_mess, (rtos_time_t)1000);
+        if (RTOS_SUCCESS == err)
         {
             switch (g_usb_pmsc_seq)
             {
@@ -364,7 +374,7 @@ void usb_pmsc_task(void)
             }
         }
     }
-#endif /*(BSP_CFG_RTOS_USED == 1)*/
+#endif /*(BSP_CFG_RTOS_USED != 0)*/
 
 } /* End of function usb_pmsc_task() */
 
@@ -952,7 +962,7 @@ static void usb_pmsc_transfer_start (uint16_t pipe, uint32_t size, uint8_t *tabl
     g_usb_pmsc_utr.tranlen      = size;
     g_usb_pmsc_utr.complete     = (usb_cb_t)usb_pmsc_trans_result;
 
-#if (BSP_CFG_RTOS_USED == 0)
+#if (BSP_CFG_RTOS_USED == 0)        /* Non-OS */
     g_usb_pmsctrans_complete = USB_FALSE;
 #endif /*(BSP_CFG_RTOS_USED == 0)*/
 
@@ -969,10 +979,10 @@ static void usb_pmsc_transfer_start (uint16_t pipe, uint32_t size, uint8_t *tabl
  ***********************************************************************************************************************/
 static void usb_pmsc_trans_result (usb_utr_t *mess, uint16_t data1, uint16_t data2)
 {
-#if (BSP_CFG_RTOS_USED == 0)
+#if (BSP_CFG_RTOS_USED == 0)        /* Non-OS */
     g_usb_pmsctrans_complete = USB_TRUE;
 #else  /*(BSP_CFG_RTOS_USED == 0)*/
-    USB_SND_MSG(USB_PMSC_MBX, (usb_msg_t *)mess);
+    rtos_send_mailbox (&g_rtos_usb_pmsc_mbx_id, (void *)mess);
 
 #endif /*(BSP_CFG_RTOS_USED == 0)*/
     g_usb_pmscstatus = mess->status;
@@ -1046,7 +1056,7 @@ void usb_pmsc_get_max_lun(uint16_t value, uint16_t index, uint16_t length)
 void usb_pmsc_init (void)
 {
     g_usb_pmsc_seq = 0;
-#if (BSP_CFG_RTOS_USED == 0)
+#if (BSP_CFG_RTOS_USED == 0)        /* Non-OS */
     g_usb_pmsctrans_complete = USB_FALSE;
 #endif /*(BSP_CFG_RTOS_USED == 0)*/
     g_usb_pmscstatus = 0;

@@ -41,6 +41,9 @@
  *                               Fixed coding style.
  *         : 20.06.2019 2.42     RX23W support added.
  *         : 30.07.2019 2.43     RX72M support added.
+ *         : 30.10.2019 2.44     RX13T support added.
+ *         : 22.11.2019 2.45     RX66N, RX72N support added.
+ *                               Modified comment of API function to Doxygen style.
  **********************************************************************************************************************/
 /***********************************************************************************************************************
  Includes   <System Includes> , "Project Includes"
@@ -213,15 +216,34 @@ volatile sci_iic_ch_dev_status_t g_sci_iic_ChStatus[SCI_IIC_NUM_CH_MAX]; /* Chan
 
 /***********************************************************************************************************************
  * Function Name: R_SCI_IIC_Open
- * Description  : Initializes the SCI_IIC driver.
- *              : Initializes the I/O register for SCI_IIC control.
- * Arguments    : sci_iic_info_t * p_sci_iic_info    ; IIC Information
- * Return Value : SCI_IIC_SUCCESS                    ; Successful operation
- *              : SCI_IIC_ERR_ERR_LOCK_FUNC          ; Another task is handling API function
- *              ; SCI_IIC_ERR_INVALID_CHAN           ; channel number invalid for part
- *              : SCI_IIC_ERR_INVALID_ARG            ; Parameter error
- *              ; SCI_IIC_ERR_OTHER                  ; Other error
- **********************************************************************************************************************/
+ ******************************************************************************************************************/ /**
+ * @brief The function initializes the simple I2C FIT module. This function must be called before calling any other API 
+ *        functions.
+ * @param[in,out] *p_sci_iic_info
+ *             This is the pointer to the I2C communication information structure.\n
+ *             Only the member of the structure used in this function is described here.\n
+ *             The contents of the structure are referred and updated during communication. Do not rewrite the structure
+ *             during communication (SCI_IIC_COMMUNICATION).
+ * @retval    SCI_IIC_SUCCESS: Processing completed successfully
+ * @retval    SCI_IIC_ERR_LOCK_FUNC: The API is locked by the other task.
+ * @retval    SCI_IIC_ERR_INVALID_CHAN: Nonexistent channel
+ * @retval    SCI_IIC_ERR_INVALID_ARG: Invalid parameter
+ * @retval    SCI_IIC_ERR_OTHER: The event occurred is invalid in the current state.
+ * @details   Performs the initialization to start the simple I2C-bus communication. Sets the SCI channel specified by 
+ *            the parameter. If the state of the channel is 'uninitialized (SCI_IIC_NO_INIT)', the following processes
+ *            are performed.\n
+ *            \- Setting the state flag\n
+ *            \- Setting I/O ports\n
+ *            \- Allocating I2C output ports\n
+ *            \- Cancelling SCI module-stop state\n
+ *            \- Initializing variables used by the API\n
+ *            \- Initializing the SCI registers used for the simple I2C-bus communication\n
+ *            \- Disabling the SCI interrupt\n\n
+ *            The bit rate set in initial setting to start simple I2C-bus communication.\n
+ *            The bit rate is set based on the setting value of "2.7 Configuration Overview" in the application note and
+ *            the clock setting definition value specified by BSP FIT module.
+ * @note      None
+*/
 sci_iic_return_t R_SCI_IIC_Open (sci_iic_info_t * p_sci_iic_info)
 {
     bool chk;
@@ -326,16 +348,50 @@ static sci_iic_return_t sci_iic_open (sci_iic_info_t * p_sci_iic_info)
 
 /***********************************************************************************************************************
  * Function Name: R_SCI_IIC_MasterSend
- * Description  : Master transmission start processing.
- *                Generates the start condition. Starts the master transmission.
- * Arguments    : sci_iic_info_t * p_sci_iic_info    ; IIC Information
- * Return Value : SCI_IIC_SUCCESS                    ; Successful operation
- *              ; SCI_IIC_ERR_INVALID_CHAN           ; channel number invalid for part
- *              : SCI_IIC_ERR_INVALID_ARG            ; Parameter error
- *              : SCI_IIC_ERR_NO_INIT                ; Uninitialized state
- *              : SCI_IIC_ERR_BUS_BUSY               ; Bus busy
- *              ; SCI_IIC_ERR_OTHER                  ; Other error
- **********************************************************************************************************************/
+ ******************************************************************************************************************/ /**
+ * @brief Starts master transmission. Changes the transmit pattern according to the parameters. Operates batched 
+ *        processing until stop condition generation.
+ * @param[in] *p_sci_iic_info
+ *             This is the pointer to the I2C communication information structure. The transmit patterns can be selected
+ *             from four patterns by the parameter. Refer to the Special Notes in this section for available settings 
+ *             and the setting values for each transmit pattern.\n
+ *             Only members of the structure used in this function are described here.\n
+ *             The contents of the structure are referred and updated during communication. Do not rewrite the structure
+ *             during communication (SCI_IIC_COMMUNICATION).\n
+ *             When setting the slave address, store it without shifting 1 bit to left.\n
+ * @retval    SCI_IIC_SUCCESS: Processing completed successfully
+ * @retval    SCI_IIC_ERR_INVALID_CHAN: The channel is nonexistent.
+ * @retval    SCI_IIC_ERR_INVALID_ARG: The parameter is invalid.
+ * @retval    SCI_IIC_ERR_NO_INIT: Uninitialized state
+ * @retval    SCI_IIC_ERR_BUS_BUSY: The bus state is busy.
+ * @retval    SCI_IIC_ERR_OTHER: The event occurred is invalid in the current state.
+ * @details   Starts the simple I2C-bus master transmission. The transmission is performed with the SCI channel and 
+ *            transmit pattern specified by parameters. If the state of the channel is 'idle (SCI_IIC_IDEL)', the
+ *            following processes are performed.\n
+ *            \- Setting the state flag\n
+ *            \- Initializing variables used by the API\n
+ *            \- Enabling the SCI interrupts\n
+ *            \- Releasing the I2C reset\n
+ *            \- Allocating I2C output ports\n
+ *            \- Generating a start condition\n\n
+ *            This function returns SCI_IIC_SUCCESS as a return value when the processing up to the start condition 
+ *            generation ends normally. This function returns SCI_IIC_ERR_BUS_BUSY as a return value when the following 
+ *            conditions are met to the start condition generation ends normally.(Note.1)\n
+ *            \- Either SCL or SDA line is in low state.\n\n
+ *            The transmission processing is performed sequentially in subsequent interrupt processing after this 
+ *            function return SCI_IIC_SUCCESS. See Section "2.4 Usage of Interrupt Vector" in the application note
+ *            should be refered for the interrupt to be used. For master transmission, the interrupt generation timing
+ *            should be refered from "6.2.1 Master transmission" in the application note.\n
+ *            After issuing a stop condition at the end of transmission, the callback function specified by the argument
+ *            is called.\n
+ *            The transmission completion is performed normally or not, can be confirmed by checking the device status 
+ *            flag specified by the argument or the channel status flag g_sci_iic_ChStatus [], that is to be 
+ *            "SCI_IIC_FINISH" for normal completion.\n
+ *            Notes:
+ *            -# When SCL and SDA pin is not external pull-up, this function may return SCI_IIC_ERR_BUS_BUSY by
+ *            detecting either SCL or SDA line is as in low state.
+ * @note      Available settings for each pattern see Section 3.2 in the application note for details.
+*/ 
 sci_iic_return_t R_SCI_IIC_MasterSend (sci_iic_info_t * p_sci_iic_info)
 {
     sci_iic_return_t ret;
@@ -358,16 +414,50 @@ sci_iic_return_t R_SCI_IIC_MasterSend (sci_iic_info_t * p_sci_iic_info)
 
 /***********************************************************************************************************************
  * Function Name: R_SCI_IIC_MasterReceive
- * Description  : Master reception start processing.
- *                Generates the start condition. Starts the master reception.
- * Arguments    : sci_iic_info_t * p_sci_iic_info    ; IIC Information
- * Return Value : SCI_IIC_SUCCESS                    ; Successful operation
- *              ; SCI_IIC_ERR_INVALID_CHAN           ; channel number invalid for part
- *              : SCI_IIC_ERR_INVALID_ARG            ; Parameter error
- *              : SCI_IIC_ERR_NO_INIT                ; Uninitialized state
- *              : SCI_IIC_ERR_BUS_BUSY               ; Bus busy
- *              ; SCI_IIC_ERR_OTHER                  ; Other error
- **********************************************************************************************************************/
+ ******************************************************************************************************************/ /**
+ * @brief Starts master reception. Changes the receive pattern according to the parameters. Operates batched processing 
+ *        until stop condition generation.
+ * @param[in] *p_sci_iic_info
+ *             This is the pointer to the I2C communication information structure. The receive pattern can be selected 
+ *             from master reception and master transmit/receive. Refer to the Special Notes in this section for 
+ *             available settings and the setting values for each receive pattern.\n
+ *             Only members of the structure used in this function are described here.\n
+ *             The contents of the structure are referred and updated during communication. Do not rewrite the structure
+ *             during communication (SCI_IIC_COMMUNICATION).\n
+ *             When setting the slave address, store it without shifting 1 bit to left.\n
+ * @retval    SCI_IIC_SUCCESS: Processing completed successfully
+ * @retval    SCI_IIC_ERR_INVALID_CHAN: The channel is nonexistent.
+ * @retval    SCI_IIC_ERR_INVALID_ARG: The parameter is invalid.
+ * @retval    SCI_IIC_ERR_NO_INIT: Uninitialized state
+ * @retval    SCI_IIC_ERR_BUS_BUSY: The bus state is busy.
+ * @retval    SCI_IIC_ERR_OTHER: The event occurred is invalid in the current state.
+ * @details   Starts the simple I2C-bus master reception. The reception is performed with the SCI channel and receive 
+ *            pattern specified by parameters. If the state of the channel is 'idle (SCI_IIC_IDEL)', the following
+ *            processes are performed.\n
+ *            \- Setting the state flag\n
+ *            \- Initializing variables used by the API\n
+ *            \- Enabling the SCI interrupts\n
+ *            \- Releasing the I2C reset\n
+ *            \- Allocating I2C output ports\n
+ *            \- Generating a start condition\n\n
+ *            This function returns SCI_IIC_SUCCESS as a return value when the processing up to the start condition 
+ *            generation ends normally. This function returns SCI_IIC_ERR_BUS_BUSY as a return value when the following 
+ *            conditions are met to the start condition generation ends normally.(Note.1)\n
+ *            \- Either SCL or SDA line is in low state.\n\n
+ *            The reception processing is performed sequentially in subsequent interrupt processing after this function 
+ *            return SCI_IIC_SUCCESS. See section "2.4 Usage of Interrupt Vector" in the application note should be
+ *            refered for the interrupt to be used. For master transmission, the interrupt generation timing should be
+ *            refered from "6.2.2 Master Reception" in the application note.\n
+ *            After issuing a stop condition at the end of transmission, the callback function specified by the argument
+ *            is called.\n
+ *            The reception completion is performed normally or not, can be confirmed by checking the device status flag
+ *            specified by the argument or the channel status flag g_sci_iic_ChStatus [], that is to be "SCI_IIC_FINISH"
+ *            for normal completion.\n
+ *            Notes:
+ *            -# When SCL and SDA pin is not external pull-up, this function may return SCI_IIC_ERR_BUS_BUSY by
+ *            detecting either SCL or SDA line is as in low state.
+ * @note      Available settings for each pattern see Section 3.3 in the application note for details.
+*/
 sci_iic_return_t R_SCI_IIC_MasterReceive (sci_iic_info_t * p_sci_iic_info)
 {
     sci_iic_return_t ret;
@@ -449,16 +539,23 @@ static sci_iic_return_t sci_iic_master_send_receive (sci_iic_info_t * p_sci_iic_
 
 /***********************************************************************************************************************
  * Function Name: R_SCI_IIC_GetStatus
- * Description  : Returns the state of this module.
- *                Obtains the state of the SCI channel, which specified by the parameter, 
- *                by reading the register, variable, or others, and returns 
- *                the obtained state as 32-bit structure.
- * Arguments    : sci_iic_info_t * p_sci_iic_info        ; IIC Information
- *                sci_iic_mcu_status_t * p_sci_iic_status; The address to store the I2C state flag.
- * Return Value : SCI_IIC_SUCCESS                        ; Successful operation
- *              ; SCI_IIC_ERR_INVALID_CHAN               ; channel number invalid for part
- *              : SCI_IIC_ERR_INVALID_ARG                ; Parameter error
- **********************************************************************************************************************/
+ ******************************************************************************************************************/ /**
+ * @brief Returns the state of this module.
+ * @param[in] *p_sci_iic_info
+ *             This is the pointer to the I2C communication information structure.\n
+ *             Only the member of the structure used in this function is described here.
+ * @param[in] *p_sci_iic_status
+ *             This contains the address to store the I2C state flag. If the argument is 'FIT_NO_PTR', the state is not
+ *             returned.
+ * @retval    SCI_IIC_SUCCESS: Processing completed successfully
+ * @retval    SCI_IIC_ERR_INVALID_CHAN: The channel is nonexistent.
+ * @retval    SCI_IIC_ERR_INVALID_ARG: The parameter is invalid.
+ * @retval    SCI_IIC_ERR_OTHER: The event occurred is invalid in the current state.
+ * @details   Returns the state of this module.
+ *            By reading the register, pin level, variable, or others, obtains the state of the SCI channel which 
+ *            specified by the parameter, and returns the obtained state as 32-bit structure. 
+ * @note      See section "3.5 R_SCI_IIC_GetStatus()" in the application note for details.
+*/
 sci_iic_return_t R_SCI_IIC_GetStatus (sci_iic_info_t *p_sci_iic_info, sci_iic_mcu_status_t *p_sci_iic_status)
 {
     sci_iic_return_t ret;
@@ -580,18 +677,37 @@ static sci_iic_return_t sci_iic_getstatus (sci_iic_info_t * p_sci_iic_info, sci_
 
 /***********************************************************************************************************************
  * Function Name: R_SCI_IIC_Control
- * Description  : This function is mainly used when a communication error occurs.
- *                Outputs control signals of the simple I2C mode. 
- *                Outputs conditions specified by the argument, NACK,
- *                and one-shot of the SSCL clock. Also resets the simple I2C mode settings.
- * Arguments    : sci_iic_info_t * p_sci_iic_info    ; IIC Information
- *                sci_iic_ctrl_ptn_t ctrl_ptn        ; Output Pattern
- * Return Value : SCI_IIC_SUCCESS                    ; Successful operation
- *              ; SCI_IIC_ERR_INVALID_CHAN           ; channel number invalid for part
- *              : SCI_IIC_ERR_INVALID_ARG            ; Parameter error
- *              : SCI_IIC_ERR_BUS_BUSY               ; Bus busy
- *              ; SCI_IIC_ERR_OTHER                  ; Other error
- **********************************************************************************************************************/
+ ******************************************************************************************************************/ /**
+ * @brief This function outputs conditions, Hi-Z from the SSDA pin, and one-shot of the SSCL clock. Also it resets the 
+ *        settings of this module. This function is mainly used when a communication error occurs.
+ * @param[in] *p_sci_iic_info
+ *             This is the pointer to the I2C communication information structure.\n
+ *             Only the member of the structure used in this function is described here.\n
+ *             The contents of the structure are referred and updated during communication. Do not rewrite the structure
+ *             during communication (SCI_IIC_COMMUNICATION).\n
+ *             For the parameter which has '(to be updated)' in the comment below, the argument for the parameter will
+ *             be updated during the API execution. 
+ * @param[in] ctrl_ptn
+ *             Specifies the output pattern. When selecting multiple options, specify them with '|'.\n
+ *             The following options can be selected simultaneously:\n
+ *             \- The following three options can be specified simultaneously. Then they will be processed in the order
+ *                listed.\n
+ *                \li SCI_IIC_GEN_START_CON
+ *                \li SCI_IIC_GEN_RESTART_CON
+ *                \li SCI_IIC_GEN_STOP_CON
+ *
+ *             \- The following two options can be specified simultaneously.\n
+ *                \li SCI_IIC_GEN_SDA_HI_Z
+ *                \li SCI_IIC_GEN_SSCL_ONESHOT
+ * @retval    SCI_IIC_SUCCESS: Processing completed successfully
+ * @retval    SCI_IIC_ERR_INVALID_CHAN: The channel is nonexistent.
+ * @retval    SCI_IIC_ERR_INVALID_ARG: The parameter is invalid.
+ * @retval    SCI_IIC_ERR_BUS_BUSY: The bus state is busy.
+ * @retval    SCI_IIC_ERR_OTHER: The event occurred is invalid in the current state.
+ * @details   Outputs control signals of the simple I2C mode. Outputs conditions specified by the argument, Hi-Z from 
+ *            the SSDA pin, and one-shot of the SSCL clock. Also resets the simple I2C mode settings.
+ * @note      None
+*/
 sci_iic_return_t R_SCI_IIC_Control (sci_iic_info_t * p_sci_iic_info, sci_iic_ctrl_ptn_t ctrl_ptn)
 {
     sci_iic_return_t ret;
@@ -870,14 +986,27 @@ static sci_iic_return_t sci_iic_control (sci_iic_info_t * p_sci_iic_info, sci_ii
 
 /***********************************************************************************************************************
  * Function Name: R_SCI_IIC_Close
- * Description  : Resets the SCI_IIC driver.
- *              : After called the processing, channel status becomes "SCI_IIC_NO_INIT".
- *              : When starts the communication again, please call an initialization processing.
- * Arguments    : sci_iic_info_t * p_sci_iic_info    ; IIC Information
- * Return Value : SCI_IIC_SUCCESS                    ; Successful operation
- *              ; SCI_IIC_ERR_INVALID_CHAN           ; channel number invalid for part
- *              : SCI_IIC_ERR_INVALID_ARG            ; Parameter error
- **********************************************************************************************************************/
+ ******************************************************************************************************************/ /**
+ * @brief This function completes the simple I2C communication and releases the SCI used.
+ * @param[in] *p_sci_iic_info
+ *             This is the pointer to the I2C communication information structure.\n
+ *             Only the member of the structure used in this function is described here.\n
+ *             The contents of the structure are referred and updated during communication. Do not rewrite the structure
+ *             during communication (SCI_IIC_COMMUNICATION).\n
+ *             For the parameter which has '(to be updated)' in the comment below, the argument for the parameter will
+ *             be updated during the API execution. 
+ * @retval    SCI_IIC_SUCCESS: Processing completed successfully
+ * @retval    SCI_IIC_ERR_INVALID_CHAN: The channel is nonexistent.
+ * @retval    SCI_IIC_ERR_INVALID_ARG: The parameter is invalid.
+ * @details   Configures the settings to complete the simple I2C-bus communication. Disables the SCI channel specified
+ *            by the parameter. The following processes are performed in this function.\n
+ *            \- Entering the SCI module-stop state\n
+ *            \- Releasing I2C output ports\n
+ *            \- Disabling the SCI interrupt\n\n
+ *            To restart the communication, call the R_SCI_IIC_Open() function (initialization function). If the 
+ *            communication is forcibly terminated, that communication is not guaranteed.
+ * @note      None
+*/
 sci_iic_return_t R_SCI_IIC_Close (sci_iic_info_t * p_sci_iic_info)
 {
     bool chk;
@@ -931,12 +1060,14 @@ static void sci_iic_close (sci_iic_info_t * p_sci_iic_info)
 
 /***********************************************************************************************************************
  * Function Name: R_SCI_IIC_GetVersion
- * Description  : Returns the version of this module. The version number is 
- *                encoded such that the top two bytes are the major version
- *                number and the bottom two bytes are the minor version number.
- * Arguments    : none
- * Return Value : version number
- **********************************************************************************************************************/
+ ******************************************************************************************************************/ /**
+ * @brief Returns the current version of this module.
+ * @return    Version number
+ * @details   This function will return the version of the currently installed SCI (simple I2C mode) FIT module. The 
+ *            version number is encoded where the top 2 bytes are the major version number and the bottom 2 bytes are 
+ *            the minor version number. For example, Version 4.25 would be returned as 0x00040019.
+ * @note      None
+*/
 uint32_t R_SCI_IIC_GetVersion (void)
 {
     uint32_t const version = (SCI_IIC_VERSION_MAJOR << 16) | SCI_IIC_VERSION_MINOR;

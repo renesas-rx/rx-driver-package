@@ -36,6 +36,11 @@
 *                               - BSP_PRV_SUB_CLK_SOSCCR
 *                               - BSP_PRV_NORMALIZE_X10
 *                               Deleted the error check of BSP_CFG_CLOCK_SOURCE in the clock_source_select function.
+*         : 17.12.2019 2.01     Deleted the unused variables of clock_source_select function and 
+*                               usb_lpc_clock_source_select function.
+*                               Fixed warning of clock_source_select function with IAR compiler.
+*         : 14.02.2020 2.02     Deleted the unused variables of clock_source_select function.
+*                               Fixed warning of clock_source_select function with CCRX and IAR compiler.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -368,11 +373,9 @@ static void operating_frequency_set (void)
 ***********************************************************************************************************************/
 static void clock_source_select (void)
 {
-    volatile uint8_t read_verify;
-    volatile uint8_t tmp;
-
-    /* Declared volatile for software delay purposes. */
-    volatile uint32_t i;
+#if (BSP_PRV_SUB_CLK_SOSCCR == 1) || (BSP_CFG_RTC_ENABLE == 1)
+    uint8_t tmp;
+#endif
 
     /* Set to High-speed operating mode if clock is > 12MHz. */
     /* Because ICLK may not be maximum frequency, it is necessary to check all clock frequency. */
@@ -682,9 +685,6 @@ static void clock_source_select (void)
 ***********************************************************************************************************************/
 static void usb_lpc_clock_source_select (void)
 {
-    /* Declared volatile for software delay purposes. */
-    volatile uint32_t i;
-
     /* Protect off. DO NOT USE R_BSP_RegisterProtectDisable()! (not initialized yet) */
     SYSTEM.PRCR.WORD = 0xA50F;
 

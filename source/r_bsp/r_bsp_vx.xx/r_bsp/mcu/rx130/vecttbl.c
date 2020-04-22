@@ -30,6 +30,7 @@
 *                               (Exception functions moved to the common file (r_bsp_interrupts.c).)
 *                               Added support for GNUC and ICCRX.
 *                               Fixed coding style.
+*         : 08.10.2019 3.01     Changed for added support of Renesas RTOS (RI600V4 or RI600PX).
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -71,6 +72,10 @@ R_BSP_POR_FUNCTION(R_BSP_POWER_ON_RESET_FUNCTION);
 #pragma public_equ = "__ID_BYTES_13_16", BSP_CFG_ID_CODE_LONG_4
 
 #endif /* defined(__ICCRX__) */
+
+#if BSP_CFG_RTOS_USED == 4  /* Renesas RI600V4 & RI600PX */
+     /* System configurator generates the ritble.src as interrupt & exception vector tables. */
+#else /* BSP_CFG_RTOS_USED!=4 */
 
 #if defined(__CCRX__) || defined(__GNUC__)
 R_BSP_ATTRIB_SECTION_CHANGE_FIXEDVECT void * const Fixed_Vectors[] =
@@ -120,6 +125,8 @@ R_BSP_ATTRIB_SECTION_CHANGE_FIXEDVECT void * const Fixed_Vectors[] =
 };
 R_BSP_ATTRIB_SECTION_CHANGE_END
 #endif /* defined(__CCRX__), defined(__GNUC__) */
+
+#endif/* BSP_CFG_RTOS_USED */
 
 #endif /* BSP_CFG_STARTUP_DISABLE == 0 */
 

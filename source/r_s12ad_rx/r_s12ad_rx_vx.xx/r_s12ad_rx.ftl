@@ -99,7 +99,13 @@ void ${Function_Name}()
     <#else>
     PORT${pin.portNum}.PDR.BIT.B${pin.pinBitNum} = 0U;
     </#if>
+    <#if headerInfo.device?contains("R5F513T")>
+        <#if pin.portNum != "4">
     PORT${pin.portNum}.PMR.BIT.B${pin.pinBitNum} = 0U;
+                </#if>
+    <#else>    
+    PORT${pin.portNum}.PMR.BIT.B${pin.pinBitNum} = 0U;
+    </#if>
     MPC.${pin.assignedPinName}PFS.BYTE = 0x${pin.pinMPC}U;
     </#if>
 </#macro> 

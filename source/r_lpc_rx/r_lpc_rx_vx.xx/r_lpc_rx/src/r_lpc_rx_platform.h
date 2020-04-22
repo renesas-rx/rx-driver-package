@@ -24,6 +24,8 @@
  ************************************************************************************************************************
  * History : DD.MM.YYYY Version Description
  *         : 01.10.2016 1.00    First Release
+ *         : 01.07.2019 1.42    Added RX23W.
+ *         : 14.11.2019 2.00    Removed RX210.
  ***********************************************************************************************************************/
 #ifndef R_LPC_RX_PLATFORM_H
     #define R_LPC_RX_PLATFORM_H
@@ -40,12 +42,12 @@
         #include "./targets/rx113/r_lpc_rx113_if.h"
     #elif defined(BSP_MCU_RX130)
         #include "./targets/rx130/r_lpc_rx130_if.h"
-    #elif defined(BSP_MCU_RX210)
-        #include "./targets/rx210/r_lpc_rx210_if.h"
     #elif defined(BSP_MCU_RX230)
         #include "./targets/rx230/r_lpc_rx230_if.h"
     #elif defined(BSP_MCU_RX231)
         #include "./targets/rx231/r_lpc_rx231_if.h"
+    #elif defined(BSP_MCU_RX23W)
+        #include "./targets/rx23w/r_lpc_rx23w_if.h"
     #elif defined(BSP_MCU_RX64M)
         #include "./targets/rx64m/r_lpc_rx64m_if.h"
     #elif defined(BSP_MCU_RX71M)

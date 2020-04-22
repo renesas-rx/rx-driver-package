@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_usb_hhid
-VERSION = 		v1.27
+VERSION = 		v1.30
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules

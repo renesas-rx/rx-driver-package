@@ -42,6 +42,9 @@
 *                               Fixed coding style. 
 *           20.06.2019 2.02     Supported RX23W.
 *           30.07.2019 2.03     Supported RX72M.
+*           22.11.2019 2.04     Supported RX72N and RX66N.
+*                               Modified comment of API function to Doxygen style.
+*                               Added support for atomic control.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 Includes   <System Includes> , "Project Includes"
@@ -243,33 +246,42 @@ static void rspi_interrupts_clear(uint8_t channel);
 static void rspi_interrupts_enable(uint8_t channel, bool enabled);
 
 static void rspi_spei_grp_isr(void *pdata);
-/***********************************************************************************************************************
-* Function Name: R_RSPI_Open
-* Description  : This function applies power to the RSPI channel,
-*                initializes the associated registers,
-*                applies user-configurable options,
-*                and provides the channel handle for use with other API functions.
-* Arguments    : chan -
-*                   Number of the RSPI channel to be initialized
-*                pconfig -
-*                   Pointer to RSPI channel configuration data structure.
-*                pcallback -
-*                   Pointer to function called from interrupt
-*                phandle -
-*                   Pointer to user-provided storage for a pointer to the handle data structure.
-* Return Value : RSPI_SUCCESS-
-*                   Successful; channel initialized
-*                RSPI_ERR_BAD_CHAN-
-*                   Channel number is invalid for part
-*                RSPI_ERR_CH_NOT_CLOSED-
-*                   Channel currently in operation; Perform R_RSPI_Close() first
-*                RSPI_ERR_NULL_PTR-
-*                   pconfig pointer or phandle pointer is NULL
-*                RSPI_ERR_ARG_RANGE-
-*                   An element of the pconfig structure contains an invalid value.
-*                RSPI_ERR_LOCK-
-*                      The lock could not be acquired. The channel is busy.
-***********************************************************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_RSPI_Open
+ *****************************************************************************************************************/ /**
+ * @brief     This function applies power to the RSPI channel, initializes the associated registers, enables interrupts,
+ *            and provides the channel handle for use with other API functions.
+ * @param[in] channel
+ *            Number of the RSPI channel to be initialized.
+ * @param[in] *pconfig
+ *            Pointer to RSPI channel configuration data structure.
+ * @param[in] spcmd_command_word
+ *            SPCMD command data structure.
+ * @param[in] (*pcallback)(void*pcbdat)
+ *            Pointer to user defined function called from interrupt.
+ * @param[in] *phandle
+ *            Pointer to a handle for channel. Handle value will be set by this function.
+ * @retval    RSPI_SUCCESS
+ *             Successful; channel initialized
+ * @retval    RSPI_ERR_BAD_CHAN
+ *             Channel number is not available
+ * @retval    RSPI_ERR_CH_NOT_CLOSED
+ *             Channel currently in operation; Perform R_RSPI_Close() first
+ * @retval    RSPI_ERR_NULL_PTR
+ *             *pconfig pointer or *phandle pointer is NULL
+ * @retval    RSPI_ERR_ARG_RANGE
+ *             An element of the *pconfig structure contains an invalid value.
+ * @retval    RSPI_ERR_LOCK
+ *             The lock could not be acquired.
+ * @details   The Open function is responsible for preparing an RSPI channel for operation. This function must be called
+ *            once prior to calling any other RSPI API functions (except R_RSPI_GetVersion). Once successfully completed,
+ *            the status of the selected RSPI will be set to "open". After that, this function should not be called
+ *            again for the same RSPI channel without first performing a "close" by calling R_RSPI_Close().
+ * @note      Take note of the following points when specifying DMAC transfer or DTC transfer.\n
+ *            \li The DMAC FIT module, DTC FIT module, and timer module (CMT FIT module, for example) must be obtained
+ *            separately.
+ *
+ */
 rspi_err_t   R_RSPI_Open(uint8_t                channel,
                          rspi_chnl_settings_t  *pconfig,
                          rspi_command_word_t  spcmd_command_word,
@@ -382,7 +394,8 @@ rspi_err_t   R_RSPI_Open(uint8_t                channel,
     /* Update the SPCMD0 command register with the settings for this transfer. */
     (*g_rspi_channels[channel]).SPCMD0.BIT.CPOL = spcmd_command_word.cpol;
 
-#if defined BSP_MCU_RX65N || defined BSP_MCU_RX66T || defined BSP_MCU_RX72T || defined BSP_MCU_RX72M
+#if defined BSP_MCU_RX65N || defined BSP_MCU_RX66T || defined BSP_MCU_RX72T || defined BSP_MCU_RX72M \
+    || defined BSP_MCU_RX72N || defined BSP_MCU_RX66N
     /* Set RSPI data control register 2 (SPDCR2) */
     (*g_rspi_channels[channel]).SPDCR2.BYTE = (uint8_t)(my_settings->spdcr2_val & RSPI_SPDCR2_MASK);
 #endif
@@ -434,29 +447,43 @@ rspi_err_t   R_RSPI_Open(uint8_t                channel,
 /* end of function R_RSPI_Open(). */
 
 
-/***********************************************************************************************************************
-* Function Name: R_RSPI_Control
-* Description  : This function is responsible for handling special hardware or software operations for the RSPI channel.
-* Arguments    : handle-
-*                   Handle for the channel
-*                cmd
-*                   Enumerated command code
-*                pcmd_data
-*                   Pointer to the command-data structure parameter of type void that is used to reference the location
-*                   of any data specific to the command that is needed for its completion.
-* Return Value : RSPI_SUCCESS-
-*                   Command successfully completed.
-*                RSPI_ERR_CH_NOT_OPENED-
-*                   The channel has not been opened.  Perform R_RSPI_Open() first
-*                RSPI_ERR_UNKNOWN_CMD-
-*                   Control command is not recognized.
-*                RSPI_ERR_NULL_PTR-
-*                   pcmd_data  pointer or handle is NULL
-*                RSPI_ERR_ARG_RANGE-
-*                   An element of the pcmd_data structure contains an invalid value.
-*                RSPI_ERR_LOCK-
-*                      The lock could not be acquired. The channel is busy.
-***********************************************************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_RSPI_Control()
+ *****************************************************************************************************************/ /**
+ * @brief     The Control function is responsible for handling special hardware or software operations for the RSPI
+ *            channel.
+ * @param[in] handle
+ *            Handle for the channel
+ * @param[in] cmd
+ *            Enumerated command code.\n
+ *            Available command codes:\n
+ *             RSPI_CMD_SET_BAUD : Change the base bit rate setting without reinitializing the RSPI channel.\n
+ *             RSPI_CMD_ABORT : Stop the current read or write operation immediately.\n
+ *             RSPI_CMD_SETREGS : Set all supported RSPI regs in one operation. (Expert use only)\n
+ *             RSPI_CMD_SET_TRANS_MODE : Set the data transfer mode.
+ * @param[in] *pcmd_data
+ *            Pointer to the command-data structure parameter of type void that is used to reference the location of
+ *            any data specific to the command needed for its completion. Commands that do not require supporting
+ *            data must use the FIT_NO_PTR.
+ * @retval    RSPI_SUCCESS
+ *             Command successfully completed.
+ * @retval    RSPI_ERR_CH_NOT_OPENED
+ *             The channel has not been opened. Perform R_RSPI_Open() first
+ * @retval    RSPI_ERR_UNKNOWN_CMD
+ *             Control command is not recognized.
+ * @retval    RSPI_ERR_NULL_PTR
+ *             *pcmd_data pointer or *phandle pointer is NULL.
+ * @retval    RSPI_ERR_ARG_RANGE
+ *             An element of the *pcmd_data structure contains an invalid value.
+ * @retval    RSPI_ERR_LOCK
+ *             The lock could not be acquired.
+ * @details   This function is responsible for handling special hardware or software operations for the RSPI channel.
+ *            It takes an RSPI handle to identify the selected RSPI, an enumerated command value to select the
+ *            operation to be performed, and a void pointer to a location that contains information or data required
+ *            to complete the operation. This pointer must point to storage that has been type-cast by the caller for
+ *            the particular command using the appropriate type provided in "r_rspi_rx_if.h".
+ * @note      See Section 3.2 in the application note for details.
+ */
 rspi_err_t  R_RSPI_Control(rspi_handle_t handle,
                            rspi_cmd_t     cmd,
                            void          *pcmd_data)
@@ -573,7 +600,8 @@ rspi_err_t  R_RSPI_Control(rspi_handle_t handle,
             (*g_rspi_channels[channel]).SSLND.BYTE = (uint8_t)(p_setregs_struct->sslnd_val & RSPI_SSLND_MASK);
         /* Set slave select polarity register (SSLP). */
             (*g_rspi_channels[channel]).SSLP.BYTE = (uint8_t)(p_setregs_struct->sslp_val & RSPI_SSLP_MASK);
-        #if defined BSP_MCU_RX65N || defined BSP_MCU_RX66T || defined BSP_MCU_RX72T || defined BSP_MCU_RX72M
+        #if defined BSP_MCU_RX65N || defined BSP_MCU_RX66T || defined BSP_MCU_RX72T || defined BSP_MCU_RX72M \
+             || defined BSP_MCU_RX72N || defined BSP_MCU_RX66N
             /* Set RSPI data control register 2 (SPDCR2) */
             (*g_rspi_channels[channel]).SPDCR2.BYTE = (uint8_t)(p_setregs_struct->spdcr2_val & RSPI_SPDCR2_MASK);
         #endif
@@ -609,31 +637,53 @@ rspi_err_t  R_RSPI_Control(rspi_handle_t handle,
 /* end of function R_RSPI_Control(). */
 
 
-/***********************************************************************************************************************
-* Function Name: R_RSPI_Read
-* Description  : Receives data from a SPI device.
-* Arguments    : handle-
-*                   Handle for the channel
-*                spcmd_command_word-
-*                   bitfield data consisting of all the RSPI command register settings for SPCMD for this operation.
-*                   This value will be placed directly into the SPCMD register by the function. Caller is required to
-*                   provide correctly formatted data.
-*                pdest-
-*                   Pointer to destination buffer into which data will be copied that is received from a SPI .
-*                   It is the responsibility of the caller to insure that adequate space is available to hold the
-*                   requested data count.
-*                length-
-*                   Indicates the number of data words to be transferred. The size of the data word is determined from
-*                   the channel configuration data structure referenced by the channel handle.
-* Return Value : RSPI_SUCCESS-
-*                   Read operation successfully completed.
-*                RSPI_ERR_CH_NOT_OPENED-
-*                   The channel has not been opened.  Perform R_RSPI_Open() first
-*                RSPI_ERR_NULL_PTR-
-*                   A required pointer argument is NULL
-*                RSPI_ERR_LOCK-
-*                      The lock could not be acquired. The channel is busy.
-***********************************************************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_RSPI_Read()
+ *****************************************************************************************************************/ /**
+ * @brief     The Read function receives data from the selected SPI device.
+ * @param[in] handle
+ *            Handle for the channel
+ * @param[in] spcmd_command_word
+ *            Bit field data consisting of all the RSPI command register settings for SPCMD for this operation.\n
+ *            See 2.14  in application note.
+ * @param[out] *pdest
+ *            Void type pointer to a destination buffer into which data will be copied that has been received from a SPI
+ *            device. It is the responsibility of the caller to ensure that adequate space is available to hold the
+ *            requested data count. The argument must not be NULL. Based on the data frame bit-length specified in the
+ *            spcmd_command_word.bit_length, the *pdest pointer will be type cast to the corresponding data type during
+ *            the transfer. So, for example, if the bit-length is set to 16-bits, then the data will be stored in the
+ *            destination buffer as a 16-bit value, and so on for each bit-length setting. Bit-length settings that are
+ *            not 8, 16 or 32 will use the smallest data type that they can be contained within. For example, 24-bit
+ *            frames will be stored in 32-bit storage, 11-bit frames will be stored in 16-bit storage, etc.
+ * @param[in] length
+ *            Transfer length variable to indicate the number of data frames to be transferred. The size of the data
+ *            word is determined from settings in the spcmd_command_word.bit_length argument. Be sure that the length
+ *            argument matches the storage type of the source data; this is a count of the number of frames, not the
+ *            number of bytes.
+ * @retval    RSPI_SUCCESS
+ *             Read operation successfully completed.
+ * @retval    RSPI_ERR_CH_NOT_OPENED
+ *             The channel has not been opened. Perform R_RSPI_Open() first.
+ * @retval    RSPI_ERR_NULL_PTR
+ *             A required pointer argument is NULL.
+ * @retval    RSPI_ERR_LOCK
+ *             The lock could not be acquired. The channel is busy.
+ * @retval    RSPI_ERR_INVALID_ARG
+ *             Argument is not valid for parameter.
+ * @details   Starts reception of data from a SPI device. The function returns immediately after the operation begins,
+ *            and data will continue to be received in the background under interrupt control until the requested length
+ *            has been received. Received data is stored in the destination buffer. When the transfer is complete the
+ *            user-defined callback function is called.\n
+ *            Operation differs slightly depending on whether the RSPI is operating as Master or Slave. If the RSPI is
+ *            configured as slave, then data will only transfer when clocks are received from the Master. While
+ *            receiving data, the RSPI will also transmit the user definable Dummy data pattern defined in the
+ *            configuration file.
+ * @note      When using as a master reception, select normal mode or high speed mode in advance. For details of the
+ *            setting method, see 2.7 in application note.\n
+ *            Add the following processing when specifying DMAC transfer or DTC transfer.\n
+ *            \li For the callback function that occurs when communication ends, see 1.6 in application note.\n
+ *            \li Make the necessary settings to make the DMAC or DTC ready to start before calling this function.
+ */
 rspi_err_t  R_RSPI_Read(rspi_handle_t        handle,
                         rspi_command_word_t  spcmd_command_word,
                         void                *pdest,
@@ -649,72 +699,57 @@ rspi_err_t  R_RSPI_Read(rspi_handle_t        handle,
     }
     #endif
 
-    if ((RSPI_TRANS_MODE_DMAC == g_rspi_tcb[handle->channel].data_tran_mode)
-      ||(RSPI_TRANS_MODE_DTC == g_rspi_tcb[handle->channel].data_tran_mode))
-    {
-
-        /* ---- Check the buffer boundary (4-byte unit). ---- */
-        /* Cast the variable to a uint32_t type because the address of this pointer may not be 4-byte unit. */
-        if (0 != ((uint32_t)pdest & RSPI_DATA_ALIGN))
-        {
-            R_RSPI_LOG_FUNC(RSPI_DEBUG_ERR_ID, (uint32_t)RSPI_STR, __LINE__);
-            return RSPI_ERR_INVALID_ARG;
-        }
-
-        /* ---- Check the counter (4-byte unit). ---- */
-        /* NOTE: Do not support the number of data other than a multiple of 4 using DMAC or DTC. */
-        if (0 != (length & RSPI_DATA_ALIGN))
-        {
-            R_RSPI_LOG_FUNC(RSPI_DEBUG_ERR_ID, (uint32_t)RSPI_STR, __LINE__);
-            return RSPI_ERR_INVALID_ARG;
-        }
-    }
-
-    if (RSPI_BYTE_DATA == rspi_get_data_type(spcmd_command_word))
-    {
-        result = rspi_write_read_common(handle, spcmd_command_word, NULL, pdest, length, RSPI_DO_RX);
-    }
-    else if (RSPI_WORD_DATA == rspi_get_data_type(spcmd_command_word))
-    {
-        result = rspi_write_read_common(handle, spcmd_command_word, NULL, pdest, (length >> 1), RSPI_DO_RX);
-    }
-    else if (RSPI_LONG_DATA == rspi_get_data_type(spcmd_command_word))
-    {
-        result = rspi_write_read_common(handle, spcmd_command_word, NULL, pdest, (length >> 2), RSPI_DO_RX);
-    }
-    else
-    {
-        return RSPI_ERR_INVALID_ARG;
-    }
+    result = rspi_write_read_common(handle, spcmd_command_word, NULL, pdest, length, RSPI_DO_RX);
 
     return result;
 }
 /* end of function R_RSPI_Read(). */
 
 
-/***********************************************************************************************************************
-* Function Name: R_RSPI_Write
-* Description  : Transmits data to a SPI  device.  The operation differs slightly depending on whether it is using
-*                SPI mode or Clock-Synchronous mode.
-* Arguments    : handle-
-*                   Handle for the channel
-*                spcmd_command_word-
-*                   Bitfield data consisting of all the RSPI command register settings for SPCMD for this operation.
-*                   This value will be placed directly into the SPCMD register by the function. Caller is required to
-*                   provide correctly formatted data.
-*                psrc-
-*                   Pointer to a source data buffer from which data will be transmitted to a SPI device.
-*                   The argument must not be NULL.
-*                length-
-*                   Indicates the number of data words to be transferred. The size of the data word is determined from
-*                   the channel configuration data structure referenced by the channel handle.
-* Return Value : RSPI_SUCCESS-
-*                   Write operation successfully completed.
-*                RSPI_ERR_CH_NOT_OPENED-
-*                   The channel has not been opened.  Perform R_RSPI_Open() first
-*                RSPI_ERR_NULL_PTR-
-*                   A required pointer argument is NULL
-***********************************************************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_RSPI_Write()
+ *****************************************************************************************************************/ /**
+ * @brief     The Write function transmits data to the selected SPI device
+ * @param[in] handle
+ *            Handle for the channel
+ * @param[in] spcmd_command_word
+ *            Bit field data consisting of all the RSPI command register settings for SPCMD for this operation.\n
+ *            See 2.14 in application note.
+ * @param[in] *psrc
+ *            Void type pointer to a source data buffer from which data will be transmitted to a SPI device. Based on
+ *            the data frame bit-length specified in the spcmd_command_word.bit_length, the *psrc pointer will be type
+ *            cast to the corresponding data type during the transfer. So, for example, if the bit-length is set to
+ *            16-bits, then the source buffer data will be accessed as a block of 16-bit data, and so on for each
+ *            bit-length setting. Bit-length settings that are not 8, 16 or 32 will use the data type that they can be
+ *            contained within.  For example, 24-bit frames will be stored in 32-bit storage, 11-bit frames will be
+ *            stored in 16-bit storage, etc.
+ * @param[in] length
+ *            Transfer length variable to indicate the number of data frames to be transferred. The size of the data
+ *            word is determined from settings in the spcmd_command_word.bit_length argument. Be sure that the length
+ *            argument matches the storage type of the source data; this is a count of the number of frames, not the
+ *            number of bytes.
+ * @retval    RSPI_SUCCESS
+ *             Write operation successfully completed.
+ * @retval    RSPI_ERR_CH_NOT_OPENED
+ *             The channel has not been opened. Perform R_RSPI_Open() first.
+ * @retval    RSPI_ERR_NULL_PTR
+ *             A required pointer argument is NULL.
+ * @retval    RSPI_ERR_LOCK
+ *             The lock could not be acquired. The channel is busy.
+ * @retval    RSPI_ERR_INVALID_ARG
+ *             Argument is not valid for parameter.
+ * @details   Starts transmission of data to a SPI device. The function returns immediately after the transmit operation
+ *            begins, and data will continue to be transmitted in the background under interrupt control until the
+ *            requested length has been transmitted. When the transmission is complete the user-defined callback
+ *            function is called. The callback function should be used to notify the user application that the transfer
+ *            has completed.\n
+ *            Operation differs slightly depending on whether the RSPI is operating as Master or Slave. If the RSPI is
+ *            configured as slave, then data will only transfer when clocks are received from the Master. Data received
+ *            by the RSPI peripheral will be discarded.
+ * @note      Take note of the following points when specifying DMAC transfer or DTC transfer.\n
+ *            \li For the callback function that occurs when communication ends, see 1.6 in application note.\n
+ *            \li Make the necessary settings to make the DMAC or DTC ready to start before calling this function.
+ */
 rspi_err_t  R_RSPI_Write(rspi_handle_t        handle,
                          rspi_command_word_t  spcmd_command_word,
                          void                *psrc,
@@ -730,77 +765,69 @@ rspi_err_t  R_RSPI_Write(rspi_handle_t        handle,
     }
     #endif
 
-    if ((RSPI_TRANS_MODE_DMAC == g_rspi_tcb[handle->channel].data_tran_mode)
-      ||(RSPI_TRANS_MODE_DTC == g_rspi_tcb[handle->channel].data_tran_mode))
-    {
-        /* ---- Check the buffer boundary (4-byte unit). ---- */
-        /* Cast the variable to a uint32_t type because the address of this pointer may not be 4-byte unit. */
-        if (0 != ((uint32_t)psrc & RSPI_DATA_ALIGN))
-        {
-            R_RSPI_LOG_FUNC(RSPI_DEBUG_ERR_ID, (uint32_t)RSPI_STR, __LINE__);
-            return RSPI_ERR_INVALID_ARG;
-        }
-
-        /* ---- Check the counter (4-byte unit). ---- */
-        /* NOTE: Do not support the number of data other than a multiple of 4 using DMAC or DTC. */
-        if (0 != (length & RSPI_DATA_ALIGN))
-        {
-            R_RSPI_LOG_FUNC(RSPI_DEBUG_ERR_ID, (uint32_t)RSPI_STR, __LINE__);
-            return RSPI_ERR_INVALID_ARG;
-        }
-    }
-
-    if (RSPI_BYTE_DATA == rspi_get_data_type(spcmd_command_word))
-    {
-        result = rspi_write_read_common(handle, spcmd_command_word, psrc, NULL, length, RSPI_DO_TX);
-    }
-    else if (RSPI_WORD_DATA == rspi_get_data_type(spcmd_command_word))
-    {
-        result = rspi_write_read_common(handle, spcmd_command_word, psrc, NULL, (length >> 1), RSPI_DO_TX);
-    }
-    else if (RSPI_LONG_DATA == rspi_get_data_type(spcmd_command_word))
-    {
-        result = rspi_write_read_common(handle, spcmd_command_word, psrc, NULL, (length >> 2), RSPI_DO_TX);
-    }
-    else
-    {
-        return RSPI_ERR_INVALID_ARG;
-    }
+    result = rspi_write_read_common(handle, spcmd_command_word, psrc, NULL, length, RSPI_DO_TX);
 
     return result;
 }
 /* end of function R_RSPI_Write(). */
 
 
-/***********************************************************************************************************************
-* Function Name: R_RSPI_WriteRead
-* Description  : Simultaneously transmits data to SPI device while receiving data from SPI device
-*                (full duplex).
-*                The operation differs slightly depending on whether it is using SPI mode or Clock-Synchronous mode.
-* Arguments    : handle-
-*                   Handle for the channel
-*                spcmd_command_word-
-*                   bitfield data consisting of all the RSPI command register settings for SPCMD for this operation.
-*                   This value will be placed directly into the SPCMD0 register by the function. Caller is required to
-*                   provide correctly formatted data.
-*                psrc-
-*                   Pointer to a source data buffer from which data will be transmitted to a SPI device.
-*                   The argument must not be NULL.
-*                pdest-
-*                   Pointer to destination buffer into which data will be copied that has been received from SPI slave.
-*                   Caller must insure that adequate space is available to hold the requested data count.
-*                   Argument must not be NULL.
-*                length-
-*                   Indicates the number of data words to be transferred. The size of the data word is determined from
-*                   the channel configuration data structure referenced by the channel handle.
-* Return Value : RSPI_SUCCESS
-*                RSPI_ERR_CH_NOT_OPENED-
-*                   The channel has not been opened.  Perform R_RSPI_Open() first
-*                RSPI_ERR_NULL_PTR-
-*                   A required pointer argument is NULL
-*                RSPI_ERR_LOCK-
-*                      The lock could not be acquired. The channel is busy.
-***********************************************************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_RSPI_WriteRead()
+ *****************************************************************************************************************/ /**
+ * @brief     The Write Read function simultaneously transmits data to a SPI device while receiving data from a SPI
+ *            device.
+ * @param[in] handle
+ *            Handle for the channel
+ * @param[in] spcmd_command_word
+ *            Bit field data consisting of all the RSPI settings for the command register (SPCMD) for this operation.\n
+ *            See 2.14 in application note.
+ * @param[in] *psrc
+ *            Void type pointer to a source data buffer from which data will be transmitted to a SPI device. Based on
+ *            the data frame bit-length specified in the spcmd_command_word.bit_length, the *psrc pointer will be type
+ *            cast to the corresponding data type during the transfer. So, for example, if the bit-length is set to
+ *            16-bits, then the source buffer data will be accessed as a block of 16-bit data, and so on for each
+ *            bit-length setting. Bit-length settings that are not 8, 16 or 32 will use the data type that they can be
+ *            contained within. For example, 24-bit frames will be stored in 32-bit storage, 11-bit frames will be
+ *            stored in 16-bit storage, etc.
+ * @param[out] *pdest
+ *            Void type pointer to a destination buffer into which data will be copied that has been received from a SPI
+ *            device. It is the responsibility of the caller to ensure that adequate space is available to hold the
+ *            requested data count. The argument must not be NULL. Based on the data frame bit-length specified in the
+ *            spcmd_command_word.bit_length, the *pdest pointer will be type cast to the corresponding data type during
+ *            the transfer. So, for example, if the bit-length is set to 16-bits, then the data will be stored in the
+ *            destination buffer as a 16-bit value, and so on for each bit-length setting. Bit-length settings that are
+ *            not 8, 16 or 32 will use the smallest data type that they can be contained within. For example, 24-bit
+ *            frames will be stored in 32-bit storage, 11-bit frames will be stored in 16-bit storage, etc.
+ * @param[in] length
+ *            Transfer length variable to indicate the number of data frames to be transferred. The size of the data
+ *            word is determined from settings in the spcmd_command_word.bit_length argument. Be sure that the length
+ *            argument matches the storage type of the source data; this is a count of the number of frames, not the
+ *            number of bytes. The same number of frames will be both written and read.
+ * @retval    RSPI_SUCCESS
+ *             Read operation successfully completed.
+ * @retval    RSPI_ERR_CH_NOT_OPENED
+ *             The channel has not been opened. Perform R_RSPI_Open() first.
+ * @retval    RSPI_ERR_NULL_PTR
+ *             A required pointer argument is NULL.
+ * @retval    RSPI_ERR_LOCK
+ *             The lock could not be acquired. The channel is busy.
+ * @retval    RSPI_ERR_INVALID_ARG
+ *             Argument is not valid for parameter.
+ * @details   Starts full-duplex transmission and reception of data to and from a SPI device. The function returns
+ *            immediately after the transfer operation begins, and data transfer will continue in the background under
+ *            interrupt control until the requested length has been transferred. When the operation is complete the
+ *            user-defined callback function is called. The callback function should be used to notify the user
+ *            application that the transfer has completed.\n
+ *            Operation differs slightly depending on whether the RSPI is operating as Master or Slave. If the RSPI is
+ *            configured as slave, then data will only transfer when clocks are received from the Master. Data to be
+ *            transmitted is obtained from the source buffer, while received data is stored in the destination buffer.
+ * @note      When using as a master transmission and reception, select normal mode or high speed mode in advance. For
+ *            details of the setting method, see 2.7 in application note.\n
+ *            Add the following processing when specifying DMAC transfer or DTC transfer.\n
+ *            \li For the callback function that occurs when communication ends, see 1.6 in application note.\n
+ *            \li Make the necessary settings to make the DMAC or DTC ready to start before calling this function.
+ */
 rspi_err_t  R_RSPI_WriteRead(rspi_handle_t        handle,
                              rspi_command_word_t  spcmd_command_word,
                              void                *psrc,
@@ -817,42 +844,7 @@ rspi_err_t  R_RSPI_WriteRead(rspi_handle_t        handle,
     }
     #endif
 
-    if ((RSPI_TRANS_MODE_DMAC == g_rspi_tcb[handle->channel].data_tran_mode)
-      ||(RSPI_TRANS_MODE_DTC == g_rspi_tcb[handle->channel].data_tran_mode))
-    {
-        /* ---- Check the buffer boundary (4-byte unit). ---- */
-        /* Cast the variable to a uint32_t type because the address of this pointer may not be 4-byte unit. */
-        if ((0 != ((uint32_t)psrc & RSPI_DATA_ALIGN))||(0 != ((uint32_t)pdest & RSPI_DATA_ALIGN)))
-        {
-            R_RSPI_LOG_FUNC(RSPI_DEBUG_ERR_ID, (uint32_t)RSPI_STR, __LINE__);
-            return RSPI_ERR_INVALID_ARG;
-        }
-
-        /* ---- Check the counter (4-byte unit). ---- */
-        /* NOTE: Do not support the number of data other than a multiple of 4 using DMAC or DTC. */
-        if (0 != (length & RSPI_DATA_ALIGN))
-        {
-            R_RSPI_LOG_FUNC(RSPI_DEBUG_ERR_ID, (uint32_t)RSPI_STR, __LINE__);
-            return RSPI_ERR_INVALID_ARG;
-        }
-    }
-
-    if (RSPI_BYTE_DATA == rspi_get_data_type(spcmd_command_word))
-    {
-        result = rspi_write_read_common(handle, spcmd_command_word, psrc, pdest, length, RSPI_DO_TX_RX);
-    }
-    else if (RSPI_WORD_DATA == rspi_get_data_type(spcmd_command_word))
-    {
-        result = rspi_write_read_common(handle, spcmd_command_word, psrc, pdest, (length >> 1), RSPI_DO_TX_RX);
-    }
-    else if (RSPI_LONG_DATA == rspi_get_data_type(spcmd_command_word))
-    {
-        result = rspi_write_read_common(handle, spcmd_command_word, psrc, pdest, (length >> 2), RSPI_DO_TX_RX);
-    }
-    else
-    {
-        return RSPI_ERR_INVALID_ARG;
-    }
+    result = rspi_write_read_common(handle, spcmd_command_word, psrc, pdest, length, RSPI_DO_TX_RX);
 
     return result;
 }
@@ -919,6 +911,44 @@ static rspi_err_t  rspi_write_read_common(rspi_handle_t handle,
     g_rspi_tcb[channel].pdest = pdest;
     g_rspi_tcb[channel].transfer_mode = tx_rx_mode;
 
+#if defined BSP_MCU_RX65N || defined BSP_MCU_RX66T || defined BSP_MCU_RX72T || defined BSP_MCU_RX72M \
+    || defined BSP_MCU_RX72N || defined BSP_MCU_RX66N
+    if((RSPI_TRANS_MODE_DMAC == g_rspi_tcb [channel] .data_tran_mode) ||
+       (RSPI_TRANS_MODE_DTC == g_rspi_tcb [channel] .data_tran_mode))
+    {
+        if(RSPI_BYTE_DATA == g_rspi_tcb[channel].bytes_per_transfer)
+        {
+            (*g_rspi_channels[channel]).SPDCR.BIT.SPBYT = 1;
+        }
+        else if(RSPI_WORD_DATA == g_rspi_tcb[channel].bytes_per_transfer)
+        {
+            (*g_rspi_channels[channel]).SPDCR.BIT.SPLW = 0;
+        }
+    }
+    else
+    {
+        (*g_rspi_channels[channel]).SPDCR.BIT.SPBYT = 0;
+        (*g_rspi_channels[channel]).SPDCR.BIT.SPLW = 1;
+    }
+#endif
+
+#if defined BSP_MCU_RX23T || defined BSP_MCU_RX23W || defined BSP_MCU_RX24T || defined BSP_MCU_RX24U || \
+    defined BSP_MCU_RX64M || defined BSP_MCU_RX71M || defined BSP_MCU_RX110 || defined BSP_MCU_RX111 || \
+    defined BSP_MCU_RX113 || defined BSP_MCU_RX130 || defined BSP_MCU_RX230 || defined BSP_MCU_RX231
+    if((RSPI_TRANS_MODE_DMAC == g_rspi_tcb [channel] .data_tran_mode) ||
+       (RSPI_TRANS_MODE_DTC == g_rspi_tcb [channel] .data_tran_mode))
+    {
+        if(RSPI_WORD_DATA == g_rspi_tcb[channel].bytes_per_transfer)
+        {
+            (*g_rspi_channels[channel]).SPDCR.BIT.SPLW = 0;
+        }
+    }
+    else
+    {
+        (*g_rspi_channels[channel]).SPDCR.BIT.SPLW = 1;
+    }
+#endif
+
     if (tx_rx_mode & RSPI_DO_TX)
     {
         g_rspi_tcb[channel].do_tx = true;
@@ -948,8 +978,8 @@ static rspi_err_t  rspi_write_read_common(rspi_handle_t handle,
 #else
     #if defined (__ICCRX__)
     uint16_t temp;
-    temp = (command_word.word[0] >> 8)
-    temp |= (command_word.word[0] << 8)
+    temp = (command_word.word[0] >> 8);
+    temp |= (command_word.word[0] << 8);
     (*g_rspi_channels[channel]).SPCMD0.WORD = temp;
     #else
     (*g_rspi_channels[channel]).SPCMD0.WORD = command_word.word[1];
@@ -991,15 +1021,20 @@ static rspi_err_t  rspi_write_read_common(rspi_handle_t handle,
 }
 /* end of function rspi_write_read_common(). */
 
-/*******************************************************************************
-* Function Name: R_RSPI_IntSptiIerClear
-* Description  : Clears the ICU.IERm.IENj bit of SPTI to 0.
-* Arguments    : handle -
-*                    handle for the channel
-* Return Value : RSPI_SUCCESS
-*                RSPI_ERR_NULL_PTR-
-*                   A required pointer argument is NULL
-*******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_RSPI_IntSptiIerClear()
+ *****************************************************************************************************************/ /**
+ * @brief     This function is used to clear the ICU.IERm.IENj bit of the transmit buffer-empty interrupt (SPTI).
+ * @param[in] handle
+ *            RSPI handle number
+ * @retval    RSPI_SUCCESS
+ *             Successful operation.
+ * @retval    RSPI_ERR_NULL_PTR
+ *             A required pointer argument is NULL
+ * @details   Use this function when disabling interrupts from within the callback function generated at DMAC
+ *            transfer-end.
+ * @note      Do not use this function for software transfers or DTC transfers. Doing so could disrupt the transfer.
+ */
 rspi_err_t R_RSPI_IntSptiIerClear(rspi_handle_t handle)
 {
     uint8_t channel = handle->channel;
@@ -1058,15 +1093,20 @@ rspi_err_t R_RSPI_IntSptiIerClear(rspi_handle_t handle)
 }
 
 
-/*******************************************************************************
-* Function Name: R_RSPI_IntSpriIerClear
-* Description  : Clears the ICU.IERm.IENj bit of SPRI to 0.
-* Arguments    : handle -
-*                    handle for the channel
-* Return Value : RSPI_SUCCESS
-*                RSPI_ERR_NULL_PTR-
-*                   A required pointer argument is NULL
-*******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_RSPI_IntSpriIerClear()
+ *****************************************************************************************************************/ /**
+ * @brief     This function is used to clear the ICU.IERm.IENj bit of the receive buffer-full interrupt (SPRI).
+ * @param[in] handle
+ *            RSPI handle number
+ * @retval    RSPI_SUCCESS
+ *             Successful operation.
+ * @retval    RSPI_ERR_NULL_PTR
+ *             A required pointer argument is NULL
+ * @details   Use this function when disabling interrupts from within the callback function generated at DMAC
+ *            transfer-end.
+ * @note      Do not use this function for software transfers or DTC transfers. Doing so could disrupt the transfer.
+ */
 rspi_err_t R_RSPI_IntSpriIerClear(rspi_handle_t handle)
 {
     uint8_t channel = handle->channel;
@@ -1120,75 +1160,6 @@ rspi_err_t R_RSPI_IntSpriIerClear(rspi_handle_t handle)
             /* Should never get here. Valid channel number is checked above. */
         break;
     }
-
-    return RSPI_SUCCESS;
-}
-
-
-/*******************************************************************************
-* Function Name: R_RSPI_IntSptiDmacdtcFlagSet
-* Description  : Sets a DMAC or DTC transfer end flag for SPTI.
-* Arguments    : handle -
-*                    handle for the channel
-* Return Value : RSPI_SUCCESS -
-*                    Successful operation
-*                RSPI_ERR_INVALID_ARG -
-*                    Parameter error
-*                RSPI_ERR_NULL_PTR-
-*                   A required pointer argument is NULL
-*******************************************************************************/
-rspi_err_t R_RSPI_IntSptiDmacdtcFlagSet(rspi_handle_t handle, rspi_trans_flg_t flg)
-{
-
-    #if RSPI_CFG_PARAM_CHECKING_ENABLE == 1
-    if ( NULL == handle )
-    {
-        R_RSPI_LOG_FUNC(RSPI_DEBUG_ERR_ID, (uint32_t)RSPI_STR, __LINE__);
-        return RSPI_ERR_NULL_PTR;
-    }
-    #endif
-
-
-    if ((RSPI_SET_TRANS_STOP != flg) && (RSPI_SET_TRANS_START != flg))
-    {
-        return RSPI_ERR_INVALID_ARG;
-    }
-
-    handle->spti_dmacdtc_flg = flg;
-
-    return RSPI_SUCCESS;
-}
-
-
-/*******************************************************************************
-* Function Name: R_RSPI_IntSpriDmacdtcFlagSet
-* Description  : Sets DMAC/DTC transfer end flag for SPRI.
-* Arguments    : handle -
-*                    handle for the channel
-* Return Value : RSPI_SUCCESS -
-*                    Successful operation
-*                RSPI_ERR_INVALID_ARG -
-*                    Parameter error
-*                RSPI_ERR_NULL_PTR-
-*                   A required pointer argument is NULL
-*******************************************************************************/
-rspi_err_t R_RSPI_IntSpriDmacdtcFlagSet(rspi_handle_t handle, rspi_trans_flg_t flg)
-{
-
-    #if RSPI_CFG_PARAM_CHECKING_ENABLE == 1
-    if ( NULL == handle )
-    {
-        R_RSPI_LOG_FUNC(RSPI_DEBUG_ERR_ID, (uint32_t)RSPI_STR, __LINE__);
-        return RSPI_ERR_NULL_PTR;
-    }
-    #endif
-
-    if ((RSPI_SET_TRANS_STOP != flg) && (RSPI_SET_TRANS_START != flg))
-    {
-        return RSPI_ERR_INVALID_ARG;
-    }
-
-    handle->spri_dmacdtc_flg = flg;
 
     return RSPI_SUCCESS;
 }
@@ -1261,22 +1232,23 @@ static rspi_err_t r_rspi_ch_check(uint8_t channel)
 }
 
 
-/*******************************************************************************
-* Function Name: R_RSPI_GetBuffRegAddress
-* Description  : Gets address of RSPI data register (SPDR).
-*              : Use the address of RSPI data register to set the transfer source
-*              : register or transfer destination register in DMAC or DTC.
-* Arguments    : handle -
-*                    handle for the channel
-*                p_spdr_adr -
-*                    Address of RSPI data register (SPDR)
-* Return Value : RSPI_SUCCESS -
-*                    Successful operation
-*                RSPI_ERR_INVALID_ARG -
-*                    Parameter error
-*                RSPI_ERR_NULL_PTR-
-*                   A required pointer argument is NULL
-*******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_RSPI_GetBuffRegAddress()
+ *****************************************************************************************************************/ /**
+ * @brief     This function is used to fetch the address of the RSPI data register (SPDR).
+ * @param[in] handle
+ *            RSPI handle number
+ * @param[out] *p_spdr_adr
+ *            The pointer for storing the address of SPDR. Set this to the address of the storage destination.
+ * @retval    RSPI_SUCCESS
+ *             Successful operation.
+ * @retval    RSPI_ERR_INVALID_ARG
+ *             Argument is not valid for parameter.
+ * @retval    RSPI_ERR_NULL_PTR
+ *             A required pointer argument is NULL
+ * @details   Use this function when setting the DMAC/DTC transfer destination/transfer source address, etc.
+ * @note      None.
+ */
 rspi_err_t R_RSPI_GetBuffRegAddress(rspi_handle_t handle, uint32_t *p_spdr_adr)
 {
     rspi_err_t ret = RSPI_SUCCESS;
@@ -1310,18 +1282,24 @@ rspi_err_t R_RSPI_GetBuffRegAddress(rspi_handle_t handle, uint32_t *p_spdr_adr)
 }
 
 
-/***********************************************************************************************************************
-* Function Name: R_RSPI_Close
-* Description  : Removes power to the RSPI channel designated by the handle and disables the associated interrupts.
-* Arguments    : handle-
-*                    Handle for the channel
-* Return Value : RSPI_SUCCESS-
-*                    Successful; channel closed
-*                RSPI_ERR_CH_NOT_OPENED-
-*                    The channel has not been opened so closing has no effect.
-*                RSPI_ERR_NULL_PTR-
-*                    A required pointer argument is NULL
-***********************************************************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_RSPI_Close()
+ *****************************************************************************************************************/ /**
+ * @brief     Fully disables the RSPI channel designated by the handle.
+ * @param[in] handle
+ *            RSPI handle number
+ * @retval    RSPI_SUCCESS
+ *             Successful : channel closed
+ * @retval    RSPI_ERR_CH_NOT_OPENED
+ *             The channel has not been opened so closing has no effect.
+ * @retval    RSPI_ERR_NULL_PTR
+ *             A required pointer argument is NULL
+ * @details   This disables the RSPI channel designated by the handle. The RSPI handle is modified to indicate that it
+ *            is no longer in the 'open' state. The RSPI channel cannot be used again until it has been reopened with
+ *            the R_RSPI_Open function. If this function is called for an RSPI that is not in the open state then an
+ *            error code is returned.
+ * @note      None.
+ */
 rspi_err_t  R_RSPI_Close(rspi_handle_t handle)
 {
     uint8_t channel;
@@ -1386,7 +1364,8 @@ static uint32_t rspi_baud_set(uint8_t channel, uint32_t bps_target)
      * PCLKB matches the functionality of PCLK in RX62x devices as far as the RSPI is concerned. */
     #if defined(BSP_MCU_RX62_ALL)
         f = BSP_PCLK_HZ;
-    #elif defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) ||defined (BSP_MCU_RX65N) ||defined (BSP_MCU_RX66T) || defined (BSP_MCU_RX72T) || defined (BSP_MCU_RX72M)
+    #elif defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) ||defined (BSP_MCU_RX65N) ||defined (BSP_MCU_RX66T) || \
+          defined (BSP_MCU_RX72T) || defined (BSP_MCU_RX72M) || defined (BSP_MCU_RX72N) || defined (BSP_MCU_RX66N)
         f = BSP_PCLKA_HZ;
     #else
         f = BSP_PCLKB_HZ;
@@ -1526,13 +1505,28 @@ static uint8_t rspi_get_data_type(rspi_command_word_t command_word)
 ***********************************************************************************************************************/
 static void power_on_off (uint8_t channel, uint8_t on_or_off)
 {
+    #if (RSPI_CFG_USE_CHAN0 == 1) || (RSPI_CFG_USE_CHAN1 == 1) || (RSPI_CFG_USE_CHAN2 == 1)
+    #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+    #endif
+    #endif
+
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
 
     switch (channel)
     {
         #if RSPI_CFG_USE_CHAN0 == 1
         case 0:
+            #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+            #endif
+
             MSTP(RSPI0) = on_or_off;
+
+            #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+            #endif
+
             if (0 == MSTP(RSPI0))
             {
                 R_BSP_NOP();
@@ -1542,7 +1536,16 @@ static void power_on_off (uint8_t channel, uint8_t on_or_off)
 
         #if RSPI_CFG_USE_CHAN1 == 1
         case 1:
+            #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+            #endif
+
             MSTP(RSPI1) = on_or_off;
+
+            #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+            #endif
+
             if (0 == MSTP(RSPI1))
             {
                 R_BSP_NOP();
@@ -1552,7 +1555,16 @@ static void power_on_off (uint8_t channel, uint8_t on_or_off)
 
         #if RSPI_CFG_USE_CHAN2 == 1
         case 2:
+            #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+            #endif
+
             MSTP(RSPI2) = on_or_off;
+
+            #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+            #endif
+
             if (0 == MSTP(RSPI2))
             {
                 R_BSP_NOP();
@@ -1580,7 +1592,8 @@ static void power_on_off (uint8_t channel, uint8_t on_or_off)
 ***********************************************************************************************************************/
 static void rspi_ir_priority_set(uint8_t channel, uint8_t rspi_priority)
 {
-    #if defined BSP_MCU_RX64M || defined BSP_MCU_RX71M || defined BSP_MCU_RX65N || defined BSP_MCU_RX66T || defined BSP_MCU_RX72T || defined BSP_MCU_RX72M
+    #if defined BSP_MCU_RX64M || defined BSP_MCU_RX71M || defined BSP_MCU_RX65N || defined BSP_MCU_RX66T || \
+        defined BSP_MCU_RX72T || defined BSP_MCU_RX72M || defined BSP_MCU_RX72N || defined BSP_MCU_RX66N
     bsp_int_ctrl_t int_ctrl_data;
     int_ctrl_data.ipl = (uint32_t)rspi_priority;
     #endif
@@ -1591,7 +1604,8 @@ static void rspi_ir_priority_set(uint8_t channel, uint8_t rspi_priority)
         case 0:
             IPR(RSPI0, SPRI0) = rspi_priority; // One priority register for all RSPI interrupts (exc RX64M).
              /* RX64M has individual RSPI interrupt priority registers. Set the rest of them */
-            #if defined BSP_MCU_RX64M || defined BSP_MCU_RX71M || defined BSP_MCU_RX65N || defined BSP_MCU_RX66T || defined BSP_MCU_RX72T || defined BSP_MCU_RX72M
+            #if defined BSP_MCU_RX64M || defined BSP_MCU_RX71M || defined BSP_MCU_RX65N || defined BSP_MCU_RX66T || \
+                defined BSP_MCU_RX72T || defined BSP_MCU_RX72M || defined BSP_MCU_RX72N || defined BSP_MCU_RX66N
             IPR(RSPI0, SPTI0) = rspi_priority;
             /* Enable the group interrupt for the SPEI0 interrupt. (sets priority also). */
             R_BSP_InterruptControl(BSP_INT_SRC_AL0_RSPI0_SPEI0, BSP_INT_CMD_GROUP_INTERRUPT_ENABLE, &int_ctrl_data);
@@ -1608,7 +1622,8 @@ static void rspi_ir_priority_set(uint8_t channel, uint8_t rspi_priority)
         case 1:
             IPR(RSPI1, SPRI1) = rspi_priority;
             /* RX71M has individual RSPI interrupt priority registers. Set the rest of them */
-            #if defined BSP_MCU_RX71M || defined BSP_MCU_RX65N || defined BSP_MCU_RX72M
+            #if defined BSP_MCU_RX71M || defined BSP_MCU_RX65N || defined BSP_MCU_RX72M || defined BSP_MCU_RX72N || \
+                defined BSP_MCU_RX66N
             IPR(RSPI1, SPTI1) = rspi_priority;
             /* Enable the group interrupt for the SPEI1 interrupt. (sets priority also). */
             R_BSP_InterruptControl(BSP_INT_SRC_AL0_RSPI1_SPEI1, BSP_INT_CMD_GROUP_INTERRUPT_ENABLE, &int_ctrl_data);
@@ -1624,7 +1639,7 @@ static void rspi_ir_priority_set(uint8_t channel, uint8_t rspi_priority)
         #if RSPI_CFG_USE_CHAN2 == 1
         case 2:
             IPR(RSPI2, SPRI2) = rspi_priority;
-            #if defined BSP_MCU_RX65N || defined BSP_MCU_RX72M
+            #if defined BSP_MCU_RX65N || defined BSP_MCU_RX72M || defined BSP_MCU_RX72N || defined BSP_MCU_RX66N
             IPR(RSPI2, SPTI2) = rspi_priority;
             /* Enable the group interrupt for the SPEI2 interrupt. (sets priority also). */
             R_BSP_InterruptControl(BSP_INT_SRC_AL0_RSPI2_SPEI2, BSP_INT_CMD_GROUP_INTERRUPT_ENABLE, &int_ctrl_data);
@@ -1667,8 +1682,12 @@ static void rspi_interrupts_clear(uint8_t channel)
             #ifndef BSP_MCU_RX66T
             #ifndef BSP_MCU_RX72T
             #ifndef BSP_MCU_RX72M
+            #ifndef BSP_MCU_RX72N
+            #ifndef BSP_MCU_RX66N
             /* Clear any pending error interrupt */
             IR(RSPI0, SPEI0) = 0;
+            #endif
+            #endif
             #endif
             #endif
             #endif
@@ -1695,8 +1714,12 @@ static void rspi_interrupts_clear(uint8_t channel)
             #ifndef BSP_MCU_RX71M
             #ifndef BSP_MCU_RX65N
             #ifndef BSP_MCU_RX72M
+            #ifndef BSP_MCU_RX72N
+            #ifndef BSP_MCU_RX66N
             /* Clear any pending error interrupt */
             IR(RSPI1, SPEI1) = 0;
+            #endif
+            #endif
             #endif
             #endif
             #endif
@@ -1718,7 +1741,11 @@ static void rspi_interrupts_clear(uint8_t channel)
             #ifndef BSP_MCU_RX63_ALL
             #ifndef BSP_MCU_RX65N
             #ifndef BSP_MCU_RX72M
+            #ifndef BSP_MCU_RX72N
+            #ifndef BSP_MCU_RX66N
             IR(RSPI2, SPEI2) = 0;
+            #endif
+            #endif
             #endif
             #endif
             #endif
@@ -1756,6 +1783,12 @@ static void rspi_interrupts_clear(uint8_t channel)
 ***********************************************************************************************************************/
 static void rspi_interrupts_enable(uint8_t channel, bool enabled)
 {
+    #if (RSPI_CFG_USE_CHAN0 == 1) || (RSPI_CFG_USE_CHAN1 == 1) || (RSPI_CFG_USE_CHAN2 == 1)
+    #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+    #endif
+    #endif
+
     switch (channel)
     {
         #if RSPI_CFG_USE_CHAN0 == 1
@@ -1786,6 +1819,8 @@ static void rspi_interrupts_enable(uint8_t channel, bool enabled)
             #ifndef BSP_MCU_RX66T
             #ifndef BSP_MCU_RX72T
             #ifndef BSP_MCU_RX72M
+            #ifndef BSP_MCU_RX72N
+            #ifndef BSP_MCU_RX66N
             /* Disable or enable error interrupt */
             if (enabled)
             {
@@ -1802,19 +1837,32 @@ static void rspi_interrupts_enable(uint8_t channel, bool enabled)
             #endif
             #endif
             #endif
+            #endif
+            #endif
 
             if (0 == IEN(RSPI0, SPTI0))
             {
                 R_BSP_NOP();
             }
             
-            #if defined BSP_MCU_RX64M || defined BSP_MCU_RX71M || defined BSP_MCU_RX65N || defined BSP_MCU_RX66T || defined BSP_MCU_RX72T || defined BSP_MCU_RX72M
+            #if defined BSP_MCU_RX64M || defined BSP_MCU_RX71M || defined BSP_MCU_RX65N || defined BSP_MCU_RX66T || \
+                defined BSP_MCU_RX72T || defined BSP_MCU_RX72M || defined BSP_MCU_RX72N || defined BSP_MCU_RX66N
             if (enabled)
             {
                 /* Register the error callback function with the BSP group interrupt handler. */
                 R_BSP_InterruptWrite(BSP_INT_SRC_AL0_RSPI0_SPEI0, (bsp_int_cb_t)rspi_spei_grp_isr);
+
+                #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+                    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+                #endif
+
                 /* Enable error interrupt source bit */
                 ICU.GENAL0.BIT.EN17 = 1;
+
+                #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+                    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+                #endif
+
                 if (0 == ICU.GENAL0.BIT.EN17)
                 {
                     R_BSP_NOP();
@@ -1825,7 +1873,16 @@ static void rspi_interrupts_enable(uint8_t channel, bool enabled)
                 /* De-register the error callback function with the BSP group interrupt handler. */
                 R_BSP_InterruptWrite(BSP_INT_SRC_AL0_RSPI0_SPEI0, FIT_NO_FUNC);
                 /* Disable error interrupt source bit */
+                
+                #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+                    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+                #endif
+
                 ICU.GENAL0.BIT.EN17 = 0;
+
+                #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+                    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+                #endif
                 if (0 == ICU.GENAL0.BIT.EN17)
                 {
                     R_BSP_NOP();
@@ -1852,6 +1909,8 @@ static void rspi_interrupts_enable(uint8_t channel, bool enabled)
             #ifndef BSP_MCU_RX71M
             #ifndef BSP_MCU_RX65N
             #ifndef BSP_MCU_RX72M
+            #ifndef BSP_MCU_RX72N
+            #ifndef BSP_MCU_RX66N
             /* Disable or enable error interrupt */
             if (enabled)
             {
@@ -1866,19 +1925,32 @@ static void rspi_interrupts_enable(uint8_t channel, bool enabled)
             #endif
             #endif
             #endif
+            #endif
+            #endif
 
             if (0 == IEN(RSPI1, SPTI1))
             {
                 R_BSP_NOP();
             }
 
-            #if defined BSP_MCU_RX64M || defined BSP_MCU_RX71M || defined BSP_MCU_RX65N || defined BSP_MCU_RX72M
+            #if defined BSP_MCU_RX64M || defined BSP_MCU_RX71M || defined BSP_MCU_RX65N || defined BSP_MCU_RX72M || \
+                defined BSP_MCU_RX72N || defined BSP_MCU_RX66N
             if (enabled)
             {
                 /* Register the error callback function with the BSP group interrupt handler. */
                 R_BSP_InterruptWrite(BSP_INT_SRC_AL0_RSPI1_SPEI1, (bsp_int_cb_t)rspi_spei_grp_isr);
                 /* Enable error interrupt source bit */
+
+                #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+                R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+                #endif
+
                 ICU.GENAL0.BIT.EN19 = 1;
+
+                #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+                R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+                #endif
+
                 if (0 == ICU.GENAL0.BIT.EN19)
                 {
                     R_BSP_NOP();
@@ -1889,7 +1961,17 @@ static void rspi_interrupts_enable(uint8_t channel, bool enabled)
                 /* De-register the error callback function with the BSP group interrupt handler. */
                 R_BSP_InterruptWrite(BSP_INT_SRC_AL0_RSPI1_SPEI1, FIT_NO_FUNC);
                 /* Disable error interrupt source bit */
+
+                #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+                R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+                #endif
+
                 ICU.GENAL0.BIT.EN19 = 0;
+
+                #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+                R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+                #endif
+
                 if (0 == ICU.GENAL0.BIT.EN19)
                 {
                     R_BSP_NOP();
@@ -1914,6 +1996,8 @@ static void rspi_interrupts_enable(uint8_t channel, bool enabled)
             #ifndef BSP_MCU_RX63_ALL
             #ifndef BSP_MCU_RX65N
             #ifndef BSP_MCU_RX72M
+            #ifndef BSP_MCU_RX72N
+            #ifndef BSP_MCU_RX66N
             if (enabled)
             {
                 R_BSP_InterruptRequestEnable(VECT(RSPI2,SPEI2));
@@ -1925,18 +2009,30 @@ static void rspi_interrupts_enable(uint8_t channel, bool enabled)
             #endif
             #endif
             #endif
+            #endif
+            #endif
             if (0 == IEN(RSPI2, SPTI2))
             {
                 R_BSP_NOP();
             }
 
-            #if defined BSP_MCU_RX65N || defined BSP_MCU_RX72M
+            #if defined BSP_MCU_RX65N || defined BSP_MCU_RX72M || defined BSP_MCU_RX72N || defined BSP_MCU_RX66N
             if (enabled)
             {
                 /* Register the error callback function with the BSP group interrupt handler. */
                 R_BSP_InterruptWrite(BSP_INT_SRC_AL0_RSPI2_SPEI2, (bsp_int_cb_t)rspi_spei_grp_isr);
                 /* Enable error interrupt source bit */
+
+                #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+                R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+                #endif
+                
                 ICU.GENAL0.BIT.EN21 = 1;
+
+                #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+                R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+                #endif
+
                 if (0 == ICU.GENAL0.BIT.EN21)
                 {
                     R_BSP_NOP();
@@ -1947,7 +2043,17 @@ static void rspi_interrupts_enable(uint8_t channel, bool enabled)
                 /* De-register the error callback function with the BSP group interrupt handler. */
                 R_BSP_InterruptWrite(BSP_INT_SRC_AL0_RSPI2_SPEI2, FIT_NO_FUNC);
                 /* Disable error interrupt source bit */
+
+                #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+                R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+                #endif
+
                 ICU.GENAL0.BIT.EN21 = 0;
+
+                #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+                R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+                #endif
+
                 if (0 == ICU.GENAL0.BIT.EN21)
                 {
                     R_BSP_NOP();
@@ -1982,16 +2088,15 @@ static void rspi_interrupts_enable(uint8_t channel, bool enabled)
 /* End of function rspi_interrupts_enable(). */
 
 
-/***********************************************************************************************************************
-* Function Name: R_RSPI_GetVersion
-* Description : Returns the version of this module. The version number is
-* encoded where the top 2 bytes are the major version number and
-* the bottom 2 bytes are the minor version number.
-* For example, Rev 4.25 would be 0x00040019.
-* NOTE: This function is inlined using #pragma inline directive.
-* Arguments : none
-* Return Value : Version Number
-***********************************************************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_RSPI_GetVersion()
+ *****************************************************************************************************************/ /**
+ * @brief     This function returns the driver version number at runtime.
+ * @return    Version number with major and minor version digits packed into a single 32-bit value.
+ * @details   The function returns the version of this module. The version number is encoded such that the top two bytes
+ *            are the major version number and the bottom two bytes are the minor version number.
+ * @note      None.
+ */
 uint32_t R_RSPI_GetVersion(void)
 {
     uint32_t version_number = 0;
@@ -2002,21 +2107,31 @@ uint32_t R_RSPI_GetVersion(void)
     return version_number;
 }
 
-#if RSPI_CFG_LONGQ_ENABLE == 1
-/*******************************************************************************
-* Function Name: R_RSPI_Set_LogHdlAddress
-* Description  : Sets handler address.
-* Arguments    : user_long_que -
-*                    Handler address
-* Return Value : RSPI_SUCCESS -
-*                    Successful operation
-*******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_RSPI_SetLogHdlAddress()
+ *****************************************************************************************************************/ /**
+ * @brief     This function specifies the handler address for the LONGQ FIT module. Call this function when using error
+ *            log acquisition processing.
+ * @param[in] user_long_que
+ *            Specify the handler address of the LONGQ FIT module.
+ * @retval    RSPI_SUCCESS
+ *             Successful operation
+ * @details   The handler address of the LONGQ FIT module is set in the RSPI FIT module.\n
+ *            It uses the LONGQ FIT module to perform preparatory processing for fetching the error log.\n
+ *            Run this processing before calling R_RSPI_Open().
+ * @note      Incorporate the LONGQ FIT module separately. Also, enable the line #define RSPI_CFG_LONGQ_ENABLE in
+ *            r_rspi_rx_config.h.\n
+ *            If RSPI_CFG_LONGQ_ENABLE == 0 and this function is called, this function does nothing.
+ */
 rspi_err_t R_RSPI_SetLogHdlAddress(uint32_t user_long_que)
 {
+#if RSPI_CFG_LONGQ_ENABLE == 1
     p_rspi_long_que = (longq_hdl_t)user_long_que;
+#endif
     return RSPI_SUCCESS;
 }
 
+#if RSPI_CFG_LONGQ_ENABLE == 1
 /*******************************************************************************
 * Function Name: r_rspi_log
 * Description  : Stores error information to LONGQ buffer.
@@ -2057,21 +2172,6 @@ uint32_t r_rspi_log(uint32_t flg, uint32_t fid, uint32_t line)
     return 0;
 }
 #endif
-
-#if RSPI_CFG_LONGQ_ENABLE == 0
-/*******************************************************************************
-* Function Name: R_RSPI_SetLogHdlAddress
-* Description  : Sets handler address.
-* Arguments    : user_long_que -
-*                    Handler address
-* Return Value : RSPI_SUCCESS -
-*                    Successful operation
-*******************************************************************************/
-rspi_err_t R_RSPI_SetLogHdlAddress(uint32_t user_long_que)
-{
-    return RSPI_SUCCESS;
-}
-#endif  /* RSPI_CFG_LONGQ_ENABLE */
 
 /******************************************************************************
 * Function Name:    rspi_tx_common
@@ -2209,7 +2309,6 @@ R_BSP_ATTRIB_STATIC_INTERRUPT void rspi_spri0_isr(void)
     else
     {
         R_RSPI_IntSpriIerClear(&g_rspi_handles[0]);
-        R_RSPI_IntSpriDmacdtcFlagSet(&g_rspi_handles[0], RSPI_SET_TRANS_STOP);
         /* Transfer complete. Call the user callback function passing pointer to the result structure. */
         if ((FIT_NO_FUNC != g_rspi_handles[0].pcallback) && (NULL != g_rspi_handles[0].pcallback))
         {
@@ -2244,7 +2343,6 @@ R_BSP_ATTRIB_STATIC_INTERRUPT void rspi_spri1_isr(void)
     else
     {
         R_RSPI_IntSpriIerClear(&g_rspi_handles[1]);
-        R_RSPI_IntSpriDmacdtcFlagSet(&g_rspi_handles[1], RSPI_SET_TRANS_STOP);
         /* Transfer complete. Call the user callback function passing pointer to the result structure. */
         if ((FIT_NO_FUNC != g_rspi_handles[1].pcallback) && (NULL != g_rspi_handles[1].pcallback))
         {
@@ -2279,7 +2377,6 @@ R_BSP_ATTRIB_STATIC_INTERRUPT void rspi_spri2_isr(void)
     else
     {
         R_RSPI_IntSpriIerClear(&g_rspi_handles[2]);
-        R_RSPI_IntSpriDmacdtcFlagSet(&g_rspi_handles[2], RSPI_SET_TRANS_STOP);
         /* Transfer complete. Call the user callback function passing pointer to the result structure. */
         if ((FIT_NO_FUNC != g_rspi_handles[2].pcallback) && (NULL != g_rspi_handles[2].pcallback))
         {
@@ -2334,7 +2431,6 @@ R_BSP_ATTRIB_STATIC_INTERRUPT void rspi_spti0_isr(void)
     else
     {
         R_RSPI_IntSptiIerClear(&g_rspi_handles[0]);
-        R_RSPI_IntSptiDmacdtcFlagSet(&g_rspi_handles[0], RSPI_SET_TRANS_STOP);
     }
 } /* end rspi_spti0_isr */
 #endif
@@ -2381,7 +2477,6 @@ R_BSP_ATTRIB_STATIC_INTERRUPT void rspi_spti1_isr(void)
     else
     {
         R_RSPI_IntSptiIerClear(&g_rspi_handles[1]);
-        R_RSPI_IntSptiDmacdtcFlagSet(&g_rspi_handles[1], RSPI_SET_TRANS_STOP);
     }
 } /* end rspi_spti1_isr */
 #endif
@@ -2428,7 +2523,6 @@ R_BSP_ATTRIB_STATIC_INTERRUPT void rspi_spti2_isr(void)
     else
     {
         R_RSPI_IntSptiIerClear(&g_rspi_handles[2]);
-        R_RSPI_IntSptiDmacdtcFlagSet(&g_rspi_handles[2], RSPI_SET_TRANS_STOP);
     }
 } /* end rspi_spti2_isr */
 #endif
@@ -2525,6 +2619,8 @@ static void rspi_spei_isr_common(uint8_t channel)
 #ifndef BSP_MCU_RX71M
 #ifndef BSP_MCU_RX72T
 #ifndef BSP_MCU_RX72M
+#ifndef BSP_MCU_RX72N
+#ifndef BSP_MCU_RX66N
     #if RSPI_CFG_USE_CHAN0 == 1
     R_BSP_PRAGMA_STATIC_INTERRUPT(rspi_spei0_isr, VECT(RSPI0, SPEI0))
     R_BSP_ATTRIB_STATIC_INTERRUPT void rspi_spei0_isr(void)
@@ -2548,6 +2644,8 @@ static void rspi_spei_isr_common(uint8_t channel)
         rspi_spei_isr_common(2);
     } /* end rspi_spei2_isr */
     #endif
+#endif
+#endif
 #endif
 #endif
 #endif
@@ -2595,7 +2693,8 @@ static void rspi_spei_isr_common(uint8_t channel)
 static void rspi_spei_grp_isr(void *pdata)
 {
     /* Called from BSP group interrupt handler. */
-    #if defined BSP_MCU_RX64M || defined BSP_MCU_RX71M || defined BSP_MCU_RX65N || defined BSP_MCU_RX66T || defined BSP_MCU_RX72T || defined BSP_MCU_RX72M
+    #if defined BSP_MCU_RX64M || defined BSP_MCU_RX71M || defined BSP_MCU_RX65N || defined BSP_MCU_RX66T || \
+        defined BSP_MCU_RX72T || defined BSP_MCU_RX72M || defined BSP_MCU_RX72N || defined BSP_MCU_RX66N
     #if RSPI_CFG_USE_CHAN0 == 1
     if (IS(RSPI0, SPEI0))
     {
@@ -2604,7 +2703,8 @@ static void rspi_spei_grp_isr(void *pdata)
     #endif
     #endif
 
-    #if defined BSP_MCU_RX71M || defined BSP_MCU_RX65N || defined BSP_MCU_RX72M
+    #if defined BSP_MCU_RX71M || defined BSP_MCU_RX65N || defined BSP_MCU_RX72M || defined BSP_MCU_RX72N || \
+        defined BSP_MCU_RX66N
     #if RSPI_CFG_USE_CHAN1 == 1
     if (IS(RSPI1, SPEI1))
     {
@@ -2613,7 +2713,7 @@ static void rspi_spei_grp_isr(void *pdata)
     #endif
     #endif
     
-    #if defined BSP_MCU_RX65N || defined BSP_MCU_RX72M
+    #if defined BSP_MCU_RX65N || defined BSP_MCU_RX72M || defined BSP_MCU_RX72N || defined BSP_MCU_RX66N
     #if RSPI_CFG_USE_CHAN2 == 1
     if (IS(RSPI2, SPEI2))
     {

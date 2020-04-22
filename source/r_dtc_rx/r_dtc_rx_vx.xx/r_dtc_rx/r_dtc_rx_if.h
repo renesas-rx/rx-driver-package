@@ -49,6 +49,9 @@
 *         : 18.06.2019 3.01    Modified r_dtc_rx_private.h.
 *         : 28.06.2019 3.10    Added support for RX23W.
 *         : 15.08.2019 3.20    Added support for RX72M.
+          : 12.11.2019 3.21    Removed definitions for MTU5 in DTC activation interrupt source for RX23W.
+*         : 25.11.2019 3.30    Added support for RX13T.
+*         : 30.12.2019 3.40    Added support for RX66N, RX72N.
 *******************************************************************************/
 #ifndef DTC_RX_IF_H
 #define DTC_RX_IF_H
@@ -71,7 +74,7 @@ Macro definitions
 
 /* Version Number of API. */
 #define DTC_VERSION_MAJOR  (3)
-#define DTC_VERSION_MINOR  (20)
+#define DTC_VERSION_MINOR  (40)
 
 /*******************************************************************************
 Typedef definitions
@@ -246,11 +249,16 @@ typedef struct st_transfer_data { /* 4 long-words */
     #include ".\src\targets\rx65n\r_dtc_rx_target_if.h"
 #elif defined(BSP_MCU_RX66T)
     #include ".\src\targets\rx66t\r_dtc_rx_target_if.h"
+#elif defined(BSP_MCU_RX66N)
+    #include ".\src\targets\rx66n\r_dtc_rx_target_if.h"
 #elif defined(BSP_MCU_RX23W)
     #include ".\src\targets\rx23w\r_dtc_rx_target_if.h"
 #elif defined(BSP_MCU_RX72M)
     #include ".\src\targets\rx72m\r_dtc_rx_target_if.h"
-
+#elif defined(BSP_MCU_RX13T)
+    #include ".\src\targets\rx13t\r_dtc_rx_target_if.h"
+#elif defined(BSP_MCU_RX72N)
+    #include ".\src\targets\rx72n\r_dtc_rx_target_if.h"
 #else
     #error "This MCU is not supported by the current r_dtc_rx module."
 #endif

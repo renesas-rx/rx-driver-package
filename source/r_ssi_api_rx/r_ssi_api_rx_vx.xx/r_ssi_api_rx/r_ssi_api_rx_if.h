@@ -23,8 +23,7 @@
 *******************************************************************************/
 /******************************************************************************
 * File Name    : r_ssi_api_rx_if.h
-* Version      : 1.24
-* Device       : RX64M, RX71M, RX113, RX231, RX230, RX23W
+* Version      : 2.00
 * Tool-Chain   : RX Family C Compiler
 *                GCC for Renesas RX
 *                IAR C/C++ Compiler for Renesas RX
@@ -39,6 +38,8 @@
 *         : 01.02.2019   1.22      Changed Minor version to 1.22.
 *         : 20.05.2019   1.23      Added support for the GCC and IAR compiler.
 *         : 20.06.2019   1.24      RX23W support added.
+*         : 25.06.2019   2.00      SSIE support added.
+*         : 31.10.2019   2.01      Version number updated.
 *
 ******************************************************************************/
 #ifndef SSI_API_RX_H_
@@ -54,8 +55,8 @@ Includes   <System Includes> , "Project Includes"
 Macro definitions
 ******************************************************************************/
 /* Version Number of API. */
-#define SSI_API_VERSION_MAJOR           (1)
-#define SSI_API_VERSION_MINOR           (24)
+#define SSI_API_VERSION_MAJOR           (2)
+#define SSI_API_VERSION_MINOR           (01)
 
 /******************************************************************************
 Typedef definitions
@@ -63,8 +64,8 @@ Typedef definitions
 /* Channel Number of SSI */
 typedef enum {
     SSI_CH0 = 0,
-#ifdef SSI1
-    SSI_CH1 = 1, /* activates when using MCU with SSI1 */
+#if (defined(SSI1) || defined(SSIE1))
+    SSI_CH1 = 1, /* activates when using MCU with SSI1 or SSIE1 */
 #endif
 } ssi_ch_t;
 

@@ -41,6 +41,10 @@
 *           20.05.2019 4.00    Added support for GNUC and ICCRX.
 *           28.06.2019 4.10    Added support for RX23W.
 *           15.08.2019 4.20    Added support for RX72M.
+*           25.11.2019 4.30    Added support for RX13T.
+*                              Removed support for Generation 1 devices
+*           30.12.2019 4.40    Added support for RX72N, RX66N.
+*                              Added support for RX65N, RX72M Amplifier Stabilization Wait Control.
 ***********************************************************************************************************************/
 #ifndef DAC_RX_IF_H
 #define DAC_RX_IF_H
@@ -61,10 +65,10 @@ Macro definitions
 
 /* Version Number of API. */
 #define DAC_VERSION_MAJOR  (4)
-#define DAC_VERSION_MINOR  (20)
+#define DAC_VERSION_MINOR  (40)
 
 
-#if defined(BSP_MCU_RX23T) || defined(BSP_MCU_RX24T)
+#if defined(BSP_MCU_RX23T) || defined(BSP_MCU_RX24T) || defined(BSP_MCU_RX13T)
 #define DAC_CFG_NUM_CH  (1)
 #else
 #define DAC_CFG_NUM_CH  (2)
@@ -74,7 +78,7 @@ Macro definitions
 Typedef definitions
 ******************************************************************************/
 
-#if defined(BSP_MCU_RX23T) || defined(BSP_MCU_RX24T)
+#if defined(BSP_MCU_RX23T) || defined(BSP_MCU_RX24T) || defined(BSP_MCU_RX13T)
 typedef enum e_dac_ch           // DAC channel numbers
 {
     DAC_CH0    = 0,
@@ -115,7 +119,7 @@ typedef enum e_dac_out_sel_ref
     DAC_OUT_SEL_REF1 = 2,     // Output DA1 channel as Vref
 }dac_out_ref;
 
-#if defined(BSP_MCU_RX111) || defined(BSP_MCU_RX23T) || defined(BSP_MCU_RX24T)
+#if defined(BSP_MCU_RX111) || defined(BSP_MCU_RX23T) || defined(BSP_MCU_RX24T) || defined(BSP_MCU_RX13T)
 typedef struct st_dac_cfg
 {
     bool        fmt_flush_right;
@@ -129,14 +133,8 @@ typedef struct st_dac_cfg
     bool sync_with_adc;
 } dac_cfg_t;
 
-#elif defined(BSP_MCU_RX210)
-typedef struct st_dac_cfg
-{
-    bool        fmt_flush_right;
-    bool        ch_conv_off_when_output_off;
-} dac_cfg_t;
-
-#elif defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX72M)
+#elif defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX72M) \
+ || defined(BSP_MCU_RX72N) || defined(BSP_MCU_RX66N)
 typedef struct st_dac_cfg
 {
     bool        fmt_flush_right;
@@ -144,7 +142,7 @@ typedef struct st_dac_cfg
     uint8_t     sync_unit;                      // 0 or 1
     bool        ch_conv_off_when_output_off;    // applies to both channels
 } dac_cfg_t;
-#elif defined(BSP_MCU_RX66_ALL) || defined(BSP_MCU_RX72T)
+#elif defined(BSP_MCU_RX66T) || defined(BSP_MCU_RX72T)
 typedef struct st_dac_cfg
 {
     bool        fmt_flush_right;
@@ -154,19 +152,11 @@ typedef struct st_dac_cfg
     dac_out_ref out_sel_ref;                    // 1 for output channel 0 as Vref, 2 for output channel 1 as Vref
 } dac_cfg_t;
 
-#elif defined(BSP_MCU_RX130) || defined(BSP_MCU_RX24U)
+#else //defined(BSP_MCU_RX130) || defined(BSP_MCU_RX24U)
 typedef struct st_dac_cfg
 {
     bool        fmt_flush_right;
     bool        sync_with_adc;
-} dac_cfg_t;
-
-#else // RX63N/631
-typedef struct st_dac_cfg
-{
-    bool        fmt_flush_right;
-    bool        sync_with_adc;
-    bool        ch_conv_off_when_output_off;
 } dac_cfg_t;
 #endif
 
@@ -176,9 +166,16 @@ typedef enum e_dac_cmd
 {
     DAC_CMD_OUTPUT_ON,          // Analog output of channel is enabled.
     DAC_CMD_OUTPUT_OFF,         // Analog output of channel is disabled.
-#if defined(BSP_MCU_RX64_ALL) || defined(BSP_MCU_RX71M)
+#if defined(BSP_MCU_RX64_ALL) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX72M) \
+ || defined(BSP_MCU_RX72N) || defined(BSP_MCU_RX66N)
     DAC_CMD_AMP_ON,             // Gain of 1 amplifier. See Electrical
     DAC_CMD_AMP_OFF,            // Characteristics in HW User's Manual
+#if defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX72M) || defined(BSP_MCU_RX72N) || defined(BSP_MCU_RX66N)
+    DAC_CMD_ASW_ON,             // Wait for the channel 0 output buffer amplifier to become stable
+                                //(the pin is Hi-Z).
+    DAC_CMD_ASW_OFF,             // A wait for stabilization of the channel 0 output buffer amplifier is
+                                //released (output is enabled).
+#endif
 #endif
     DAC_CMD_END_ENUM
 } dac_cmd_t;

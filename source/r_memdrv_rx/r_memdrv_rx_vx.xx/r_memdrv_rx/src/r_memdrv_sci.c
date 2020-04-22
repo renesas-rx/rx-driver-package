@@ -24,7 +24,7 @@
 /************************************************************************************************
 * System Name  : MEMDRV software
 * File Name    : r_memdrv_sci.c
-* Version      : 1.01
+* Version      : 1.02
 * Device       : -
 * Abstract     : IO I/F module
 * Tool-Chain   : -
@@ -38,6 +38,7 @@
 *              : 15.12.2018 1.00     Initial Release
 *              : 04.04.2019 1.01     Added support for GNUC and ICCRX.
 *                                    Fixed coding style.
+*              : 22.11.2019 1.02     Modified the interface type of transmit and receive data.
 *************************************************************************************************/
 
 /************************************************************************************************
@@ -48,8 +49,8 @@ Includes <System Includes> , "Project Includes"
 #include "./src/r_memdrv_rx_private.h"           /* MEMDRV driver Private module definitions       */
 
 /* Check driver interface. */
-#if (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) | \
-    (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI)
+#if ((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR == MEMDRV_DRVR_RX_FIT_SCI_SPI)) || \
+    ((MEMDRV_CFG_DEV1_INCLUDED == 1) && (MEMDRV_CFG_DEV1_MODE_DRVR == MEMDRV_DRVR_RX_FIT_SCI_SPI))
 #include "r_pinset.h"
 /************************************************************************************************
 Macro definitions
@@ -59,6 +60,7 @@ Macro definitions
 #define SCI_TIMER_CH_MAX_COUNT           (2)
 #define SCI_TIMER_MIN_TIME               (100)       /* 100ms */
 #define SCI_SECTOR_SIZE                  (512)       /* 1 sector size */
+#define SCI_EXCHG_MAX_COUNT              (65532)
 
 #define SCI_MAX_CHANNELS                 (SCI_NUM_CH)
 /************************************************************************************************
@@ -363,10 +365,33 @@ memdrv_err_t r_memdrv_sci_tx(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 memdrv_err_t r_memdrv_sci_tx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 {
     sci_err_t   ret_drv = SCI_SUCCESS;
-    uint8_t channel = r_memdrv_get_drv_ch(devno);
+    uint8_t     channel = r_memdrv_get_drv_ch(devno);
+    uint32_t    cnt     = p_memdrv_info->cnt;
+    uint32_t    rem_txcnt = cnt / SCI_EXCHG_MAX_COUNT;
+    uint32_t    mod_txcnt = cnt % SCI_EXCHG_MAX_COUNT;
 
     transfer_busy = true;
-    ret_drv = R_SCI_Send(sci_handle, p_memdrv_info->p_data, p_memdrv_info->cnt);
+    /* Turn 32 digits into 16 digits */
+    if (rem_txcnt >= 1)
+    {
+        /* WAIT_LOOP */
+        while(rem_txcnt)
+        {
+            ret_drv = R_SCI_Send(sci_handle, p_memdrv_info->p_data, SCI_EXCHG_MAX_COUNT);
+            if (MEMDRV_SUCCESS != ret_drv)
+            {
+                return MEMDRV_ERR_OTHER;
+            }
+            p_memdrv_info->p_data = (uint8_t *)(p_memdrv_info->p_data + SCI_EXCHG_MAX_COUNT);
+            rem_txcnt--;
+        }
+        ret_drv = R_SCI_Send(sci_handle, p_memdrv_info->p_data, mod_txcnt);
+    }
+    else
+    {
+        ret_drv = R_SCI_Send(sci_handle, p_memdrv_info->p_data, cnt);
+    }
+
     if (SCI_SUCCESS != ret_drv)
     {
         R_MEMDRV_Log(MEMDRV_DEBUG_ERR_ID, (uint32_t)MEMDRV_ERR_SUB, __LINE__);
@@ -447,10 +472,32 @@ memdrv_err_t r_memdrv_sci_rx(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 memdrv_err_t r_memdrv_sci_rx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 {
     sci_err_t   ret_drv = SCI_SUCCESS;
-    uint8_t channel = r_memdrv_get_drv_ch(devno);
+    uint8_t     channel = r_memdrv_get_drv_ch(devno);
+    uint32_t    cnt     = p_memdrv_info->cnt;
+    uint32_t    rem_rxcnt = cnt / SCI_EXCHG_MAX_COUNT;
+    uint32_t    mod_rxcnt = cnt % SCI_EXCHG_MAX_COUNT;
     
     transfer_busy = true;
-    ret_drv = R_SCI_Receive(sci_handle, p_memdrv_info->p_data, p_memdrv_info->cnt);
+    /* Turn 32 digits into 16 digits */
+    if (rem_rxcnt >= 1)
+    {
+        /* WAIT_LOOP */
+        while(rem_rxcnt)
+        {
+            ret_drv = R_SCI_Receive(sci_handle, p_memdrv_info->p_data, SCI_EXCHG_MAX_COUNT);
+            if (MEMDRV_SUCCESS != ret_drv)
+            {
+                return MEMDRV_ERR_OTHER;
+            }
+            p_memdrv_info->p_data = (uint8_t *)(p_memdrv_info->p_data + SCI_EXCHG_MAX_COUNT);
+            rem_rxcnt--;
+        }
+        ret_drv = R_SCI_Receive(sci_handle, p_memdrv_info->p_data, mod_rxcnt);
+    }
+    else
+    {
+        ret_drv = R_SCI_Receive(sci_handle, p_memdrv_info->p_data, cnt);
+    }
     if (SCI_SUCCESS != ret_drv)
     {
         R_MEMDRV_Log(MEMDRV_DEBUG_ERR_ID, (uint32_t)MEMDRV_ERR_SUB, __LINE__);
@@ -623,51 +670,74 @@ static void r_memdrv_sci_callback(void *p_data)
 ******************************************************************************/
 static void sci_init_ports(void)
 {
-#if ((MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH0) || \
-    (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH0))
+#if (((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && \
+      (MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH0)) || ((MEMDRV_CFG_DEV1_INCLUDED == 1)      && \
+      (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH0)))
     R_SCI_PinSet_SCI0();
-#elif ((MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH1) || \
-    (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH1))
+#endif
+#if (((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && \
+      (MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH1)) || ((MEMDRV_CFG_DEV1_INCLUDED == 1)      && \
+      (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH1)))
     R_SCI_PinSet_SCI1();
-#elif ((MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH2) || \
-    (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH2))
+#endif
+#if (((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && \
+      (MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH2)) || ((MEMDRV_CFG_DEV1_INCLUDED == 1)      && \
+      (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH2)))
     R_SCI_PinSet_SCI2();
-#elif ((MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH3) || \
-    (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH3))
+#endif
+#if (((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && \
+      (MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH3)) || ((MEMDRV_CFG_DEV1_INCLUDED == 1)      && \
+      (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH3)))
     R_SCI_PinSet_SCI3();
-#elif ((MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH4) || \
-    (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH4))
+#endif
+#if (((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && \
+      (MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH4)) || ((MEMDRV_CFG_DEV1_INCLUDED == 1)      && \
+      (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH4)))
     R_SCI_PinSet_SCI4();
-#elif ((MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH5) || \
-    (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH5))
+#endif
+#if (((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && \
+      (MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH5)) || ((MEMDRV_CFG_DEV1_INCLUDED == 1)      && \
+      (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH5)))
     R_SCI_PinSet_SCI5();
-#elif ((MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH6) || \
-    (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH6))
+#endif
+#if (((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && \
+      (MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH6)) || ((MEMDRV_CFG_DEV1_INCLUDED == 1)      && \
+      (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH6)))
     R_SCI_PinSet_SCI6();
-#elif ((MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH7) || \
-    (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH7))
+#endif
+#if (((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && \
+      (MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH7)) || ((MEMDRV_CFG_DEV1_INCLUDED == 1)      && \
+      (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH7)))
     R_SCI_PinSet_SCI7();
-#elif ((MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH8) || \
-    (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH8))
+#endif
+#if (((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && \
+      (MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH8)) || ((MEMDRV_CFG_DEV1_INCLUDED == 1)      && \
+      (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH8)))
     R_SCI_PinSet_SCI8();
-#elif ((MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH9) || \
-    (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH9))
+#endif
+#if (((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && \
+      (MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH9)) || ((MEMDRV_CFG_DEV1_INCLUDED == 1)      && \
+      (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH9)))
     R_SCI_PinSet_SCI9();
-#elif ((MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH10) || \
-    (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH10))
+#endif
+#if (((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && \
+      (MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH10)) || ((MEMDRV_CFG_DEV1_INCLUDED == 1)     && \
+      (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH10)))
     R_SCI_PinSet_SCI10();
-#elif ((MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH11) || \
-    (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH11))
+#endif
+#if (((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && \
+      (MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH11)) || ((MEMDRV_CFG_DEV1_INCLUDED == 1)     && \
+      (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH11)))
     R_SCI_PinSet_SCI11();
-#elif ((MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH12) || \
-    (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH12))
+#endif
+#if (((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && \
+      (MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH12)) || ((MEMDRV_CFG_DEV1_INCLUDED == 1)     && \
+      (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) && (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH12)))
     R_SCI_PinSet_SCI12();
-#else
-#error "ERROR - SCI do not have this channel."
 #endif
 } /* End of function sci_init_ports() */
 
-#else /* MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI */
+#else
 memdrv_err_t r_memdrv_sci_open(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 {
     R_MEMDRV_Log(MEMDRV_DEBUG_ERR_ID, (uint32_t)MEMDRV_ERR_SUB, __LINE__);
@@ -737,7 +807,7 @@ memdrv_err_t r_memdrv_sci_1ms_interval(void)
     R_MEMDRV_Log(MEMDRV_DEBUG_ERR_ID, (uint32_t)MEMDRV_ERR_SUB, __LINE__);
     return MEMDRV_ERR_OTHER;
 } /* End of function r_memdrv_sci_1ms_interval() */
-#endif  /* (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) |
-           (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) */
+#endif  /* ((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR == MEMDRV_DRVR_RX_FIT_SCI_SPI)) || \
+           ((MEMDRV_CFG_DEV1_INCLUDED == 1) && (MEMDRV_CFG_DEV1_MODE_DRVR == MEMDRV_DRVR_RX_FIT_SCI_SPI))
 
 /* End of File */

@@ -18,8 +18,8 @@
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_ether_rx_private.h
- * Version      : 1.17
- * Device       : RX63N/RX65N/RX64M/RX71M/RX72M
+ * Version      : 1.20
+ * Device       : RX63N/RX65N/RX64M/RX71M/RX72M/RX72N
  * Tool-Chain   : RX Family C Compiler
  * H/W Platform : 
  * Description  : File that defines macro and structure seen only in "r_ether_rx.c" file.
@@ -36,6 +36,9 @@
  *         : 20.05.2019 1.16     Added support for GNUC and ICCRX.
  *                               Fixed coding style.
  *         : 30.07.2019 1.17     Added changes for RX72M.
+ *         : 22.11.2019 1.20     Added changes for RX72N.
+ *         :                     Added changes for RX66N.
+ *         :                     Deleted support for RX63N.
   ***********************************************************************************************************************/
 
 /* Guards against multiple inclusion */
@@ -43,7 +46,8 @@
     #define R_ETHER_PRIVATE_H
 
 /* This checks that the module of the Ethernet is supported to the MCU that has been selected for sure. */
-    #if (defined(BSP_MCU_RX63N) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX72M))
+    #if (defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX72M) || \
+         defined(BSP_MCU_RX72N) || defined(BSP_MCU_RX66N))
 
     #else
         #error "This MCU is not supported by the current r_ether_rx module."
@@ -108,6 +112,29 @@
         #error "ERROR- ETHER_CFG_USE_PHY_KSZ8041NL - use KSZ8041NL is out of range defined in r_ether_rx_config.h."
     #endif
 
+    #if !((ETHER_CFG_NON_BLOCKING == 0) || (ETHER_CFG_NON_BLOCKING == 1))
+        #error "ERROR- ETHER_CFG_NON_BLOCKING - Use Non-Blocking select is out of range defined in r_ether_rx_config.h."
+    #endif
+
+    #if !((ETHER_CFG_PMGI_CLOCK >= 97657) && (ETHER_CFG_PMGI_CLOCK <= 60000000) )
+        #error "ERROR- ETHER_CFG_PMGI_CLOCK - PMGI's MDC clock is out of range defined in r_ether_rx_config.h."
+    #endif
+
+    #if !((ETHER_CFG_PMGI_ENABLE_PREAMBLE == 0) || (ETHER_CFG_PMGI_ENABLE_PREAMBLE == 1))
+        #error "ERROR- ETHER_CFG_PMGI_ENABLE_PREAMBLE - Preamble Control select is out of range defined in r_ether_rx_config.h."
+    #endif
+
+    #if !((ETHER_CFG_PMGI_HOLD_TIME >= 0) && (ETHER_CFG_PMGI_HOLD_TIME <= 7) )
+        #error "ERROR- ETHER_CFG_PMGI_HOLD_TIME - Hold Time Adjustment select is out of range defined in r_ether_rx_config.h."
+    #endif
+
+    #if !((ETHER_CFG_PMGI_CAPTURE_TIME >= 0) && (ETHER_CFG_PMGI_CAPTURE_TIME <= 7) )
+        #error "ERROR- ETHER_CFG_PMGI_CAPTURE_TIME - Capture Time Adjustment select is out of range defined in r_ether_rx_config.h."
+    #endif
+
+    #if !((ETHER_CFG_PMGI_INT_PRIORTY >= 0) && (ETHER_CFG_PMGI_INT_PRIORTY <= 15) )
+        #error "ERROR- ETHER_CFG_PMGI_INT_PRIORTY - PMGI interrupt priority level select is out of range defined in r_ether_rx_config.h."
+    #endif
 /*
  * The total number of EMAC buffers to allocate. The number of
  * total buffers is simply the sum of the number of transmit and

@@ -25,6 +25,7 @@
  *         : 28.11.2016 1.00     First Release
  *         : 20.05.2019 2.41     Added support for GNUC and ICCRX.
  *                               Fixed coding style.
+ *         : 10.10.2019 2.44     Added support for atomic control.
  **********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -374,6 +375,11 @@ void riic_mcu_hardware_unlock (uint8_t channel)
  **********************************************************************************************************************/
 void riic_mcu_power_on (uint8_t channel)
 {
+    #if (1U == RIIC_CFG_CH0_INCLUDED)
+    #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+    #endif
+    #endif
     /* Enable writing to MSTP registers. */
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
 
@@ -382,9 +388,17 @@ void riic_mcu_power_on (uint8_t channel)
     {
     #if (1U == RIIC_CFG_CH0_INCLUDED)
         case 0x00 :
-
+        
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
+        
             /* Bring module out of stop state. */
             MSTP(RIIC0) = 0U;
+        
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
         break;
     #endif
 
@@ -406,6 +420,11 @@ void riic_mcu_power_on (uint8_t channel)
  **********************************************************************************************************************/
 void riic_mcu_power_off (uint8_t channel)
 {
+    #if (1U == RIIC_CFG_CH0_INCLUDED)
+    #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+    #endif
+    #endif
     /* Enable writing to MSTP registers. */
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
 
@@ -414,9 +433,17 @@ void riic_mcu_power_off (uint8_t channel)
     {
     #if (1U == RIIC_CFG_CH0_INCLUDED)
         case 0x00 :
-
+        
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
+        
             /* Put module in stop state. */
             MSTP(RIIC0) = 1U;
+        
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
         break;
     #endif
 

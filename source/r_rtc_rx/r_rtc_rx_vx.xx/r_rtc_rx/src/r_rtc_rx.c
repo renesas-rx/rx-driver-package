@@ -44,6 +44,8 @@
 *                              Fixed coding style. 
 *           20.06.2019 2.76    Added support for RX23W.
 *           30.07.2019 2.77    Added support for RX72M.
+*           22.11.2019 2.78    Added support for RX66N and RX72N.
+*                              Modified comment of API function to Doxygen style.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -81,23 +83,40 @@ const uint8_t g_days_in_month[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30
 
 
 /***********************************************************************************************************************
-* Function Name: R_RTC_Open
-* Description  : Sets the current date/time, starts the counters, and configures the output clock
-*                and periodic interrupt options. This module is locked to avoid re-entrancy issues.
-* Arguments    : p_init
-*                   - pointer to initialization structure
-* Return Value : RTC_SUCCESS
-*                   - RTC successfully initialized
-*                RTC_ERR_ALREADY_OPEN
-*                   - RTC initialized previously
-*                RTC_ERR_MISSING_CALLBACK
-*                   - Periodic interrupts specified but no corresponding callback supplied.
-*                RTC_ERR_BAD_PARAM
-*                   - Missing or invalid parameter
-*                RTC_ERR_TIME_FORMAT
-*                   - A field within p_current has an invalid value
-*                       RTC_SUCCESS = 0,
-***********************************************************************************************************************/
+ * Function Name: R_RTC_Open
+ ******************************************************************************************************************/ /**
+ * @brief This function initializes the RTC, sets the current date/time, configures the relevant interrupt,
+ *        and starts counting.\n The function initializes the RTC FIT module. This function must be called
+ *        before calling any other API functions.
+ * @param[in] p_init
+ *             Pointer to initialization structure.
+ * @param[in] p_current
+ *             Pointer to date/time structure to set current time.
+ * @retval    RTC_SUCCESS 
+ * @retval    RTC_ERR_ALREADY_OPEN     R_RTC_Open has already been called.
+ * @retval    RTC_ERR_BAD_PARAM        Missing or invalid parameter specified
+ * @retval    RTC_ERR_MISSING_CALLBACK Callback function has not been set. 
+ * @retval    RTC_ERR_TIME_FORMAT      Improper time format (field out of range)
+ * @details   This function initializes the RTC and starts the RTC counter.
+ *            The function returns RTC_SUCCESS after the RTC has been initialized and started counting successfully.\n 
+ *            When the "set_time" member of the "rtc_init_t" structure is set to 'true', the RTC is initialized
+ *            and date/time is specified with the "p_current_time" argument. When the "set_time" member is false,
+ *            the "p_current_time" argument is ignored. Normally,
+ *            "true" is set at cold start and "false" at warm start (such as reset).\n 
+ *            The "tm_t" structure which is used for "p_current_time" is defined in the C standard library.
+ *            If the compiler does not support it, the "tm_t" structure defined in the "r_rtc_rx_if.h" file is used.
+ * @note      Before calling this function, start the sub-clock oscillator and wait for oscillation to stabilize.
+ *            For details on oscillating the sub-clock and specifying the oscillation stabilization wait time,
+ *            refer to the User's Manual: Hardware for the MCU used.\n 
+ *            This function must be called regardless of cold start or warm start.\n
+ *            And keep following notes when using clock output.\n
+ *            \li Configure the RTCOUT pin with the application software after initializing clock output 
+ *            with the R_RTC_Open function or R_RTC_Control function.
+ *            \li In warm start mode (rtc_init_t->set_time = false ), configuration of clock output
+ *            by R_RTC_Open function are invalid. To use clock output at warm start, configure clock output
+ *            with the R_RTC_Control function after calling the R_RTC_Open function.
+ *            
+ */
 rtc_err_t R_RTC_Open (rtc_init_t * p_init, tm_t *p_current)
 {
     rtc_err_t err = RTC_SUCCESS;
@@ -343,28 +362,29 @@ End of function leap_year_test
 
 
 /***********************************************************************************************************************
-* Function Name: R_RTC_Control
-* Description  : This function processes a variety of commands including setting alarms, setting output and
-*                periodic interrupt frequencies, starting/stopping counters, and configuring/inspecting/stopping
-*                capture events.
-* Arguments    : cmd
-*                   - command to process
-*                p_argd
-*                   - void pointer to arguments specific to command
-* Return Value : RTC_SUCCESS
-*                   - command executed successfully
-*                RTC_ERR_NOT_OPENED
-*                   - R_RTC_Open() not called yet
-*                RTC_ERR_BAD_PARAM
-*                   - missing, invalid, or unknown argument
-*                RTC_ERR_MISSING_CALLBACK
-*                   - callback function required but not specified
-*                RTC_ERR_NO_CAPTURE
-*                   - a capture event was not detected
-*                RTC_ERR_TIME_FORMAT
-*                   - time structure contains an out-of-range element
-*                       RTC_SUCCESS = 0,
-***********************************************************************************************************************/
+ * Function Name: R_RTC_Control
+ ******************************************************************************************************************/ /**
+ * @brief This function updates the current date/time and the alarm date/time, and configures the time
+ *        capture function (only when available in the MCU) and other settings.
+ * @param[in] cmd
+ *             Command to process
+ * @param[in] p_args
+ *             Pointer to optional argument structure (refer to the Description for each command setting.)
+ * @retval    RTC_SUCCESS 
+ * @retval    RTC_ERR_NOT_OPENED       R_RTC_Open is not called.
+ * @retval    RTC_ERR_BAD_PARAM        Missing or invalid parameter specified
+ * @retval    RTC_ERR_MISSING_CALLBACK Callback function has not been specified. 
+ * @retval    RTC_ERR_TIME_FORMAT      Improper time format (field out of range)
+ * @retval    RTC_ERR_NO_CAPTURE       Time capture event is not detected.
+ * @details   This function updates the current date/time and the alarm date/time, and configures the time
+ *            capture function (only when available in the MCU) and other settings.
+ *            See Section 3.5 in the application note for details.
+ * @note      When using time capture function, the pins to be used must be configured by the application
+ *            software before executing the RTC_CMD_CONFIG_CAPTURE command in the R_RTC_Control function after
+ *            calling the R_RTC_Open function.\n 
+ *            And executing the RTC_CMD_SET_OUTPUT command or the RTC_CMD_SET_CURRENT_TIME command
+ *            stops RTC counting while processing.
+ */
 rtc_err_t R_RTC_Control (rtc_cmd_t cmd, void *p_args)
 {
     rtc_err_t           err=RTC_SUCCESS;
@@ -524,19 +544,26 @@ End of function R_RTC_Control
 
 
 /***********************************************************************************************************************
-* Function Name: R_RTC_Read
-* Description  : This function retrieves the current date/time and alarm date/time.
-* Arguments    : p_current
-*                   - time structure pointer for loading current date/time.
-*                     Specify NULL or FIT_NO_PTR to skip reading the current time.
-*                p_alarm
-*                   - time structure pointer for loading alarm date/time.
-*                     Specify NULL or FIT_NO_PTR to skip reading the alarm time.
-* Return Value : RTC_SUCCESS
-*                   - current date/time, alarm date/time, or both retrieved successfully
-*                RTC_ERR_NOT_OPENED
-*                   - RTC has not been initialized yet
-***********************************************************************************************************************/
+ * Function Name: R_RTC_Read
+ ******************************************************************************************************************/ /**
+ * @brief This function returns the current date/time and the alarm date/time set in the RTC.
+ * @param[out] p_current
+ *             Pointer for loading the current date/time from the RTC. Specify NULL or FIT_NO_PTR to skip
+ *             reading the current date/time.
+ * @param[out] p_alarm
+ *             Pointer for loading the alarm date/time from the RTC. Specify NULL or FIT_NO_PTR to skip
+ *             reading the alarm date/time.
+ * @retval    RTC_SUCCESS 
+ * @retval    RTC_ERR_NOT_OPENED R_RTC_Open is not called.
+ * @details   This function reads the current date/time and the alarm date/time.
+ * @note      To read the current date/time using this function after return from a reset, deep software
+ *            standby mode, software standby mode, or the battery backup state, wait for 1/128 second
+ *            while counting has been started with the condition of (RCR2.START bit = 1).\n 
+ *            When a carry of the RTC counter occurs while reading the current time, this function reads
+ *            the current time again. For checking the carry, the function uses carry interrupt status flag (IR bit).\n 
+ *            For that, it enables carry interrupt (RCR1.CIE bit = 1).  So, do not clear this status flag
+ *            in the application software.
+ */
 rtc_err_t R_RTC_Read (tm_t *p_current, tm_t *p_alarm)
 {
 #if (RTC_CFG_CALCULATE_YDAY == 1)
@@ -601,12 +628,11 @@ End of function R_RTC_Read
 
 
 /***********************************************************************************************************************
-* Function Name: R_RTC_Close
-* Description  : This function stops the counters and disables all RTC interrupts.
-*                The sub-clock is not stopped.
-* Arguments    : None
-* Return Value : None
-***********************************************************************************************************************/
+ * Function Name: R_RTC_Close
+ ******************************************************************************************************************/ /**
+ * @details   This function stops counting, resets the RTC, and disables all RTC interrupts.
+ * @note      None.
+ */
 void R_RTC_Close (void)
 {
 
@@ -632,14 +658,14 @@ End of function R_RTC_Close
 
 
 /***********************************************************************************************************************
-* Function Name: R_RTC_GetVersion
-* Description  : Returns this module's version information.
-*                The version number is encoded where the top 2 bytes are the major version number and the bottom 2 bytes
-*                are the minor version number. For example, Version 4.25 would be returned as 0x00040019.
-*                NOTE: This function is inlined by default.
-* Arguments    : none
-* Return Value : Encoded version number
-***********************************************************************************************************************/
+ * Function Name: R_RTC_GetVersion
+ ******************************************************************************************************************/ /**
+ * @brief This function returns the driver version number at runtime.
+ * @return    Version number.
+ * @details   Returns the version of this module. The top 2 bytes are the major version number and the bottom
+ *            2 bytes are the minor version number.
+ * @note      None.
+ */
 uint32_t R_RTC_GetVersion (void)
 {
     return ((((uint32_t) RTC_RX_VERSION_MAJOR) << 16) | ((uint32_t) RTC_RX_VERSION_MINOR));

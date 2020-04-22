@@ -19,7 +19,7 @@
 /**********************************************************************************************************************
 * System Name  : MMC Driver
 * File Name    : r_mmcif_cd.c
-* Version      : 1.05.00
+* Version      : 1.07.00
 * Device       : RX64M (LQFP-176)
 * Abstract     : API & Sub module
 * Tool-Chain   : For RX64M Group
@@ -34,6 +34,7 @@
 *              : 03.09.2014 1.00    First Release
 *              : 20.05.2019 1.05    Added support for GNUC and ICCRX.
 *                                   Fixed coding style.
+*              : 22.11.2019 1.07    Modified comment of API function to Doxygen style.
 **********************************************************************************************************************/
 
 /**********************************************************************************************************************
@@ -59,19 +60,32 @@ Private global variables and functions
 
 
 /**********************************************************************************************************************
-* Outline      : Set Card Detect Interrupt
-* Function Name: R_MMCIF_Cd_Int
-* Description  : Sets card detection interrupt.
-* Arguments    : uint32_t           channel                 ;   MMC Channel No.
-*              : int32_t            enable                  ;   Card detection interrupt mode
-*              :                                            ;       MMC_CD_INT_ENABLEÅFEnables interrupt.
-*              :                                            ;       MMC_CD_INT_DISABLEÅFDisables interrupt.
-*              : mmc_status_t  (*callback)(int32_t)         ;   Interrupt callback function
-* Return Value : MMC_SUCCESS                                ;   Successful operation
-*              : MMC_ERR                                    ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_MMCIF_Cd_Int
+ *****************************************************************************************************************/ /**
+ * @brief This function sets up the insertion interrupt (including registering the insertion interrupt callback 
+ *        function).
+ * @param[in] channel
+ *             Channel number : The number of the MMCIF channel used (numbering starts at 0)
+ * @param[in] enable
+ *             Specifies enable/disable of the MMC card insertion interrupt.
+ * @param[in] (*callback)(int32_t)
+ *            Callback function to be registered.\n 
+ *            If a null pointer is specified, no callback function is registered. If a callback function is to be used,
+ *            execute this function to register the callback function before an MMC card is inserted.\n 
+ *            The MMC_CD pin detection state is stored in the (int32_t).
+ * @retval    MMC_SUCCESS Successful operation
+ * @retval    MMC_ERR     General error
+ * @details   This function sets up the MMC card insertion interrupt and registers a callback function.\n 
+ *            The callback function registered by this function is called as a subroutine from the interrupt handler 
+ *            when an MMC card insertion interrupt occurs.\n 
+ *            Note that the MMC card insertion state can be verified with the R_MMCIF_Get_CardDetection() function 
+ *            regardless of the enabled/disabled state of the MMC card insertion interrupt.
+ * @note      To enable card detection, set #define MMC_CFG_CHx_CD_ACTIVE to 1.\n 
+ *            Initialization by the R_MMCIF_Open() function is required before this function is executed.\n 
+ *            After this function has been executed, the MMC card insertion interrupt will be caused by an MMC card
+ *            insertion.\n 
+ *            Note that the error code cannot be acquired with the R_MMCIF_Get_ErrCode() function.
+ */
 mmc_status_t R_MMCIF_Cd_Int(uint32_t channel, int32_t enable, mmc_status_t (*callback)(int32_t))
 {
     uint32_t           ul_tmp = 0;
@@ -135,15 +149,33 @@ mmc_status_t R_MMCIF_Cd_Int(uint32_t channel, int32_t enable, mmc_status_t (*cal
 
 
 /**********************************************************************************************************************
-* Outline      : Check Card Insertion
-* Function Name: R_MMCIF_Get_CardDetection
-* Description  : Checks card insertion.
-* Arguments    : uint32_t           channel             ;   MMC Channel No.
-* Return Value : MMC_SUCCESS                            ;   A card is inserted.
-*              : MMC_ERR                                ;   A card is not inserted.
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_MMCIF_Get_CardDetection
+ *****************************************************************************************************************/ /**
+ * @brief This function verifies the MMC Card insertion state.
+ * @param[in] channel
+ *             Channel number : The number of the MMCIF channel used (numbering starts at 0)
+ * @retval    MMC_SUCCESS The MMC_CD pin was at the low level or card detection was invalid.
+ * @retval    MMC_ERR     The MMC_CD pin was at the high level.
+ * @details   This function verifies the MMC card insertion state.\n 
+ *            - When MMC_CFG_CHx_CD_ACTIVE == 1 (card detection enabled)\n
+ *            If the MMC_CD pin is low, this function returns MMC_SUCCESS.\n 
+ *            If the MMC_CD pin is high, this function returns MMC_ERR.\n 
+ *            - When MMC_CFG_CHx_CD_ACTIVE == 0 (card detection disabled)\n
+ *            This function will always return MMC_SUCCESS.
+ * @note      When using the card insertion detection function, pin setting is necessary after this function is 
+ *            executed. See section 4.4 in application note for details. Before running this function, driver open
+ *            processing must be performed by the R_MMCIF_Open() function.\n 
+ *            When using with card removal detection, pin setting is required before this function is executed. 
+ *            See section 4.5 in application note for details.\n 
+ *            The MMC_CD pin, which is connected to the MMC card socket CD pin, is used as the MMC card insertion 
+ *            detection pin.\n 
+ *            In this MMCIF, there is no hardware function to remove the chattering generated when an MMC card is 
+ *            inserted. Users should implement card detection processing that takes chattering into consideration.\n 
+ *            Note that the error code cannot be acquired with the R_MMCIF_Get_ErrCode() function.\n 
+ *            See section 4.6 in application note for MMC_CD pin handling methods.\n 
+ *            After an MMC card has been detected, the processing that provides the power supply voltage to the MMC 
+ *            card must be performed.
+ */
 mmc_status_t R_MMCIF_Get_CardDetection(uint32_t channel)
 {
 #if (BSP_CFG_PARAM_CHECKING_ENABLE)

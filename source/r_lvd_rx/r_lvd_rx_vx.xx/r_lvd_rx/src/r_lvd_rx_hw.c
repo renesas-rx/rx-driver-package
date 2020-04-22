@@ -34,6 +34,9 @@
 *              : 01.02.2019 2.50     Added support for RX72T, RX65N-64pin
 *              : 20.05.2019 3.00     Added support for GNUC and ICCRX.
 *              : 28.06.2019 3.10     Added support for RX23W.
+*              : 30.12.2019 3.40     Added support RX66N, RX72N.
+                                     Fixed Bit Operation on LVD1CR0, LVD2CR0.
+                                     Added macro LVD_GROUP_INT_ICUD.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -429,14 +432,14 @@ void lvd_hw_clear_lvd_status(lvd_channel_t ch)
 #ifndef  BSP_MCU_RX23W
     else
     {
-			/* Set LVD2DET to 0 */
-			SYSTEM.LVD2SR.BIT.LVD2DET = 0;
+            /* Set LVD2DET to 0 */
+            SYSTEM.LVD2SR.BIT.LVD2DET = 0;
 
-			/* Wait for a value to be reflected to a register. */
-			dummy_read = SYSTEM.LVD2SR.BIT.LVD2DET;
+            /* Wait for a value to be reflected to a register. */
+            dummy_read = SYSTEM.LVD2SR.BIT.LVD2DET;
 
-			/* Wait for PCLKB 2cycles time. */
-			dummy_read = SYSTEM.LVDLVLR.BYTE;
+            /* Wait for PCLKB 2cycles time. */
+            dummy_read = SYSTEM.LVDLVLR.BYTE;
     }
 #endif
 
@@ -479,24 +482,24 @@ void lvd_hw_get_lvd_status(lvd_channel_t ch, lvd_status_position_t *p_pos, lvd_s
     else
     {
 
-	/* Check LVD2DET = 0 */
-	if (0 == SYSTEM.LVD2SR.BIT.LVD2DET)
-	{
-		*p_cross = LVD_STATUS_CROSS_NONE;
-	}
-	else
-	{
-		*p_cross = LVD_STATUS_CROSS_OVER;
-	}
-	/* Check LVD2MON = 0 */
-	if (0 == SYSTEM.LVD2SR.BIT.LVD2MON)
-	{
-		*p_pos = LVD_STATUS_POSITION_BELOW;
-	}
-	else
-	{
-		*p_pos = LVD_STATUS_POSITION_ABOVE;
-	}
+    /* Check LVD2DET = 0 */
+    if (0 == SYSTEM.LVD2SR.BIT.LVD2DET)
+    {
+        *p_cross = LVD_STATUS_CROSS_NONE;
+    }
+    else
+    {
+        *p_cross = LVD_STATUS_CROSS_OVER;
+    }
+    /* Check LVD2MON = 0 */
+    if (0 == SYSTEM.LVD2SR.BIT.LVD2MON)
+    {
+        *p_pos = LVD_STATUS_POSITION_BELOW;
+    }
+    else
+    {
+        *p_pos = LVD_STATUS_POSITION_ABOVE;
+    }
     }
 #endif
     
@@ -652,7 +655,7 @@ void lvd_hw_select_reset(lvd_channel_t ch)
 #if ((LVD_ENABLE == LVD_SUPPORT_MI_CH1)||\
      (LVD_ENABLE == LVD_SUPPORT_NMI_CH1))
         /* Set LVD1RI */
-        SYSTEM.LVD1CR0.BIT.LVD1RI = 1;
+        SYSTEM.LVD1CR0.BYTE = (SYSTEM.LVD1CR0.BYTE & 0xF7U) | 0x40U;
 #endif
     }
 #ifndef  BSP_MCU_RX23W
@@ -661,7 +664,7 @@ void lvd_hw_select_reset(lvd_channel_t ch)
 #if ((LVD_ENABLE == LVD_SUPPORT_MI_CH2)||\
      (LVD_ENABLE == LVD_SUPPORT_NMI_CH2))
         /* Set LVD2RI */
-        SYSTEM.LVD2CR0.BIT.LVD2RI = 1;
+        SYSTEM.LVD2CR0.BYTE = (SYSTEM.LVD2CR0.BYTE & 0xF7U) | 0x40U;
 #endif
     }
 #endif
@@ -684,29 +687,29 @@ void lvd_hw_setup_reset(lvd_channel_t ch, uint16_t lvd_reset_negate)
         if (LVD_STAB_RECOVARY == lvd_reset_negate)
         {
             /* Set LVD1RN */
-            SYSTEM.LVD1CR0.BIT.LVD1RN = 0;
+            SYSTEM.LVD1CR0.BYTE = SYSTEM.LVD1CR0.BYTE & 0x77U;
         }
         else
         {
             /* Set LVD1RN */
-            SYSTEM.LVD1CR0.BIT.LVD1RN = 1;
+            SYSTEM.LVD1CR0.BYTE = (SYSTEM.LVD1CR0.BYTE & 0xF7U) | 0x80U;
         }
     }
-	#ifndef  BSP_MCU_RX23W
-		else
-		{
-			if (LVD_STAB_RECOVARY == lvd_reset_negate)
-			{
-				/* Set LVD2RN */
-				SYSTEM.LVD2CR0.BIT.LVD2RN = 0;
-			}
-			else
-			{
-				/* Set LVD2RN */
-				SYSTEM.LVD2CR0.BIT.LVD2RN = 1;
-			}
-		}
-	#endif
+    #ifndef  BSP_MCU_RX23W
+        else
+        {
+            if (LVD_STAB_RECOVARY == lvd_reset_negate)
+            {
+                /* Set LVD2RN */
+                SYSTEM.LVD2CR0.BYTE = SYSTEM.LVD2CR0.BYTE & 0x77U;
+            }
+            else
+            {
+                /* Set LVD2RN */
+                SYSTEM.LVD2CR0.BYTE = (SYSTEM.LVD2CR0.BYTE & 0xF7U) | 0x80U;
+            }
+        }
+    #endif
     return ;
 } /* End of function lvd_hw_setup_reset() */
 
@@ -724,7 +727,7 @@ void lvd_hw_select_int(lvd_channel_t ch)
 #if ((LVD_ENABLE == LVD_SUPPORT_MI_CH1)||\
      (LVD_ENABLE == LVD_SUPPORT_NMI_CH1))
         /* Set LVD1RI */
-        SYSTEM.LVD1CR0.BIT.LVD1RI = 0;
+        SYSTEM.LVD1CR0.BYTE = SYSTEM.LVD1CR0.BYTE & 0xB7U;
 #endif
     }
 #ifndef  BSP_MCU_RX23W
@@ -733,7 +736,7 @@ void lvd_hw_select_int(lvd_channel_t ch)
 #if ((LVD_ENABLE == LVD_SUPPORT_MI_CH2)||\
      (LVD_ENABLE == LVD_SUPPORT_NMI_CH2))
         /* Set LVD2RI */
-        SYSTEM.LVD2CR0.BIT.LVD2RI = 0;
+        SYSTEM.LVD2CR0.BYTE = SYSTEM.LVD2CR0.BYTE & 0xB7U;
 #endif
     }
 #endif
@@ -819,7 +822,7 @@ void lvd_hw_setup_dfilter(lvd_channel_t ch, uint16_t clock_value)
         {
 #if (LVD_ENABLE == LVD_SUPPORT_DFILTER_CH1)
             /* Set LVD1FSAMP */
-            SYSTEM.LVD1CR0.BIT.LVD1FSAMP = clock_value;
+            SYSTEM.LVD1CR0.BYTE = (SYSTEM.LVD1CR0.BYTE & 0xC7U) | ((clock_value & 0xFFU) << 4);
 #endif
         }
 #ifndef  BSP_MCU_RX23W
@@ -827,7 +830,7 @@ void lvd_hw_setup_dfilter(lvd_channel_t ch, uint16_t clock_value)
         {
 #if (LVD_ENABLE == LVD_SUPPORT_DFILTER_CH2)
             /* Set LVD2FSAMP */
-            SYSTEM.LVD2CR0.BIT.LVD2FSAMP = clock_value;
+            SYSTEM.LVD2CR0.BYTE = (SYSTEM.LVD2CR0.BYTE & 0xC7U) | ((clock_value & 0xFFU) << 4);
 #endif
         }
 #endif
@@ -858,20 +861,20 @@ void lvd_hw_get_circuit_enable(lvd_channel_t ch, bool *b_penable_flag)
             *b_penable_flag = true;
         }
     }
-	#ifndef  BSP_MCU_RX23W
-		else
-		{
-			/* Check LVD2E */
-			if (0 == SYSTEM.LVCMPCR.BIT.LVD2E)
-			{
-				*b_penable_flag = false;
-			}
-			else
-			{
-				*b_penable_flag = true;
-			}
-		}
-	#endif
+    #ifndef  BSP_MCU_RX23W
+        else
+        {
+            /* Check LVD2E */
+            if (0 == SYSTEM.LVCMPCR.BIT.LVD2E)
+            {
+                *b_penable_flag = false;
+            }
+            else
+            {
+                *b_penable_flag = true;
+            }
+        }
+    #endif
     return ;
 } /* End of function lvd_hw_get_circuit_enable() */
 
@@ -897,20 +900,20 @@ void lvd_hw_get_reset_int_enable(lvd_channel_t ch, bool *b_penable_flag)
             *b_penable_flag = true;
         }
     }
-	#ifndef  BSP_MCU_RX23W
-		else
-		{
-			/* Check LVD2RIE */
-			if (0 == SYSTEM.LVD2CR0.BIT.LVD2RIE)
-			{
-				*b_penable_flag = false;
-			}
-			else
-			{
-				*b_penable_flag = true;
-			}
-		}
-	#endif
+    #ifndef  BSP_MCU_RX23W
+        else
+        {
+            /* Check LVD2RIE */
+            if (0 == SYSTEM.LVD2CR0.BIT.LVD2RIE)
+            {
+                *b_penable_flag = false;
+            }
+            else
+            {
+                *b_penable_flag = true;
+            }
+        }
+    #endif
 
     return ;
 } /* End of function lvd_hw_get_reset_int_enable() */
@@ -976,12 +979,12 @@ void lvd_hw_enable_output(lvd_channel_t ch, bool b_enable_flag)
         if (true == b_enable_flag)
         {
             /* Set LVD1CMPE */
-            SYSTEM.LVD1CR0.BIT.LVD1CMPE = 1;
+            SYSTEM.LVD1CR0.BYTE = (SYSTEM.LVD1CR0.BYTE & 0xF7U) | 0x04U;
         }
         else
         {
             /* Set LVD1CMPE */
-            SYSTEM.LVD1CR0.BIT.LVD1CMPE = 0;
+            SYSTEM.LVD1CR0.BYTE = SYSTEM.LVD1CR0.BYTE & 0xF3U;
         }
     }
 #ifndef  BSP_MCU_RX23W
@@ -990,12 +993,12 @@ void lvd_hw_enable_output(lvd_channel_t ch, bool b_enable_flag)
         if (true == b_enable_flag)
         {
             /* Set LVD2CMPE */
-            SYSTEM.LVD2CR0.BIT.LVD2CMPE = 1;
+            SYSTEM.LVD2CR0.BYTE = (SYSTEM.LVD2CR0.BYTE & 0xF7U) | 0x04U;
         }
         else
         {
             /* Set LVD2CMPE */
-            SYSTEM.LVD2CR0.BIT.LVD2CMPE = 0;
+            SYSTEM.LVD2CR0.BYTE = SYSTEM.LVD2CR0.BYTE & 0xF3U;
         }
     }
 #endif
@@ -1025,21 +1028,21 @@ void lvd_hw_enable_circuit(lvd_channel_t ch, bool b_enable_flag)
             SYSTEM.LVCMPCR.BIT.LVD1E = 0;
         }
     }
-	#ifndef BSP_MCU_RX23W
-		else
-		{
-			if (true == b_enable_flag)
-			{
-				/* Set LVD2E */
-				SYSTEM.LVCMPCR.BIT.LVD2E = 1;
-			}
-			else
-			{
-				/* Set LVD2E */
-				SYSTEM.LVCMPCR.BIT.LVD2E = 0;
-			}
-		}
-	#endif
+    #ifndef BSP_MCU_RX23W
+        else
+        {
+            if (true == b_enable_flag)
+            {
+                /* Set LVD2E */
+                SYSTEM.LVCMPCR.BIT.LVD2E = 1;
+            }
+            else
+            {
+                /* Set LVD2E */
+                SYSTEM.LVCMPCR.BIT.LVD2E = 0;
+            }
+        }
+    #endif
     
     return ;
 } /* End of function lvd_hw_enable_circuit() */
@@ -1059,29 +1062,29 @@ void lvd_hw_enable_reset_int(lvd_channel_t ch, bool b_enable_flag)
         if (true == b_enable_flag)
         {
             /* Set LVD1RIE */
-            SYSTEM.LVD1CR0.BIT.LVD1RIE = 1;
+            SYSTEM.LVD1CR0.BYTE = (SYSTEM.LVD1CR0.BYTE & 0xF7U) | 0x01U;
         }
         else
         {
             /* Set LVD1RIE */
-            SYSTEM.LVD1CR0.BIT.LVD1RIE = 0;
+            SYSTEM.LVD1CR0.BYTE = SYSTEM.LVD1CR0.BYTE & 0xF6U;
         }
     }
-	#ifndef BSP_MCU_RX23W
-		else
-		{
-			if (true == b_enable_flag)
-			{
-				/* Set LVD2RIE */
-				SYSTEM.LVD2CR0.BIT.LVD2RIE = 1;
-			}
-			else
-			{
-				/* Set LVD2RIE */
-				SYSTEM.LVD2CR0.BIT.LVD2RIE = 0;
-			}
-		}
-	#endif
+    #ifndef BSP_MCU_RX23W
+        else
+        {
+            if (true == b_enable_flag)
+            {
+                /* Set LVD2RIE */
+                SYSTEM.LVD2CR0.BYTE = (SYSTEM.LVD2CR0.BYTE & 0xF7U) | 0x01U;
+            }
+            else
+            {
+                /* Set LVD2RIE */
+                SYSTEM.LVD2CR0.BYTE = SYSTEM.LVD2CR0.BYTE & 0xF6U;
+            }
+        }
+    #endif
     
     return ;
 } /* End of function lvd_hw_enable_reset_int() */
@@ -1102,12 +1105,12 @@ void lvd_hw_enable_dfilter(lvd_channel_t ch, bool b_enable_flag)
         if (true == b_enable_flag)
         {
             /* Set LVD1DFDIS */
-            SYSTEM.LVD1CR0.BIT.LVD1DFDIS = 0;
+            SYSTEM.LVD1CR0.BYTE = SYSTEM.LVD1CR0.BYTE & 0xF5U;
         }
         else
         {
             /* Set LVD1DFDIS */
-            SYSTEM.LVD1CR0.BIT.LVD1DFDIS = 1;
+            SYSTEM.LVD1CR0.BYTE = (SYSTEM.LVD1CR0.BYTE & 0xF7U) | 0x02U;
         }
 #endif
     }
@@ -1118,12 +1121,12 @@ void lvd_hw_enable_dfilter(lvd_channel_t ch, bool b_enable_flag)
         if (true == b_enable_flag)
         {
             /* Set LVD2DFDIS */
-            SYSTEM.LVD2CR0.BIT.LVD2DFDIS = 0;
+            SYSTEM.LVD2CR0.BYTE = SYSTEM.LVD2CR0.BYTE & 0xF5U;
         }
         else
         {
             /* Set LVD2DFDIS */
-            SYSTEM.LVD2CR0.BIT.LVD2DFDIS = 1;
+            SYSTEM.LVD2CR0.BYTE = (SYSTEM.LVD2CR0.BYTE & 0xF7U) | 0x02U;
         }
 #endif
     }
@@ -1142,7 +1145,8 @@ void lvd_hw_enable_dfilter(lvd_channel_t ch, bool b_enable_flag)
 * Return Value : none
 ***********************************************************************************************************************/
 #if ((LVD_GROUP_INT_ICUA == LVD_GROUP_INT)||\
-     (LVD_GROUP_INT_ICUB == LVD_GROUP_INT))
+     (LVD_GROUP_INT_ICUB == LVD_GROUP_INT)||\
+     (LVD_GROUP_INT_ICUD == LVD_GROUP_INT))
 void lvd_hw_enable_mi(lvd_channel_t ch, uint16_t prio, bool b_enable_flag)
 {
     if (LVD_CHANNEL_1 == ch)
@@ -1160,7 +1164,7 @@ void lvd_hw_enable_mi(lvd_channel_t ch, uint16_t prio, bool b_enable_flag)
         else
         {
             /* Set IEN to 0 */
-        	R_BSP_InterruptRequestDisable(VECT(LVD1, LVD1));
+            R_BSP_InterruptRequestDisable(VECT(LVD1, LVD1));
         }
 #endif
     }
@@ -1180,7 +1184,7 @@ void lvd_hw_enable_mi(lvd_channel_t ch, uint16_t prio, bool b_enable_flag)
         else
         {
             /* Set IEN to 0 */
-        	R_BSP_InterruptRequestDisable(VECT(LVD2, LVD2));
+            R_BSP_InterruptRequestDisable(VECT(LVD2, LVD2));
         }
 #endif
     }
@@ -1197,7 +1201,7 @@ void lvd_hw_enable_mi(lvd_channel_t ch, uint16_t prio, bool b_enable_flag)
 #if (LVD_ENABLE == LVD_SUPPORT_MI_CH1)
         if (true == b_enable_flag)
         {
-        	/* casting is valid*/
+            /* casting is valid*/
             IR(LVD, LVD1)  = 0;
 
             /* casting is valid*/
@@ -1206,7 +1210,7 @@ void lvd_hw_enable_mi(lvd_channel_t ch, uint16_t prio, bool b_enable_flag)
         }
         else
         {
-        	R_BSP_InterruptRequestDisable(VECT(LVD, LVD1));
+            R_BSP_InterruptRequestDisable(VECT(LVD, LVD1));
         }
 #endif
     }
@@ -1222,7 +1226,7 @@ void lvd_hw_enable_mi(lvd_channel_t ch, uint16_t prio, bool b_enable_flag)
         }
         else
         {
-        	R_BSP_InterruptRequestDisable(VECT(LVD, LVD2));
+            R_BSP_InterruptRequestDisable(VECT(LVD, LVD2));
         }
 #endif
     }
@@ -1487,7 +1491,8 @@ void lvd_hw_wait_delay(uint32_t usec)
 ***********************************************************************************************************************/
 #if (LVD_ENABLE == LVD_SUPPORT_MI_CH1)
 #if ((LVD_GROUP_INT_ICUA == LVD_GROUP_INT)||\
-     (LVD_GROUP_INT_ICUB == LVD_GROUP_INT))
+     (LVD_GROUP_INT_ICUB == LVD_GROUP_INT)||\
+     (LVD_GROUP_INT_ICUD == LVD_GROUP_INT))
 R_BSP_PRAGMA_STATIC_INTERRUPT(lvd_ch1_isr,VECT(LVD1,LVD1))
 #elif (LVD_GROUP_INT_ICUb == LVD_GROUP_INT)
 R_BSP_PRAGMA_STATIC_INTERRUPT(lvd_ch1_isr,VECT(LVD,LVD1))
@@ -1522,7 +1527,8 @@ R_BSP_ATTRIB_STATIC_INTERRUPT void lvd_ch1_isr(void)
 #ifndef  BSP_MCU_RX23W
 #if (LVD_ENABLE == LVD_SUPPORT_MI_CH2)
 #if ((LVD_GROUP_INT_ICUA == LVD_GROUP_INT)||\
-     (LVD_GROUP_INT_ICUB == LVD_GROUP_INT))
+     (LVD_GROUP_INT_ICUB == LVD_GROUP_INT)||\
+     (LVD_GROUP_INT_ICUD == LVD_GROUP_INT))
 R_BSP_PRAGMA_STATIC_INTERRUPT(lvd_ch2_isr,VECT(LVD2,LVD2))
 #elif (LVD_GROUP_INT_ICUb ==LVD_GROUP_INT)
 R_BSP_PRAGMA_STATIC_INTERRUPT(lvd_ch2_isr,VECT(LVD,LVD2))

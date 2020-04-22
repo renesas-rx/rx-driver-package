@@ -33,6 +33,7 @@
 *         : 20.05.2019 2.04    Added support for GNUC and ICCRX.
 *                              Fixed coding style.
 *         : 30.07.2019 2.05    Changed Minor version to 2.05.
+*         : 22.11.2019 2.06    Changed Minor version to 2.06.
 **********************************************************************************************************************/
 
 #ifndef SDHI_RX_H
@@ -55,7 +56,7 @@ Macro definitions
 /* #### SD Memory and common definitions #### */
 /* Version Number of API. */
 #define RX_SDHI_VERSION_MAJOR       (2)
-#define RX_SDHI_VERSION_MINOR       (05)
+#define RX_SDHI_VERSION_MINOR       (06)
 
 /* ==== Select use CBSY bit ==== */
 /*  #define     USE_INFO2_CBSY      */ /* Use SDHI_SDIMSK2_SCLKDIVEN   */

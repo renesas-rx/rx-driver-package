@@ -23,6 +23,11 @@
 /**********************************************************************************************************************
 * History : DD.MM.YYYY Version  Description
 *         : 08.04.2019 1.00     First Release
+*         : 26.07.2019 1.01     Corrected the compile condition of clock setting.
+*         : 08.10.2019 1.02     Deleted setting of the SDCLK Pin Output Control bit.
+*         : 10.12.2019 1.03     Fixed macro name related to BSP_CFG_ESC_CLOCK_SOURCE.
+*         : 17.12.2019 1.04     Fixed warning of clock_source_select function with IAR compiler.
+*         : 14.02.2020 1.05     Fixed warning of clock_source_select function with CCRX and IAR compiler.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -57,23 +62,21 @@ Macro definitions
    If the following conditions are satisfied, HOCO will operate.
    1. System clock source is HOCO.
    2. System clock source is PLL circuit. PLL source is HOCO.
-   3. USB clock source is PPLL circuit. PPLL source is HOCO.
-   4. ESC clock source is PPLL circuit. PPLL source is HOCO.
-   5. PHY clock source is PLL circuit. PLL source is HOCO.
-   6. PHY clock source is PPLL circuit. PPLL source is HOCO.
-   7. Clock output enable and clock output source is HOCO.
-   8. Clock output enable and clock output source is PLL circuit. PLL source is HOCO.
-   9. Clock output enable and clock output source is PPLL circuit. PPLL source is HOCO.
+   3. ESC clock source is PPLL circuit. PPLL source is HOCO.
+   4. PHY clock source is PLL circuit. PLL source is HOCO.
+   5. PHY clock source is PPLL circuit. PPLL source is HOCO.
+   6. Clock output enable and clock output source is HOCO.
+   7. Clock output enable and clock output source is PLL circuit. PLL source is HOCO.
+   8. Clock output enable and clock output source is PPLL circuit. PPLL source is HOCO.
  */
 #if (BSP_CFG_CLOCK_SOURCE == 1) \
      || ((BSP_CFG_CLOCK_SOURCE == 4) && (BSP_CFG_PLL_SRC == 1)) \
-     || ((BSP_CFG_USB_CLOCK_SOURCE == 3) && (BSP_CFG_PLL_SRC == 1)) \
      || ((BSP_CFG_ESC_CLOCK_SOURCE == 1) && (BSP_CFG_PLL_SRC == 1)) \
      || ((BSP_CFG_PHY_CLOCK_SOURCE == 0) && (BSP_CFG_PLL_SRC == 1)) \
      || ((BSP_CFG_PHY_CLOCK_SOURCE == 1) && (BSP_CFG_PLL_SRC == 1)) \
-     || ((BSP_CFG_CLKOUT_SOURCE == 1) && (BSP_CFG_CLKOUT_SOURCE == 1)) \
-     || ((BSP_CFG_CLKOUT_SOURCE == 1) && (BSP_CFG_CLKOUT_SOURCE == 4) && (BSP_CFG_PLL_SRC == 1)) \
-     || ((BSP_CFG_CLKOUT_SOURCE == 1) && (BSP_CFG_CLKOUT_SOURCE == 6) && (BSP_CFG_PLL_SRC == 1))
+     || ((BSP_CFG_CLKOUT_OUTPUT == 1) && (BSP_CFG_CLKOUT_SOURCE == 1)) \
+     || ((BSP_CFG_CLKOUT_OUTPUT == 1) && (BSP_CFG_CLKOUT_SOURCE == 4) && (BSP_CFG_PLL_SRC == 1)) \
+     || ((BSP_CFG_CLKOUT_OUTPUT == 1) && (BSP_CFG_CLKOUT_SOURCE == 6) && (BSP_CFG_PLL_SRC == 1))
     #define BSP_PRV_HOCO_CLK_OPERATING    (1)    /* HOCO is operating. */
 #else
     #define BSP_PRV_HOCO_CLK_OPERATING    (0)    /* HOCO is stopped. */
@@ -361,17 +364,6 @@ static void operating_frequency_set (void)
     #error "Error! Invalid setting for BSP_CFG_BCLK_OUTPUT in r_bsp_config.h"
 #endif
 
-    /* Configure PSTOP0 bit for SDCLK output. */
-#if BSP_CFG_SDCLK_OUTPUT == 0
-    /* Set PSTOP0 bit */
-    tmp_clock |= 0x00400000;
-#elif BSP_CFG_SDCLK_OUTPUT == 1
-    /* Clear PSTOP0 bit */
-    tmp_clock &= ~0x00400000;
-#else
-    #error "Error! Invalid setting for BSP_CFG_SDCLK_OUTPUT in r_bsp_config.h"
-#endif
-
     /* Figure out setting for PCKA bits. */
 #if   BSP_CFG_PCKA_DIV == 1
     /* Do nothing since PCKA bits should be 0. */
@@ -573,7 +565,9 @@ static void clock_source_select (void)
 {
     volatile uint8_t i;
     volatile uint8_t dummy;
-    volatile uint8_t tmp;
+#if (BSP_PRV_SUB_CLK_OPERATING == 1) || (BSP_CFG_RTC_ENABLE == 1)
+    uint8_t tmp;
+#endif
     volatile uint16_t tmp_packcr;
 
     /* Main clock will be not oscillate in software standby or deep software standby modes. */
@@ -1035,7 +1029,7 @@ static void clock_source_select (void)
         R_BSP_NOP();
     }
 
-    #if (BSP_CFG_ESCCLK_SRC == 1) && (BSP_CFG_PPLCK_DIV != 2)
+    #if (BSP_CFG_ESC_CLOCK_SOURCE == 1) && (BSP_CFG_PPLCK_DIV != 2)
         #error "Error! Invalid setting for BSP_CFG_PPLCK_DIV in r_bsp_config.h"
     #else
     /* Set PPLCK Input Divisor. */

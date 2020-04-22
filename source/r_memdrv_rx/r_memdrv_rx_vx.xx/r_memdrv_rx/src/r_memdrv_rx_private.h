@@ -23,7 +23,7 @@
 *************************************************************************************************/
 /************************************************************************************************
 * File Name    : r_memdrv_private.h
-* Version      : 1.00
+* Version      : 1.02
 * Description  : MEMDRV driver private header file
 *************************************************************************************************/
 /************************************************************************************************
@@ -31,32 +31,31 @@
 *              : 15.12.2018 1.00     Initial Release
 *              : 04.04.2019 1.01     Added support for GNUC and ICCRX.
 *                                    Fixed coding style.
+*              : 22.11.2019 1.02     Modified check driver interface.
 *************************************************************************************************/
 
 /************************************************************************************************
 Includes <System Includes> , "Project Includes"
 *************************************************************************************************/
 #include "r_memdrv_rx_config.h"
-#if (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI) | \
-    (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI)
+#if ((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR == MEMDRV_DRVR_RX_FIT_RSPI)) || \
+    ((MEMDRV_CFG_DEV1_INCLUDED == 1) && (MEMDRV_CFG_DEV1_MODE_DRVR == MEMDRV_DRVR_RX_FIT_RSPI))
 #include "r_rspi_rx_if.h"
 #endif
-#if (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_QSPI_SMSTR) | \
-    (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_QSPI_SMSTR)
+#if ((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR == MEMDRV_DRVR_RX_FIT_QSPI_SMSTR)) || \
+    ((MEMDRV_CFG_DEV1_INCLUDED == 1) && (MEMDRV_CFG_DEV1_MODE_DRVR == MEMDRV_DRVR_RX_FIT_QSPI_SMSTR))
 #include "r_qspi_smstr_rx_if.h"
 #endif
-#if (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI) | \
-    (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_SCI_SPI)
+#if ((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR == MEMDRV_DRVR_RX_FIT_SCI_SPI)) || \
+    ((MEMDRV_CFG_DEV1_INCLUDED == 1) && (MEMDRV_CFG_DEV1_MODE_DRVR == MEMDRV_DRVR_RX_FIT_SCI_SPI))
 #include "r_sci_rx_if.h"
 #endif
-#if (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_RX_FIT_SCI_SPI) | \
-    (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_RX_FIT_SCI_SPI)
-#include "r_sci_rx_if.h"
-#endif
-#if (MEMDRV_CFG_DEV0_MODE_TRNS & MEMDRV_TRNS_DMAC) | (MEMDRV_CFG_DEV1_MODE_TRNS & MEMDRV_TRNS_DMAC)
+#if ((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_TRNS == MEMDRV_TRNS_DMAC)) || \
+    ((MEMDRV_CFG_DEV1_INCLUDED == 1) && (MEMDRV_CFG_DEV1_MODE_TRNS == MEMDRV_TRNS_DMAC))
 #include "r_dmaca_rx_if.h"
 #endif
-#if (MEMDRV_CFG_DEV0_MODE_TRNS & MEMDRV_TRNS_DTC)  | (MEMDRV_CFG_DEV1_MODE_TRNS & MEMDRV_TRNS_DTC)
+#if ((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_TRNS == MEMDRV_TRNS_DTC)) || \
+    ((MEMDRV_CFG_DEV1_INCLUDED == 1) && (MEMDRV_CFG_DEV1_MODE_TRNS == MEMDRV_TRNS_DTC))
 #include "r_dtc_rx_if.h"
 #endif
 #if (MEMDRV_CFG_LONGQ_ENABLE == 1)

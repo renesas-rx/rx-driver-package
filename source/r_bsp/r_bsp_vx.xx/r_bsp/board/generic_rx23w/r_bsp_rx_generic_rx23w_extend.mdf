@@ -23,9 +23,9 @@
            This is a description of a sample FIT module configuration file
 ***********************************************************************************************************************/
 -->
-<module xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" schemaVersion="2.0" xs:noNamespaceSchemaLocation="schema_mdf_2.00.xsd">
+<module xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" schemaVersion="2.0" xs:noNamespaceSchemaLocation="schema_mdf_2.11.xsd">
     <fileVersion>1.00</fileVersion>
-    <formatVersion>2.00</formatVersion>
+    <formatVersion>2.11</formatVersion>
     <fileTemplate></fileTemplate>
     <configuration>
         <property id="BSP_CFG_STARTUP_DISABLE" display="Startup select" default="0" type="combobox">
@@ -39,33 +39,36 @@ NOTE: This setting is available only when using CCRX.</description>
             <option id="BSP_CFG_USER_STACK_ENABLE.0" display="1 stack" value="0"/>
             <option id="BSP_CFG_USER_STACK_ENABLE.1" display="2 stacks" value="1"/>
             <description>0 = Use 1 stack. Disable user stack. User stack size set below will be ignored. If 1 stack is chosen, please remove the 'SU' section from the linker sections to remove any linker warnings.
-1 = Use 2 stacks. User stack and interrupt stack will both be used.</description>
+1 = Use 2 stacks. User stack and interrupt stack will both be used.
+NOTE: This setting is available only when using CCRX and GNUC.</description>
         </property>
-        <property id="#pragma stacksize su" display="User stack size" default="0x1000" keyword="    #pragma stacksize su=%s" type="textbox">
-            <constraint display="when Startup select is Use Enable (use BSP startup) only" actionOnFail="disable">${BSP_CFG_STARTUP_DISABLE} == ${BSP_CFG_STARTUP_DISABLE.0}</constraint>
+        <property id="BSP_CFG_USTACK_BYTES" display="User stack size" default="0x1000" type="textbox">
             <constraint display="when User stack setting is 2 stacks only" actionOnFail="disable">${BSP_CFG_USER_STACK_ENABLE} == ${BSP_CFG_USER_STACK_ENABLE.1}</constraint>
-            <constraint display="Value must be an hexadecimal value" actionOnFail="error">testHexInteger("${#pragma stacksize su}")</constraint>
-            <constraint display="Value must be in the range (0x1~RAM capacity)" actionOnFail="error">("${#pragma stacksize su}" &gt;= 1) &amp;&amp; ("${#pragma stacksize su}" &lt;= (${Device.ramSize} * 1024))</constraint>
-            <description>User stack size</description>
+            <constraint display="Value must be an hexadecimal value" actionOnFail="error">testHexInteger("${BSP_CFG_USTACK_BYTES}")</constraint>
+            <constraint display="Value must be in the range (0x1~RAM capacity)" actionOnFail="error">("${BSP_CFG_USTACK_BYTES}" &gt;= 1) &amp;&amp; ("${BSP_CFG_USTACK_BYTES}" &lt;= (${Device.ramSize} * 1024))</constraint>
+            <description>User stack size
+NOTE: This setting is available only when using CCRX and GNUC.</description>
         </property>
-        <property id="#pragma stacksize si" display="interrupt stack size" default="0x400" keyword="#pragma stacksize si=%s" type="textbox">
-            <constraint display="when Startup select is Use Enable (use BSP startup) only" actionOnFail="disable">${BSP_CFG_STARTUP_DISABLE} == ${BSP_CFG_STARTUP_DISABLE.0}</constraint>
-            <constraint display="Value must be an hexadecimal value" actionOnFail="error">testHexInteger("${#pragma stacksize si}")</constraint>
-            <constraint display="Value must be in the range (0x1~RAM capacity)" actionOnFail="error">("${#pragma stacksize si}" &gt;= 1) &amp;&amp; ("${#pragma stacksize si}" &lt;= (${Device.ramSize} * 1024))</constraint>
-            <description>Interrupt stack  size</description>
+        <property id="BSP_CFG_ISTACK_BYTES" display="Interrupt stack size" default="0x400" type="textbox">
+            <constraint display="Value must be an hexadecimal value">testHexInteger("${BSP_CFG_ISTACK_BYTES}")</constraint>
+            <constraint display="Value must be in the range (0x1~RAM capacity)">("${BSP_CFG_ISTACK_BYTES}" &gt;= 1) &amp;&amp; ("${BSP_CFG_ISTACK_BYTES}" &lt;= (${Device.ramSize} * 1024))</constraint>
+            <description>Interrupt stack  size
+NOTE: This setting is available only when using CCRX and GNUC.</description>
         </property>
         <property id="BSP_CFG_HEAP_BYTES" display="Heap size" default="0x400" type="textbox">
             <constraint display="Value must be an hexadecimal value">testHexInteger("${BSP_CFG_HEAP_BYTES}")</constraint>
             <constraint display="Value must be in the range (0x0~RAM capacity)">("${BSP_CFG_HEAP_BYTES}" &gt;= 0) &amp;&amp; ("${BSP_CFG_HEAP_BYTES}" &lt;= (${Device.ramSize} * 1024))</constraint>
-            <description>Heap size</description>
+            <description>Heap size
+NOTE: This setting is available only when using CCRX and GNUC.</description>
         </property>
-        <property id="BSP_CFG_IO_LIB_ENABLE" display="Initializes C input and output library functions" default="1" type="combobox">
+        <property id="BSP_CFG_IO_LIB_ENABLE" display="Initializes C input and output library functions" default="1" conditionalDefault= "if ('${Toolchain.name}' === 'RXC') {'1';} else {'0';}" type="combobox">
             <option id="BSP_CFG_IO_LIB_ENABLE.0" display="Disable" value="0"/>
             <option id="BSP_CFG_IO_LIB_ENABLE.1" display="Enable" value="1"/>
             <description>0 = Disable I/O library initialization in resetprg.c.
        If you are not using stdio then use this value.
 1 = Enable I/O library initialization in resetprg.c.
-      This is default and needed if you are using stdio.</description>
+      This is default and needed if you are using stdio.
+NOTE: This setting is available only when using CCRX.</description>
         </property>
         <property id="BSP_CFG_USER_CHARGET_ENABLED" display="Enable user stdio charget function" default="0" type="combobox">
             <option id="BSP_CFG_USER_CHARGET_ENABLED.0" display="Use BSP charget() function" value="0"/>
@@ -213,6 +216,49 @@ Please set this value more than IPR for other FIT module interrupts. Don't chang
             <description>Select the clock to be input to the EXTAL pin according to the board.
    0 = Input to EXTAL pin from resonator or external oscillator input.
    1 = Input from the CLOCK_OUT_RF pin to the EXTAL pin.</description>
+        </property>
+        <property id="BSP_CFG_VBATT_ENABLE" display="VBATT function select" default="0" type="combobox">
+            <option id="BSP_CFG_VBATT_ENABLE.0" display="Disable" value="0"/>
+            <option id="BSP_CFG_VBATT_ENABLE.1" display="Enable" value="1"/>
+            <description>Select the battery backup function in the current application.
+   0 = Disable the battery backup function.
+   1 = Enable the battery backup function.</description>
+        </property>
+        <property id="BSP_CFG_SWINT_UNIT1_ENABLE" display="Software Interrupt Unit1 (SWINT1)" default="1" type="combobox">
+            <option id="BSP_CFG_SWINT_UNIT1_ENABLE.0" display="Unused" value="0"/>
+            <option id="BSP_CFG_SWINT_UNIT1_ENABLE.1" display="Used" value="1"/>
+            <description>0 = Software interrupt is not used.
+1 = Software interrupt is used.
+NOTE: When this macro is set to 1, the software interrupt is initialized in bsp startup routine. </description>
+        </property>
+        <property id="BSP_CFG_SWINT_TASK_BUFFER_NUMBER" display="Software Interrupt Task Buffer Number" default="8" type="textbox">
+            <constraint display="when Software Interrupts is Used only" actionOnFail="disable">(${BSP_CFG_SWINT_UNIT1_ENABLE} == ${BSP_CFG_SWINT_UNIT1_ENABLE.1})</constraint>
+            <constraint display="Value must be an decimal value" actionOnFail="error">testInteger("${BSP_CFG_SWINT_TASK_BUFFER_NUMBER}")</constraint>
+            <constraint display="Value must be in the range 1~254" actionOnFail="error">(("${BSP_CFG_SWINT_TASK_BUFFER_NUMBER}" &gt;= 1) &amp;&amp; ("${BSP_CFG_SWINT_TASK_BUFFER_NUMBER}" &lt;= 254))</constraint>
+            <description>For software interrupt, this value is number of buffering user tasks.
+So user can increase this value if user system would have many software interrupt tasks and user system has enough buffer. This value requires 9 byte per task.
+NOTE: This setting is common to all units. It can not be set individually. The maximum value is 254.</description>
+        </property>
+        <property id="BSP_CFG_SWINT_IPR_INITIAL_VALUE" display="Initial value of the software interrupt priority." default="0x1" type="combobox">
+            <option id="BSP_CFG_SWINT_IPR_INITIAL_VALUE.0x0" display="Priority level 0 (lowest)" value="0x0"/>
+            <option id="BSP_CFG_SWINT_IPR_INITIAL_VALUE.0x1" display="Priority level 1" value="0x1"/>
+            <option id="BSP_CFG_SWINT_IPR_INITIAL_VALUE.0x2" display="Priority level 2" value="0x2"/>
+            <option id="BSP_CFG_SWINT_IPR_INITIAL_VALUE.0x3" display="Priority level 3" value="0x3"/>
+            <option id="BSP_CFG_SWINT_IPR_INITIAL_VALUE.0x4" display="Priority level 4" value="0x4"/>
+            <option id="BSP_CFG_SWINT_IPR_INITIAL_VALUE.0x5" display="Priority level 5" value="0x5"/>
+            <option id="BSP_CFG_SWINT_IPR_INITIAL_VALUE.0x6" display="Priority level 6" value="0x6"/>
+            <option id="BSP_CFG_SWINT_IPR_INITIAL_VALUE.0x7" display="Priority level 7" value="0x7"/>
+            <option id="BSP_CFG_SWINT_IPR_INITIAL_VALUE.0x8" display="Priority level 8" value="0x8"/>
+            <option id="BSP_CFG_SWINT_IPR_INITIAL_VALUE.0x9" display="Priority level 9" value="0x9"/>
+            <option id="BSP_CFG_SWINT_IPR_INITIAL_VALUE.0xA" display="Priority level 10" value="0xA"/>
+            <option id="BSP_CFG_SWINT_IPR_INITIAL_VALUE.0xB" display="Priority level 11" value="0xB"/>
+            <option id="BSP_CFG_SWINT_IPR_INITIAL_VALUE.0xC" display="Priority level 12" value="0xC"/>
+            <option id="BSP_CFG_SWINT_IPR_INITIAL_VALUE.0xD" display="Priority level 13" value="0xD"/>
+            <option id="BSP_CFG_SWINT_IPR_INITIAL_VALUE.0xE" display="Priority level 14" value="0xE"/>
+            <option id="BSP_CFG_SWINT_IPR_INITIAL_VALUE.0xF" display="Priority level 15 (highest)" value="0xF"/>
+            <constraint display="when Software Interrupts is Used only" actionOnFail="disable">(${BSP_CFG_SWINT_UNIT1_ENABLE} == ${BSP_CFG_SWINT_UNIT1_ENABLE.1})</constraint>
+            <description>For software interrupt, this value is interrupt priority. Range is 0x0 - 0xF.
+NOTE: This setting is common to all units. It can not be set individually. Please be careful that this setting is the initial value of the interrupt priority register(IPR).It is possible to dynamically change the IPR.</description>
         </property>
     </configuration>
 </module>

@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_ether_rx
-VERSION = 		v1.17
+VERSION = 		v1.20
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules

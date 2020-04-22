@@ -52,6 +52,8 @@
 *                              Fixed coding style.
 *           20.06.2019 2.76    Added support for RX23W.
 *           30.07.2019 2.77    Added support for RX72M.
+*           22.11.2019 2.78    Added support for RX66N.
+*                              Added support for RX72N.
 ***********************************************************************************************************************/
 
 #ifndef R_RTC_PRIVATE_H
@@ -113,7 +115,7 @@ Macro definitions
     #elif defined(RTC_CFG_DRIVE_CAPACITY_STD)
         #define RTC_DRIVE_CAPACITY      (4)
     #endif
-#else /* RX130, RX230, RX231, RX23W, RX64M, RX65N, RX71M, RX72M */
+#else /* RX130, RX230, RX231, RX23W, RX64M, RX65N, RX71M, RX72M, RX66N, RX72N */
     #if defined(RTC_CFG_DRIVE_CAPACITY_LO)
         #define RTC_DRIVE_CAPACITY      (1)
     #elif defined(RTC_CFG_DRIVE_CAPACITY_STD)

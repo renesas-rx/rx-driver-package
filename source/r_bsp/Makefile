@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_bsp
-VERSION = 		v5.20
+VERSION = 		v5.52
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules

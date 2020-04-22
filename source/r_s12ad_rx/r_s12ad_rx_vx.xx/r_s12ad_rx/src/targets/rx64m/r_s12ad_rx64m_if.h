@@ -29,19 +29,63 @@
 *           05.04.2019 4.00    Modified comment.
 ***********************************************************************************************************************/
 
-#ifndef S12AD_RX64M_IF_H
-#define S12AD_RX64M_IF_H
-
 /******************************************************************************
 Includes   <System Includes> , "Project Includes"
 *******************************************************************************/
 #include "platform.h"
 
+#ifndef S12AD_PRV_RX64M_IF_H
+#define S12AD_PRV_RX64M_IF_H
 
 /******************************************************************************
 Macro definitions
 *******************************************************************************/
+#define ADC_0_REG_ARRAY_MAX   (8)
+#define ADC_1_REG_ARRAY_MAX   (21)
 
+#define ADC_SST_SH_CNT_MIN      (4)     /* minimum sample&hold states */
+#define ADC_SST_SH_CNT_MAX      (255)   /* maximum sample&hold states */
+#define ADC_SST_SH_CNT_DEFAULT  (24)    /* default sample&hold states */
+
+#define ADC_DDA_STATE_CNT_MIN       (2)
+#define ADC_DDA_STATE_CNT_MAX       (15)
+
+#define ADC_SST_CNT_MIN     (5)
+#define ADC_SST_CNT_MAX     (255)
+#define ADC_SST_CNT_DEFAULT (11)
+
+/* for ADC_CMD_ENABLE_CHANS */
+
+/* Bitwise OR these masks together for desired channels and sensors
+   Used for all commands containing a "mask" or "flags" field */
+#define ADC_MASK_CH0    (1<<0)
+#define ADC_MASK_CH1    (1<<1)
+#define ADC_MASK_CH2    (1<<2)
+#define ADC_MASK_CH3    (1<<3)
+#define ADC_MASK_CH4    (1<<4)
+#define ADC_MASK_CH5    (1<<5)
+#define ADC_MASK_CH6    (1<<6)
+#define ADC_MASK_CH7    (1<<7)
+#define ADC_MASK_CH8    (1<<8)
+#define ADC_MASK_CH9    (1<<9)
+#define ADC_MASK_CH10   (1<<10)
+#define ADC_MASK_CH11   (1<<11)
+#define ADC_MASK_CH12   (1<<12)
+#define ADC_MASK_CH13   (1<<13)
+#define ADC_MASK_CH14   (1<<14)
+#define ADC_MASK_CH15   (1<<15)
+#define ADC_MASK_CH16   (1<<16)
+#define ADC_MASK_CH17   (1<<17)
+#define ADC_MASK_CH18   (1<<18)
+#define ADC_MASK_CH19   (1<<19)
+#define ADC_MASK_CH20   (1<<20)
+#define ADC_MASK_TEMP   (1<<21)     /* temperature sensor */
+#define ADC_MASK_VOLT   (1<<22)     /* internal reference voltage sensor */
+
+#define ADC_MASK_SENSORS            (ADC_MASK_TEMP | ADC_MASK_VOLT)
+#define ADC_MASK_GROUPB_OFF         (0)
+#define ADC_MASK_ADD_OFF            (0)
+#define ADC_MASK_SAMPLE_HOLD_OFF    (0)
 
 /*****************************************************************************
 Typedef definitions
@@ -207,9 +251,6 @@ typedef enum e_adc_charge           // Disconnection Detection Assist (DDA)
     ADC_DDA_OFF = 0x02
 } adc_charge_t;
 
-#define ADC_DDA_STATE_CNT_MIN       (2)
-#define ADC_DDA_STATE_CNT_MAX       (15)
-
 typedef struct st_adc_dda
 {
     adc_charge_t    method;
@@ -235,9 +276,6 @@ typedef enum e_adc_sst_reg          // sample state registers
     ADC_SST_REG_MAX = ADC_SST_VOLTAGE
 } adc_sst_reg_t;
 
-#define ADC_SST_CNT_MIN     (5)
-#define ADC_SST_CNT_MAX     (255)
-#define ADC_SST_CNT_DEFAULT (11)
 
 typedef struct st_adc_time
 {
@@ -246,38 +284,6 @@ typedef struct st_adc_time
 } adc_sst_t;
 
 
-/* for ADC_CMD_ENABLE_CHANS */
-
-/* Bitwise OR these masks together for desired channels and sensors
-   Used for all commands containing a "mask" or "flags" field */
-#define ADC_MASK_CH0    (1<<0)
-#define ADC_MASK_CH1    (1<<1)
-#define ADC_MASK_CH2    (1<<2)
-#define ADC_MASK_CH3    (1<<3)
-#define ADC_MASK_CH4    (1<<4)
-#define ADC_MASK_CH5    (1<<5)
-#define ADC_MASK_CH6    (1<<6)
-#define ADC_MASK_CH7    (1<<7)
-#define ADC_MASK_CH8    (1<<8)
-#define ADC_MASK_CH9    (1<<9)
-#define ADC_MASK_CH10   (1<<10)
-#define ADC_MASK_CH11   (1<<11)
-#define ADC_MASK_CH12   (1<<12)
-#define ADC_MASK_CH13   (1<<13)
-#define ADC_MASK_CH14   (1<<14)
-#define ADC_MASK_CH15   (1<<15)
-#define ADC_MASK_CH16   (1<<16)
-#define ADC_MASK_CH17   (1<<17)
-#define ADC_MASK_CH18   (1<<18)
-#define ADC_MASK_CH19   (1<<19)
-#define ADC_MASK_CH20   (1<<20)
-#define ADC_MASK_TEMP   (1<<21)     /* temperature sensor */
-#define ADC_MASK_VOLT   (1<<22)     /* internal reference voltage sensor */
-
-#define ADC_MASK_SENSORS            (ADC_MASK_TEMP | ADC_MASK_VOLT)
-#define ADC_MASK_GROUPB_OFF         (0)
-#define ADC_MASK_ADD_OFF            (0)
-#define ADC_MASK_SAMPLE_HOLD_OFF    (0)
 
 typedef enum e_adc_grpa                 // action when groupa interrupts groupb scan
 {
@@ -295,10 +301,6 @@ typedef enum e_adc_diag                 // Self-Diagnosis Channel
     ADC_DIAG_VREFH0 = 0x3,
     ADC_DIAG_ROTATE_VOLTS = 0x4
 } adc_diag_t;
-
-#define ADC_SST_SH_CNT_MIN      (4)     /* minimum sample&hold states */
-#define ADC_SST_SH_CNT_MAX      (255)   /* maximum sample&hold states */
-#define ADC_SST_SH_CNT_DEFAULT  (24)    /* default sample&hold states */
 
 typedef struct st_adc_ch_cfg            // bit 0 is ch0; bit 15 is ch15
 {
@@ -366,9 +368,6 @@ typedef enum e_adc_reg
     ADC_REG_MAX = ADC_REG_SELF_DIAG
 } adc_reg_t;
 
-#define ADC_0_REG_ARRAY_MAX   (8)
-#define ADC_1_REG_ARRAY_MAX   (21)
-
 /* ADC_READALL() ARGUMENT DEFINITIONS */
 
 typedef struct st_adc_unit0_data
@@ -402,5 +401,5 @@ typedef struct st_adc_data
 Public Functions
 ******************************************************************************/
 
-#endif /* S12AD_RX64M_IF_H */
+#endif /* S12AD_PRV_RX64M_IF_H */
 

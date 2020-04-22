@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer
  *
- * Copyright (C) 2014(2018) Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2014(2020) Renesas Electronics Corporation. All rights reserved.
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_usb_hhid_if.h
@@ -42,6 +42,7 @@
  *                           "usb_hhid_get_pipetbl"
  *                           "R_USB_HhidGetType" is added.
  *         : 31.03.2018 1.23 Supporting Smart Configurator 
+ *         : 01.03.2020 1.30 RX72N/RX66N is added and uITRON is supported.
  ***********************************************************************************************************************/
 
 #ifndef USB_HHID_IF_H
@@ -86,3 +87,7 @@ usb_err_t       R_USB_HhidGetType (usb_ctrl_t *p_ctrl, uint8_t *p_type);
 usb_err_t       R_USB_HhidGetMxps(usb_ctrl_t *p_ctrl, uint16_t *p_mxps, uint8_t dir);
 
 #endif /* USB_VENDOR_IF_H */
+
+/***********************************************************************************************************************
+End  Of File
+***********************************************************************************************************************/

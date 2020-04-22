@@ -19,7 +19,7 @@
 /**********************************************************************************************************************
 * System Name  : MMC Driver
 * File Name    : r_mmcif_init.c
-* Version      : 1.06
+* Version      : 1.07
 * Device       : RX64M (LQFP-176)
 * Abstract     : API & Sub module
 * Tool-Chain   : For RX64M Group
@@ -36,6 +36,7 @@
 *              : 20.05.2019 1.05    Added support for GNUC and ICCRX.
 *                                   Fixed coding style.
 *              : 30.07.2019 1.06    Add WAIT_LOOP.
+*              : 22.11.2019 1.07    Modified comment of API function to Doxygen style.
 **********************************************************************************************************************/
 
 /**********************************************************************************************************************
@@ -62,18 +63,32 @@ mmc_mmchndl_t *MMCHandle[(sizeof(MMC_CFG_IP_BASE) / sizeof(uint32_t))];
 
 
 /**********************************************************************************************************************
-* Outline      : Initialize MMC Driver
-* Function Name: R_MMCIF_Open
-* Description  : Initializes the MMC Driver work memory specified by MMC channel.
-* Arguments    : uint32_t           channel             ;   MMC Channel No.
-*              : void               *p_mmc_WorkArea     ;   MMC Driver work memory
-* Return Value : MMC_SUCCESS                            ;   Successful operation
-*              : MMC_ERR                                ;   Failed operation
-*              : MMC_ERR_CPU_IF                         ;   CPU-IF function error
-*              : MMC_ERR_ADDRESS_BOUNDARY               ;   Not specified buffer address in 4-byte unit
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_MMCIF_Open
+ *****************************************************************************************************************/ /**
+ * @brief This is the first function called when this MMCIF driver API is used.
+ * @param[in] channel
+ *             Channel number : The number of the MMCIF channel used (numbering starts at 0)
+ * @param[in] *p_mmc_WorkArea
+ *             Pointer to a working area on a 4-byte boundary (area size: 164 bytes)
+ * @retval    MMC_SUCCESS              Successful operation
+ * @retval    MMC_ERR                  General error
+ * @retval    MMC_ERR_CPU_IF           Target microcontroller interface error
+ * @retval    MMC_ERR_ADDRESS_BOUNDARY Argument buffer address error
+ * @details   This function acquires the MMCIF channel resource specified with the argument channel 
+ *            and initializes this MMCIF driver and the MMCIF channel. 
+ *            Also, this function exclusively acquires that MMCIF channel resource.\n 
+ *            The working area is also retained until MMCIF driver close processing completes, 
+ *            and the application must not modify the working area contents.
+ * @note      The pins must be set up before this function is called. 
+ *            See section 4.4 in the application note for details.\n 
+ *            If this function does not complete successfully, do not call any library functions other than 
+ *            R_MMCIF_GetVersion(), R_MMCIF_Log() or R_MMCIF_Set_LogHdlAddress().\n 
+ *            If this function does complete successfully, the card insertion interrupt may be enabled. 
+ *            If the MMC card insertion interrupt is used, after this function has run, 
+ *            use the R_MMCIF_Cd_Int() function to enable the card insertion interrupt.\n 
+ *            Note that the error code cannot be acquired with the R_MMCIF_Get_ErrCode() function.\n 
+ *            The microcontroller pin states do not change from before to after the execution of this function.
+ */
 mmc_status_t R_MMCIF_Open(uint32_t channel, void *p_mmc_WorkArea)
 {
     mmc_mmchndl_t      *p_hndl = 0;
@@ -186,15 +201,23 @@ mmc_status_t R_MMCIF_Open(uint32_t channel, void *p_mmc_WorkArea)
 
 
 /**********************************************************************************************************************
-* Outline      : Finish MMC Driver
-* Function Name: R_MMCIF_Close
-* Description  : Finishes the MMC Driver oprarion.
-* Arguments    : uint32_t           channel             ;   MMC Channel No.
-* Return Value : MMC_SUCCESS                            ;   Successful operation
-*              : MMC_ERR                                ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : After this function finished, MMC handle is unavailable.
-**********************************************************************************************************************/
+ * Function Name: R_MMCIF_Close
+ *****************************************************************************************************************/ /**
+ * @brief This function releases the resources being used by the MMCIF driver.
+ * @param[in] channel
+ *             Channel number : The number of the MMCIF channel used (numbering starts at 0)
+ * @retval    MMC_SUCCESS Successful operation
+ * @retval    MMC_ERR     General error
+ * @details   This function terminates all MMCIF driver processing and releases the resources for 
+ *            the MMCIF channel specified in the argument channel.\n 
+ *            That MMCIF channel is set to the module stop state.\n 
+ *            After this function is called, the insertion interrupt will be in the disabled state.\n 
+ *            The working area specified with the R_MMCIF_Open() function is not used after this function 
+ *            has been executed. This are may be used for other purposes.
+ * @note      The pins must be set up after this function is called. See section 4.5 in application note for details. 
+ *            Before running this function, driver open processing must be performed by the R_MMCIF_Open() function.\n 
+ *            Note that the error code cannot be acquired with the R_MMCIF_Get_ErrCode() function.
+ */
 mmc_status_t R_MMCIF_Close(uint32_t channel)
 {
     /* Check channel. */

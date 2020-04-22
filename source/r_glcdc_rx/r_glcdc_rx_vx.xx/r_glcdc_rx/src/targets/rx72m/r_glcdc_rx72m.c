@@ -18,12 +18,14 @@
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_glcdc_rx72m.c
- * Version      : 1.00
+ * Version      : 1.30
  * Description  : Internal function program using in GLCDC API functions.
  ************************************************************************************************************************/
 /***********************************************************************************************************************
  * History : DD.MM.YYYY Version   Description
  *         : 09.04.2019 1.00      First Release
+ *         : 20.09.2019 1.30      Added the interrupt control processing to before and after 
+ *                                GROUP Interrupt request(EN()) executing.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
  Includes <System Includes> , "Project Includes"
@@ -54,6 +56,10 @@ void r_glcdc_interrupt_setting(glcdc_interrupt_cfg_t const * const p_interrupt)
 {
     bsp_int_ctrl_t grpal1;
 
+#if (R_BSP_VERSION_MAJOR >= 5) && (R_BSP_VERSION_MINOR >= 30)
+    bsp_int_ctrl_t int_ctrl;
+#endif
+
     grpal1.ipl = GLCDC_CFG_INTERRUPT_PRIORITY_LEVEL;
 
     if (true == p_interrupt->vpos_enable)
@@ -65,9 +71,18 @@ void r_glcdc_interrupt_setting(glcdc_interrupt_cfg_t const * const p_interrupt)
         b0     VPOSINTEN  - VPOS Interrupt Enable. - Enable VPOS interrupt request. */
         GLCDC.INTEN.BIT.VPOSINTEN = 1;
 
+#if (R_BSP_VERSION_MAJOR >= 5) && (R_BSP_VERSION_MINOR >= 30)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
+
         /* GENAL1 - Group AL1 Interrupt Request Enable Register
         b8 EN8 - Interrupt Request Enable 8 - Interrupt request is enabled. */
         EN(GLCDC,VPOS) = 1;
+
+#if (R_BSP_VERSION_MAJOR >= 5) && (R_BSP_VERSION_MINOR >= 30)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
+
     }
     else
     {
@@ -75,9 +90,17 @@ void r_glcdc_interrupt_setting(glcdc_interrupt_cfg_t const * const p_interrupt)
         b0 VPOSINTEN  - VPOS Interrupt Enable. - Disable VPOS interrupt request. */
         GLCDC.INTEN.BIT.VPOSINTEN = 0;
 
+#if (R_BSP_VERSION_MAJOR >= 5) && (R_BSP_VERSION_MINOR >= 30)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif        
+
         /* GENAL1 - Group AL1 Interrupt Request Enable Register
         b8 EN8 - Interrupt Request Enable 8 - Interrupt request is disabled. */
         EN(GLCDC,VPOS) = 0;
+
+#if (R_BSP_VERSION_MAJOR >= 5) && (R_BSP_VERSION_MINOR >= 30)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
 
         /* GRPAL1 - Group AL1 Interrupt Request Register
         b8 IS8 - Interrupt Status Flag 8. */
@@ -85,7 +108,7 @@ void r_glcdc_interrupt_setting(glcdc_interrupt_cfg_t const * const p_interrupt)
         /* WAIT_LOOP */
         while (0 != IS(GLCDC,VPOS))
         {
-          R_BSP_NOP();
+            R_BSP_NOP();
         }
     }
 
@@ -95,9 +118,17 @@ void r_glcdc_interrupt_setting(glcdc_interrupt_cfg_t const * const p_interrupt)
         b1 GR1UFINTEN - GR1UF Interrupt enable. */
         GLCDC.INTEN.BIT.GR1UFINTEN = 1;
 
+#if (R_BSP_VERSION_MAJOR >= 5) && (R_BSP_VERSION_MINOR >= 30)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif    
+
         /* GENAL1 - Group AL1 Interrupt Request Enable Register
         b9 EN9 - Interrupt Request Enable 9 - Interrupt request is enabled. */
         EN(GLCDC,GR1UF) = 1;
+
+#if (R_BSP_VERSION_MAJOR >= 5) && (R_BSP_VERSION_MINOR >= 30)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
     }
     else
     {
@@ -105,9 +136,17 @@ void r_glcdc_interrupt_setting(glcdc_interrupt_cfg_t const * const p_interrupt)
         b1 GR1UFINTEN - GR1UF Interrupt disable. */
         GLCDC.INTEN.BIT.GR1UFINTEN = 0;
 
+#if (R_BSP_VERSION_MAJOR >= 5) && (R_BSP_VERSION_MINOR >= 30)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif  
+
         /* GENAL1 - Group AL1 Interrupt Request Enable Register
         b9 EN9 - Interrupt Request Enable 9 - Interrupt request is disabled. */
         EN(GLCDC,GR1UF) = 0;
+
+#if (R_BSP_VERSION_MAJOR >= 5) && (R_BSP_VERSION_MINOR >= 30)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
 
         /* GRPAL1 - Group AL1 Interrupt Request Register
         b9 IS9 - Interrupt Status Flag 9. */
@@ -125,9 +164,17 @@ void r_glcdc_interrupt_setting(glcdc_interrupt_cfg_t const * const p_interrupt)
         b2 GR2UFINTEN - GR2UF Interrupt enable. */
         GLCDC.INTEN.BIT.GR2UFINTEN = 1;
 
+#if (R_BSP_VERSION_MAJOR >= 5) && (R_BSP_VERSION_MINOR >= 30)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
+
         /* GENAL1 - Group AL1 Interrupt Request Enable Register
         b10 EN10 - Interrupt Request Enable 10 - Interrupt request is enabled. */
         EN(GLCDC,GR2UF) = 1;
+
+#if (R_BSP_VERSION_MAJOR >= 5) && (R_BSP_VERSION_MINOR >= 30)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
     }
     else
     {
@@ -135,9 +182,17 @@ void r_glcdc_interrupt_setting(glcdc_interrupt_cfg_t const * const p_interrupt)
         b2 GR2UFINTEN - GR2UF Interrupt disable. */
         GLCDC.INTEN.BIT.GR2UFINTEN = 0;
 
+#if (R_BSP_VERSION_MAJOR >= 5) && (R_BSP_VERSION_MINOR >= 30)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
+
         /* GENAL1 - Group AL1 Interrupt Request Enable Register
         b10 EN10 - Interrupt Request Enable 10 - Interrupt request is disabled. */
         EN(GLCDC,GR2UF) = 0;
+
+#if (R_BSP_VERSION_MAJOR >= 5) && (R_BSP_VERSION_MINOR >= 30)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
 
         /* GRPAL1 - Group AL1 Interrupt Request Register
         b10 IS10 - Interrupt Status Flag 10. */
@@ -162,5 +217,5 @@ void r_glcdc_interrupt_setting(glcdc_interrupt_cfg_t const * const p_interrupt)
 
 } /* End of function r_glcdc_interrupt_setting() */
 
-#endif  /* defined(BSP_MCU_RX72M) */
+#endif /* defined(BSP_MCU_RX72M) */
 /* End of File */

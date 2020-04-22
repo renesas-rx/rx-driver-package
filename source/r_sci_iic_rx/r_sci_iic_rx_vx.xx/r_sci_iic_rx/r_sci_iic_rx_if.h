@@ -31,7 +31,7 @@
  *         : 27.02.2015 1.60     RX63N support added.
  *         : 29.05.2015 1.70     RX231 support added.
  *         : 31.10.2015 1.80     RX130, RX230, RX23T support added.
- *         : 04.03.2016 1.90     RX24T support added.Changed about the pin definisions.
+ *         : 04.03.2016 1.90     RX24T support added.Changed about the pin definitions.
  *         : 01.10.2016 2.00     Updated version to 2.00 for RX65N release
  *         : 31.08.2017 2.20     Changed minor version to '20' for RX24U, RX130-512KB, and RX65N-2MB support.
  *         : 22.10.2017 2.30     Changed minor version to '30' for RX66T support.
@@ -41,6 +41,8 @@
  *                               Fixed coding style.
  *         : 20.06.2019 2.42     Changed minor version to '42' for RX23W support.
  *         : 30.07.2019 2.43     Changed minor version to '43' for RX72M support.
+ *         : 30.10.2019 2.44     Changed minor version to '44' for RX13T support.
+ *         : 22.11.2019 2.45     Changed minor version to '45' for RX66N and RX72N support.
  **********************************************************************************************************************/
 /* Guards against multiple inclusion */
 #ifndef SCI_IIC_IF_H
@@ -51,9 +53,14 @@ R_BSP_PRAGMA_UNPACK
 /***********************************************************************************************************************
  Macro definitions
  **********************************************************************************************************************/
-/* Version Number of API. */
+
+#if R_BSP_VERSION_MAJOR < 5
+    #error "This module must use BSP module of Rev.5.00 or higher. Please use the BSP module of Rev.5.00 or higher."
+#endif
+
+ /* Version Number of API. */
     #define SCI_IIC_VERSION_MAJOR  (2)
-    #define SCI_IIC_VERSION_MINOR  (43)
+    #define SCI_IIC_VERSION_MINOR  (45)
 
 /*----------------------------------------------------------------------------*/
 /*   Define return values and values of channel state flag.                   */

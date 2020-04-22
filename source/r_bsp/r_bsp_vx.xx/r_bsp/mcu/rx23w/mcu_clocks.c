@@ -23,6 +23,9 @@
 /**********************************************************************************************************************
 * History : DD.MM.YYYY Version  Description
 *         : 29.03.2019 1.00     First Release
+*         : 17.12.2019 1.01     Deleted the unused variables of clock_source_select function and 
+*                               usb_lpc_clock_source_select function.
+*         : 14.02.2020 1.02     Fixed warning of clock_source_select function with CCRX and IAR compiler.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -374,10 +377,9 @@ static void operating_frequency_set (void)
 ***********************************************************************************************************************/
 static void clock_source_select (void)
 {
-    /* Declared volatile for software delay purposes. */
-    volatile uint8_t read_verify;
-    volatile uint32_t i;
-    volatile uint8_t tmp;
+#if (BSP_PRV_SUB_CLK_SOSCCR == 1) || (BSP_CFG_RTC_ENABLE == 1)
+    uint8_t tmp;
+#endif
 
     /* Set to High-speed operating mode if clock is > 12MHz. */
     /* Because ICLK may not be maximum frequency, it is necessary to check all clock frequency. */
@@ -689,7 +691,6 @@ static void usb_lpc_clock_source_select (void)
 #endif
 {
     /* Declared volatile for software delay purposes. */
-    volatile uint32_t i;
     volatile uint32_t delay_time;
 
     /* Protect off. DO NOT USE R_BSP_RegisterProtectDisable()! (not initialized yet) */

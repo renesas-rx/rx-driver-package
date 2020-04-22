@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_dac_rx
-VERSION = 		v4.20
+VERSION = 		v4.40
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules

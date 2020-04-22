@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer
  *
- * Copyright (C) 2014(2019) Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2014(2020) Renesas Electronics Corporation. All rights reserved.
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_usb_hcdc_if.h
@@ -28,6 +28,7 @@
  *         : 30.09.2016 1.20 RX65N/RX651 is added.
  *         : 30.09.2017 1.22 Deleted API Prototype
  *         : 31.05.2019 1.26 Added support for GNUC and ICCRX.
+ *         : 01.03.2020 1.30 RX72N/RX66N is added and uITRON is supported.
  ***********************************************************************************************************************/
 
 #ifndef USB_HCDC_IF_H
@@ -195,5 +196,8 @@ typedef struct
     uint16_t wtime_ms; /* Duration of Break */
 } usb_hcdc_breakduration_t;
 
-
 #endif /* USB_HCDC_IF_H */
+
+/***********************************************************************************************************************
+End  Of File
+***********************************************************************************************************************/

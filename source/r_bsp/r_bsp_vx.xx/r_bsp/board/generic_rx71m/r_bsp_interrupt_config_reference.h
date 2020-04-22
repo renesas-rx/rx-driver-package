@@ -48,6 +48,8 @@
 *                               Removed the following macro definition.
 *                               - BSP_MAPPED_INT_CFG_A_VECT_MTU8_TGIU8
 *                               Fixed coding style.
+*         : 31.07.2019 1.20     Added the following macro definition.
+*                               - BSP_MAPPED_INT_CFG_B_VECT_SHA_SHARDY
 ***********************************************************************************************************************/
 #ifndef R_BSP_INTERRUPT_CONFIG_REF_HEADER_FILE
 #define R_BSP_INTERRUPT_CONFIG_REF_HEADER_FILE
@@ -137,12 +139,13 @@ Macro definitions
 #define BSP_MAPPED_INT_CFG_B_VECT_S12ADC0_S12GBADI0                       191
 #define BSP_MAPPED_INT_CFG_B_VECT_S12ADC1_S12ADI1                         192
 #define BSP_MAPPED_INT_CFG_B_VECT_S12ADC1_S12GBADI1                       193
-#define BSP_MAPPED_INT_CFG_B_VECT_DES_DESEND                              194
-#define BSP_MAPPED_INT_CFG_B_VECT_SHA_SHADEND                             195
-#define BSP_MAPPED_INT_CFG_B_VECT_SHA_SHAEND                              196
-#define BSP_MAPPED_INT_CFG_B_VECT_RNG_RNGEND                              197
-#define BSP_MAPPED_INT_CFG_B_VECT_ELC_ELSR18I                             198
-#define BSP_MAPPED_INT_CFG_B_VECT_ELC_ELSR19I                             199
+#define BSP_MAPPED_INT_CFG_B_VECT_SHA_SHARDY                              194
+#define BSP_MAPPED_INT_CFG_B_VECT_DES_DESEND                              195
+#define BSP_MAPPED_INT_CFG_B_VECT_SHA_SHADEND                             196
+#define BSP_MAPPED_INT_CFG_B_VECT_SHA_SHAEND                              197
+#define BSP_MAPPED_INT_CFG_B_VECT_RNG_RNGEND                              198
+#define BSP_MAPPED_INT_CFG_B_VECT_ELC_ELSR18I                             199
+#define BSP_MAPPED_INT_CFG_B_VECT_ELC_ELSR19I                             200
 
 /* Interrupt A Sources.
  * -Valid vector numbers are 208-255.

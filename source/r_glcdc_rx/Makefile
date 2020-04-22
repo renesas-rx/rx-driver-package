@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_glcdc_rx
-VERSION = 		v1.20
+VERSION = 		v1.30
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules

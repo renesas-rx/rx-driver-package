@@ -35,6 +35,7 @@
 *                               - BSP_MCU_CPU_VERSION
 *                               - CPU_CYCLES_PER_LOOP
 *                               Fixed coding style.
+*         : 26.07.2019 2.01     Added setting for 64 Pin Package.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -85,6 +86,9 @@ Macro definitions
     #define BSP_PACKAGE_PINS        (80)
 #elif BSP_CFG_MCU_PART_PACKAGE == 0x8
     #define BSP_PACKAGE_LFQFP64     (1)
+    #define BSP_PACKAGE_PINS        (64)
+#elif BSP_CFG_MCU_PART_PACKAGE == 0x1
+    #define BSP_PACKAGE_LQFP64      (1)
     #define BSP_PACKAGE_PINS        (64)
 #else
     #error "ERROR - BSP_CFG_MCU_PART_PACKAGE - Unknown package chosen in r_bsp_config.h"

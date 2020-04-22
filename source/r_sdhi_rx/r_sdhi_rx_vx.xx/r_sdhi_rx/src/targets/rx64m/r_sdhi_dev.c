@@ -19,7 +19,7 @@
 /**********************************************************************************************************************
 * System Name  : SDHI Driver
 * File Name    : r_sdhi_dev.c
-* Version      : 2.04
+* Version      : 2.06
 * Device       : RX64M
 * Abstract     : API & Sub module
 * Tool-Chain   : For RX64M Group e2_studio
@@ -33,6 +33,8 @@
 *              : 31.07.2017 2.00    First Release
 *              : 20.05.2019 2.04    Added support for GNUC and ICCRX.
 *                                   Fixed coding style. 
+*              : 22.11.2019 2.06    Added support for atomic control.
+*                                   Modified comment of API function to Doxygen style.
 **********************************************************************************************************************/
 
 /**********************************************************************************************************************
@@ -99,8 +101,18 @@ R_BSP_ATTRIB_STATIC_INTERRUPT void r_sdhi_dev_sbfai_isr(void)
 **********************************************************************************************************************/
 sdhi_status_t r_sdhi_dev_init(uint32_t channel)
 {
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+#endif
+
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
     MSTP_SDHI = 0;              /* SDHI ON */
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
     if (0 == MSTP_SDHI)
     {
         R_BSP_NOP();    /* Wait for the write completion. */
@@ -128,8 +140,18 @@ sdhi_status_t r_sdhi_dev_init(uint32_t channel)
 **********************************************************************************************************************/
 sdhi_status_t r_sdhi_dev_finalize(uint32_t channel)
 {
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+#endif
+
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
     MSTP_SDHI = 1;              /* SDHI OFF */
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
     if (1 == MSTP_SDHI)
     {
         R_BSP_NOP();    /* Wait for the write completion. */
@@ -147,19 +169,28 @@ sdhi_status_t r_sdhi_dev_finalize(uint32_t channel)
 } /* End of function r_sdhi_dev_finalize() */
 
 /**********************************************************************************************************************
-* Outline      : Disable ICU
-* Function Name: R_SDHI_DisableIcuInt
-* Description  : Disable the Interrupt Request Enable (IENn).
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-*              : uint32_t           select               ;   Interrupt setting
-* Return Value : SDHI_SUCCESS                            ;   Successful operation
-*              : SDHI_ERR                                ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_DisableIcuInt
+ *****************************************************************************************************************/ /**
+ * @brief Disables ICU controller interrupts for the SDHI.\n 
+ *        note : The following interrupt is disabled. [SD buffer access interrupt (SBFAI), 
+ *        Card detect interrupt (CDETI), Card access interrupt (CACI), SDIO access interrupt (SDACI)]
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @param[in] select
+ *             Specify interrupt arguments. See section 3.8 in application note for details.
+ * @retval    SDHI_SUCCESS Successful operation
+ * @retval    SDHI_ERR     General error
+ * @details   Makes settings to the ICU controller registers.\n 
+ *            Clears the SDHI interrupt source priority register (IPR) to 0.\n 
+ *            Sets the SDHI interrupt request enable register (IEN) to disable interrupts.
+ * @note      Before running this function, initialization processing by the R_SDHI_Open() function is required.
+ */
 sdhi_status_t R_SDHI_DisableIcuInt(uint32_t channel, uint32_t select)
 {
     uint32_t ipl = 0;
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+#endif
 
 #if (SDHI_CFG_PARAM_CHECKING_ENABLE == 1)
     sdhi_sdhndl_t * p_hndl = 0;
@@ -194,9 +225,15 @@ sdhi_status_t R_SDHI_DisableIcuInt(uint32_t channel, uint32_t select)
 
         if (select & SDHI_HWINT_ACCESS_CD)
         {
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
             ICU.GENBL1.BIT.EN3 = 0;
             ICU.GENBL1.BIT.EN4 = 0;
             ICU.GENBL1.BIT.EN5 = 0;
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
             if (0 == ICU.GENBL1.BIT.EN5)
             {
                 R_BSP_NOP();    /* Wait for the write completion. */
@@ -223,19 +260,29 @@ sdhi_status_t R_SDHI_DisableIcuInt(uint32_t channel, uint32_t select)
 } /* End of function R_SDHI_DisableIcuInt() */
 
 /**********************************************************************************************************************
-* Outline      : Enable ICU
-* Function Name: R_SDHI_EnableIcuInt
-* Description  : Enable the Interrupt Request Enable (IENn).
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-*              : uint32_t           select               ;   Interrupt setting
-* Return Value : SDHI_SUCCESS                            ;   Successful operation
-*              : SDHI_ERR                                ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_EnableIcuInt
+ *****************************************************************************************************************/ /**
+ * @brief Enables ICU controller interrupts for the SDHI.\n 
+ *        note : The following interrupt is enabled. [SD buffer access interrupt (SBFAI), 
+ *        Card detect interrupt (CDETI), Card access interrupt (CACI), SDIO access interrupt (SDACI)]
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @param[in] select
+ *             Specify interrupt arguments. See section 3.7 in application note for details.
+ * @retval    SDHI_SUCCESS Successful operation
+ * @retval    SDHI_ERR     General error
+ * @details   Makes settings to the ICU controller registers. \n 
+ *            Makes settings to the SDHI's interrupt source property register (IPR). The setting values are defined by
+ *            #define SDHI_CHx_INT_LEVRL and #define SDHI_CFG_CHx_INT_LEVEL_DMADTC.\n 
+ *            Sets the SDHI interrupt request enable register (IEN) to enable interrupts.
+ * @note      Before running this function, initialization processing by the R_SDHI_Open() function is required.
+ */
 sdhi_status_t R_SDHI_EnableIcuInt(uint32_t channel, uint32_t select)
 {
     uint32_t ipl = 0;
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+#endif
 
 #if (SDHI_CFG_PARAM_CHECKING_ENABLE == 1)
     sdhi_sdhndl_t * p_hndl = 0;
@@ -270,9 +317,15 @@ sdhi_status_t R_SDHI_EnableIcuInt(uint32_t channel, uint32_t select)
 
         if (select & SDHI_HWINT_ACCESS_CD)
         {
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
             ICU.GENBL1.BIT.EN3 = 1;
             ICU.GENBL1.BIT.EN4 = 1;
             ICU.GENBL1.BIT.EN5 = 1;
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
             if (1 == ICU.GENBL1.BIT.EN5)
             {
                 R_BSP_NOP();    /* Wait for the write completion. */
@@ -299,15 +352,16 @@ sdhi_status_t R_SDHI_EnableIcuInt(uint32_t channel, uint32_t select)
 } /* End of function R_SDHI_EnableIcuInt() */
 
 /**********************************************************************************************************************
-* Outline      : CD Terminal layout check
-* Function Name: R_SDHI_CDLayout
-* Description  : CD Terminal layout check.
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-* Return Value : SDHI_SUCCESS                            ;   layout ACTIVE
-*              : SDHI_ERR                                ;   layout no ACTIVE
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_CDLayout
+ *****************************************************************************************************************/ /**
+ * @brief This function checks whether the SDHI_CD (SD card detection) pin is used.
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @retval    SDHI_SUCCESS CD pin used.
+ * @retval    SDHI_ERR     CD pin not used.
+ * @details   Checks whether the CD pin is used.
+ * @note      None
+ */
 sdhi_status_t R_SDHI_CDLayout(uint32_t channel)
 {
     sdhi_status_t ret = SDHI_ERR;
@@ -334,15 +388,16 @@ sdhi_status_t R_SDHI_CDLayout(uint32_t channel)
 } /* End of function R_SDHI_CDLayout() */
 
 /**********************************************************************************************************************
-* Outline      : WP Terminal layout check
-* Function Name: R_SDHI_WPLayout
-* Description  : WP Terminal layout check.
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-* Return Value : SDHI_SUCCESS                            ;   layout ACTIVE
-*              : SDHI_ERR                                ;   layout no ACTIVE
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_WPLayout
+ *****************************************************************************************************************/ /**
+ * @brief This function checks whether the SDHI_WP (SD write protect) pin is used.
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @retval    SDHI_SUCCESS WP pin used.
+ * @retval    SDHI_ERR     WP pin not used.
+ * @details   Checks whether the WP pin is used.
+ * @note      None
+ */
 sdhi_status_t R_SDHI_WPLayout(uint32_t channel)
 {
     sdhi_status_t ret = SDHI_ERR;
@@ -383,15 +438,16 @@ uint32_t r_sdhi_dev_sdopt_init(void)
 } /* End of function r_sdhi_dev_sdopt_init() */
 
 /**********************************************************************************************************************
-* Outline      : SDHI TERMINAL SPEED check
-* Function Name: R_SDHI_GetSpeedType
-* Description  : SDHI TERMINAL SPEED check.
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-* Return Value : SDHI_SUCCESS                            ;   High-speed
-*              : SDHI_ERR                                ;   Default-speed
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_GetSpeedType
+ *****************************************************************************************************************/ /**
+ * @brief This function gets information on the speed modes supported by the target microcontroller.
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @retval    SDHI_SUCCESS Compatible with default-speed and high-speed modes
+ * @retval    SDHI_ERR     Compatible with default-speed mode
+ * @details   Gets information on the speed modes supported by the target microcontroller.
+ * @note      None.
+ */
 sdhi_status_t R_SDHI_GetSpeedType(uint32_t channel)
 {
     sdhi_status_t ret = SDHI_ERR;
@@ -439,14 +495,18 @@ sdhi_status_t r_sdhi_check_clksel(uint32_t channel)
 } /* End of function r_sdhi_check_clksel() */
 
 /**********************************************************************************************************************
-* Outline      : SDHI_MEM & SDHI_SDIO Interrupt Handler
-* Function Name: R_SDHI_IntHandler0
-* Description  : Checks the relevant elements (without masked) and call a callback function.
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-* Return Value : None
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_IntHandler0
+ *****************************************************************************************************************/ /**
+ * @brief This function is the interrupt handler.
+ * @param[in] *vect
+ *             vector table
+ * @details   This is the interrupt handler of the SDHI FIT module.\n 
+ *            It is incorporated into the system as a processing routine for interrupt sources supported by the SDHI.\n
+ *            When a callback function for the card access interrupt (CACI) and card detect interrupt (CDETI), 
+ *            and a callback function for the SDIO access interrupt (SDACI) have been registered, 
+ *            the appropriate callback function is called by this function.
+ * @note      Before running this function, initialization processing by the R_SDHI_Open() function is required.
+ */
 void R_SDHI_IntHandler0(void * vect)
 {
     sdhi_sdhndl_t   * p_hndl = 0;

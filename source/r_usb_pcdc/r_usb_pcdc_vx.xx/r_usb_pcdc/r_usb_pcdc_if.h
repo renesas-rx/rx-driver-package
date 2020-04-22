@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer
  *
- * Copyright (C) 2014(2019) Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2014(2020) Renesas Electronics Corporation. All rights reserved.
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_usb_pcdc_if.h
@@ -32,6 +32,7 @@
  *                           "R_USB_PcdcSerialStateNotification","R_USB_PcdcCtrltrans",
  *         : 31.03.2018 1.23 Supporting Smart Configurator
  *         : 31.05.2019 1.26 Added support for GNUC and ICCRX.
+ *         : 01.03.2020 1.30 RX72N/RX66N is added and uITRON is supported.
  ***********************************************************************************************************************/
 
 #ifndef USB_PCDC_IF_H
@@ -108,5 +109,8 @@ typedef struct
 } usb_pcdc_ctrllinestate_t;     /* USB_PCDC_ControlLineState_t; */
 R_BSP_PRAGMA_PACKOPTION
 
-
 #endif /* USB_PCDC_IF_H */
+
+/***********************************************************************************************************************
+End  Of File
+***********************************************************************************************************************/

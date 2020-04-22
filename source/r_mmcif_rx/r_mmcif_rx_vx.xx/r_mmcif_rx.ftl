@@ -36,9 +36,9 @@ void R_MMCIF_PinSetInit()
     /* Set ${pin.pinName} pin */
     PORT${pin.portNum}.PMR.BIT.B${pin.pinBitNum} = 0U;
     <#if pin.pinName == "MMC_CLK" || pin.pinName == "MMC_CMD" || pin.pinName == "MMC_D0" || pin.pinName == "MMC_D1" || pin.pinName == "MMC_D2" || pin.pinName == "MMC_D3" || pin.pinName == "MMC_D4" || pin.pinName == "MMC_D5" || pin.pinName == "MMC_D6" || pin.pinName == "MMC_D7">
-        <#if headerInfo.device?contains("R5F565N") || headerInfo.device?contains("R5F5651")>
+        <#if headerInfo.device?contains("R5F565N") || headerInfo.device?contains("R5F5651") || headerInfo.device?contains("R5F566N") || headerInfo.device?contains("R5F572M") || headerInfo.device?contains("R5F572N")>
     PORT${pin.portNum}.DSCR.BIT.B${pin.pinBitNum} = 1U;
-        <#elseif headerInfo.device?contains("R5F564M") || headerInfo.device?contains("R5F571M") || headerInfo.device?contains("R5F572M")>
+        <#elseif headerInfo.device?contains("R5F564M") || headerInfo.device?contains("R5F571M")>
             <#if pin.portNum == "C" || pin.portNum == "D" || pin.portNum == "E" >
     PORT${pin.portNum}.DSCR.BIT.B${pin.pinBitNum} = 1U;
             </#if>

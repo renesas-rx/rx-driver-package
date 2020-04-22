@@ -18,7 +18,7 @@
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : phy.c
- * Version      : 1.17
+ * Version      : 1.20
  * Description  : Ethernet PHY device driver
  ***********************************************************************************************************************/
 /**********************************************************************************************************************
@@ -30,6 +30,8 @@
  *         : 20.05.2019 1.16     Added support for GNUC and ICCRX.
  *                               Fixed coding style.
  *         : 30.07.2019 1.17     Added WAIT LOOP.
+ *         : 22.11.2019 1.20     Added macro ETHER_CFG_NON_BLOCKING to choose whether to use PMGI.
+ *                               Added pmgi_initial, pmgi_access, pmgi_read_reg, pmgi_close function for NON-BLOCKING.
  ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -50,69 +52,6 @@
 #define PHY_MII_READ                    (2)
 #define PHY_MII_WRITE                   (1)
 
-/* Standard PHY Registers */
-#define PHY_REG_CONTROL                 (0)
-#define PHY_REG_STATUS                  (1)
-#define PHY_REG_IDENTIFIER1             (2)
-#define PHY_REG_IDENTIFIER2             (3)
-#define PHY_REG_AN_ADVERTISEMENT        (4)
-#define PHY_REG_AN_LINK_PARTNER         (5)
-#define PHY_REG_AN_EXPANSION            (6)
-
-/* Vendor Specific PHY Registers */
-#ifdef ETHER_CFG_USE_PHY_KSZ8041NL
-    #define PHY_REG_PHY_CONTROL_1           (0x1E)
-#endif /* MICREL_KSZ8041NL */
-
-/* Basic Mode Control Register Bit Definitions */
-#define PHY_CONTROL_RESET               (1 << 15)
-#define PHY_CONTROL_LOOPBACK            (1 << 14)
-#define PHY_CONTROL_100_MBPS            (1 << 13)
-#define PHY_CONTROL_AN_ENABLE           (1 << 12)
-#define PHY_CONTROL_POWER_DOWN          (1 << 11)
-#define PHY_CONTROL_ISOLATE             (1 << 10)
-#define PHY_CONTROL_AN_RESTART          (1 << 9)
-#define PHY_CONTROL_FULL_DUPLEX         (1 << 8)
-#define PHY_CONTROL_COLLISION           (1 << 7)
-
-/* Basic Mode Status Register Bit Definitions */
-#define PHY_STATUS_100_T4               (1 << 15)
-#define PHY_STATUS_100F                 (1 << 14)
-#define PHY_STATUS_100H                 (1 << 13)
-#define PHY_STATUS_10F                  (1 << 12)
-#define PHY_STATUS_10H                  (1 << 11)
-#define PHY_STATUS_AN_COMPLETE          (1 << 5)
-#define PHY_STATUS_RM_FAULT             (1 << 4)
-#define PHY_STATUS_AN_ABILITY           (1 << 3)
-#define PHY_STATUS_LINK_UP              (1 << 2)
-#define PHY_STATUS_JABBER               (1 << 1)
-#define PHY_STATUS_EX_CAPABILITY        (1 << 0)
-
-/* Auto Negotiation Advertisement Bit Definitions */
-#define PHY_AN_ADVERTISEMENT_NEXT_PAGE  (1 << 15)  
-#define PHY_AN_ADVERTISEMENT_RM_FAULT   (1 << 13)
-#define PHY_AN_ADVERTISEMENT_ASM_DIR    (1 << 11)
-#define PHY_AN_ADVERTISEMENT_PAUSE      (1 << 10)
-#define PHY_AN_ADVERTISEMENT_100_T4     (1 << 9)
-#define PHY_AN_ADVERTISEMENT_100F       (1 << 8)
-#define PHY_AN_ADVERTISEMENT_100H       (1 << 7)
-#define PHY_AN_ADVERTISEMENT_10F        (1 << 6)
-#define PHY_AN_ADVERTISEMENT_10H        (1 << 5)
-#define PHY_AN_ADVERTISEMENT_SELECTOR   (1 << 0)
-
-/* Auto Negotiate Link Partner Ability Bit Definitions */
-#define PHY_AN_LINK_PARTNER_NEXT_PAGE   (1 << 15)
-#define PHY_AN_LINK_PARTNER_ACK         (1 << 14)
-#define PHY_AN_LINK_PARTNER_RM_FAULT    (1 << 13)
-#define PHY_AN_LINK_PARTNER_ASM_DIR     (1 << 11)
-#define PHY_AN_LINK_PARTNER_PAUSE       (1 << 10) 
-#define PHY_AN_LINK_PARTNER_100_T4      (1 << 9) 
-#define PHY_AN_LINK_PARTNER_100F        (1 << 8)
-#define PHY_AN_LINK_PARTNER_100H        (1 << 7)
-#define PHY_AN_LINK_PARTNER_10F         (1 << 6)
-#define PHY_AN_LINK_PARTNER_10H         (1 << 5)
-#define PHY_AN_LINK_PARTNER_SELECTOR    (1 << 0)
-
 /***********************************************************************************************************************
  Typedef definitions
  ***********************************************************************************************************************/
@@ -124,8 +63,9 @@
 /***********************************************************************************************************************
  Private global variables and functions
  ***********************************************************************************************************************/
-static uint16_t phy_read (uint32_t ether_channel, uint16_t reg_addr);
-static void phy_write (uint32_t ether_channel, uint16_t reg_addr, uint16_t data);
+#if ETHER_CFG_NON_BLOCKING == 0
+uint16_t phy_read (uint32_t ether_channel, uint16_t reg_addr);
+void phy_write (uint32_t ether_channel, uint16_t reg_addr, uint16_t data);
 static void phy_preamble (uint32_t ether_channel);
 static void phy_reg_set (uint32_t ether_channel, uint16_t reg_addr, int32_t option);
 static void phy_reg_read (uint32_t ether_channel, uint16_t *pdata);
@@ -137,11 +77,30 @@ static void phy_mii_write0 (uint32_t ether_channel);
 static int16_t phy_get_pir_address (uint32_t ether_channel, volatile uint32_t R_BSP_EVENACCESS_SFR ** pppir_addr);
 
 static uint16_t local_advertise[ETHER_CHANNEL_MAX]; /* the capabilities of the local link as PHY data */
+#endif
 
+/*
+ * Private global variables
+ */
+#if ETHER_CFG_NON_BLOCKING == 1
+
+  /* Used to prevent having duplicate code for each channel. This only works if the channels are identical (just at
+   different locations in memory). This is easy to tell by looking in iodefine.h and seeing if the same structure
+   was used for all channels. */
+volatile struct st_pmgi R_BSP_EVENACCESS_SFR * gp_pmgi_channels[PMGI_CHANNEL_MAX] =
+{
+/* Initialize the array for up to 3 channels. Add more as needed. */
+#if   PMGI_CHANNEL_MAX == 1
+    &PMGI0,
+#elif PMGI_CHANNEL_MAX == 2
+    &PMGI0, &PMGI1
+#endif
+};
+#endif
 /**
  * Public functions
  */
-
+#if ETHER_CFG_NON_BLOCKING == 0
 /***********************************************************************************************************************
  * Function Name: phy_init
  * Description  : Resets Ethernet PHY device
@@ -369,7 +328,7 @@ int16_t phy_get_link_status (uint32_t ether_channel)
  *                    address of the PHY register
  * Return Value : read value
  ***********************************************************************************************************************/
-static uint16_t phy_read (uint32_t ether_channel, uint16_t reg_addr)
+uint16_t phy_read (uint32_t ether_channel, uint16_t reg_addr)
 {
     uint16_t data;
 
@@ -397,7 +356,7 @@ static uint16_t phy_read (uint32_t ether_channel, uint16_t reg_addr)
  *                    value
  * Return Value : none
  ***********************************************************************************************************************/
-static void phy_write (uint32_t ether_channel, uint16_t reg_addr, uint16_t data)
+void phy_write (uint32_t ether_channel, uint16_t reg_addr, uint16_t data)
 {
     /*
      * The value is read from the PHY register by the frame format of MII Management Interface provided
@@ -789,4 +748,143 @@ static int16_t phy_get_pir_address (uint32_t ether_channel, volatile uint32_t R_
 
     return R_PHY_OK;
 } /* End of function phy_get_pir_address() */
+
+#endif /* End of ETHER_CFG_NON_BLOCKING == 0 */
+
+#if ETHER_CFG_NON_BLOCKING == 1
+/***********************************************************************************************************************
+ * Function Name: pmgi_initial
+ * Description  : PMGI initialze.
+ * Arguments    : pmgi_channel -
+ *                    PMGI channel number
+ * Return Value : R_PHY_OK      success
+                : R_PHY_ERROR   error
+ ***********************************************************************************************************************/
+int16_t pmgi_initial(uint16_t pmgi_channel)
+{
+    int32_t     f;  // Frequency
+    int32_t     n;  // n term in equation
+
+    /* set the frequency of MDC */
+    f = BSP_PCLKA_HZ;
+    n = (f/(ETHER_CFG_PMGI_CLOCK * 2)) - 1;
+
+    if ((n <= 0) || (n > 63))
+    {
+        return R_PHY_ERROR;
+    }
+    else
+    {
+        (*gp_pmgi_channels[pmgi_channel]).PMGCR.BIT.PSMCS = n;
+    }
+
+    /* set the preamble control bit */
+    (*gp_pmgi_channels[pmgi_channel]).PMGCR.BIT.PSMDP = ETHER_CFG_PMGI_ENABLE_PREAMBLE;
+
+    /* set the hold time adjustment */
+    (*gp_pmgi_channels[pmgi_channel]).PMGCR.BIT.PSMHT = ETHER_CFG_PMGI_HOLD_TIME;
+
+    /* set the capture time adjustment */
+    (*gp_pmgi_channels[pmgi_channel]).PMGCR.BIT.PSMCT = ETHER_CFG_PMGI_CAPTURE_TIME;
+
+#if ((ETHER_CFG_CH0_PHY_ACCESS == 0) || (ETHER_CFG_CH1_PHY_ACCESS == 0))
+    if (PMGI_CHANNEL_0 == pmgi_channel)
+    {
+        R_BSP_InterruptRequestEnable(VECT(PMGI0, PMGI0I));
+        IPR(PMGI0, PMGI0I) = ETHER_CFG_PMGI_INT_PRIORTY;
+    }
+#endif
+#if (PMGI_CHANNEL_MAX == 2)
+#if ((ETHER_CFG_CH0_PHY_ACCESS == 1) || (ETHER_CFG_CH1_PHY_ACCESS == 1))
+    if (PMGI_CHANNEL_1 == pmgi_channel)
+    {
+        R_BSP_InterruptRequestEnable(VECT(PMGI1, PMGI1I));
+        IPR(PMGI1, PMGI1I) = ETHER_CFG_PMGI_INT_PRIORTY;
+    }
+#endif
+#endif
+
+    return R_PHY_OK;
+} /* End of function pmgi_initial */
+
+/***********************************************************************************************************************
+ * Function Name: pmgi_read_reg
+ * Description  : read PMGI register.
+ * Arguments    : pmgi_channel -
+ *                    PMGI channel number
+ * Return Value : reg      register value
+ ***********************************************************************************************************************/
+uint16_t pmgi_read_reg(uint16_t pmgi_channel)
+{
+    uint16_t reg;
+
+    reg = (*gp_pmgi_channels[pmgi_channel]).PSMR.BIT.PRD;
+
+    return reg;
+} /*End of function pmgi_read_reg */
+
+/***********************************************************************************************************************
+ * Function Name: pmgi_close
+ * Description  : PMGI close.
+ * Arguments    : pmgi_channel -
+ *                    PMGI channel number
+ * Return Value : R_PHY_OK      success
+ ***********************************************************************************************************************/
+int16_t pmgi_close(uint16_t pmgi_channel)
+{
+#if ((ETHER_CFG_CH0_PHY_ACCESS == 0) || (ETHER_CFG_CH1_PHY_ACCESS == 0))
+    if (PMGI_CHANNEL_0 == pmgi_channel )
+    {
+        R_BSP_InterruptRequestDisable(VECT(PMGI0, PMGI0I));
+    }
+#endif
+#if (PMGI_CHANNEL_MAX == 2)
+#if ((ETHER_CFG_CH0_PHY_ACCESS == 1) || (ETHER_CFG_CH1_PHY_ACCESS == 1))
+    if (PMGI_CHANNEL_1 == pmgi_channel )
+    {
+        R_BSP_InterruptRequestDisable(VECT(PMGI1, PMGI1I));
+    }
+#endif
+#endif
+    return R_PHY_OK;
+} /* End of function pmgi_close */
+
+/***********************************************************************************************************************
+ * Function Name: pmgi_access
+ * Description  : PMGI access.
+ * Arguments    : channel -
+ *                    ETHER     channel number
+ *                    address   phy register address
+ *                    data      access data
+ *                    dir       access direction
+ * Return Value : R_PHY_OK      success
+                : R_PHY_ERROR   error
+ ***********************************************************************************************************************/
+int16_t pmgi_access(uint32_t channel, uint16_t address, uint16_t data, uint16_t dir)
+{
+    uint16_t pmgi_channel;
+
+    if (ETHER_CHANNEL_0 == channel)
+    {
+        pmgi_channel = ETHER_CFG_CH0_PHY_ACCESS;
+        (*gp_pmgi_channels[pmgi_channel]).PSMR.BIT.PDA = ETHER_CFG_CH0_PHY_ADDRESS;
+    }
+    else
+    {
+        pmgi_channel = ETHER_CFG_CH1_PHY_ACCESS;
+        (*gp_pmgi_channels[pmgi_channel]).PSMR.BIT.PDA = ETHER_CFG_CH1_PHY_ADDRESS;
+    }
+    (*gp_pmgi_channels[pmgi_channel]).PSMR.BIT.PSMAD = dir;
+    (*gp_pmgi_channels[pmgi_channel]).PSMR.BIT.PRA = address;
+
+    if (PMGI_WRITE == dir)
+    {
+        (*gp_pmgi_channels[pmgi_channel]).PSMR.BIT.PRD = data;
+    }
+
+    (*gp_pmgi_channels[pmgi_channel]).PSMR.BIT.PSME = PMGI_START;
+
+    return R_PHY_OK;
+} /*End of function pmgi_access */
+#endif /* End of ETHER_CFG_NON_BLOCKING == 1 */
 

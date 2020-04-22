@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_rspi_rx
-VERSION = 		v2.03
+VERSION = 		v2.04
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules

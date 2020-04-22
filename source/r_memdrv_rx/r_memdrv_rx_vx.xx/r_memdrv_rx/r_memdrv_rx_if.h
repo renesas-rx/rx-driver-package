@@ -31,6 +31,7 @@
 *              : 15.12.2018 1.00     Initial Release
 *              : 04.04.2019 1.01     Added support for GNUC and ICCRX.
 *                                    Fixed coding style.
+*              : 22.11.2019 1.02     Modify the parameter type of structure Memory Driver I/F information.
 *************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -41,11 +42,16 @@ Includes <System Includes> , "Project Includes"
 /***********************************************************************************************************************
 Macro definitions
 ***********************************************************************************************************************/
+
+#if R_BSP_VERSION_MAJOR < 5
+    #error "This module must use BSP module of Rev.5.00 or higher. Please use the BSP module of Rev.5.00 or higher."
+#endif
+
 #ifndef MEMDRV_IF_H
 #define MEMDRV_IF_H
 /* Version Number of API. */
 #define MEMDRV_VERSION_MAJOR                 (1)
-#define MEMDRV_VERSION_MINOR                 (01)
+#define MEMDRV_VERSION_MINOR                 (02)
 
 /* Define device no. */
 #define MEMDRV_DEV0                          (0)
@@ -105,7 +111,7 @@ typedef enum e_memdrv_err
 /* Memory Driver I/F information */
 typedef struct
 {
-    uint16_t    cnt;
+    uint32_t    cnt;
     uint8_t   * p_data;
     uint8_t     io_mode;
     uint8_t     rsv[3];

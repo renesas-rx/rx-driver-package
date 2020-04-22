@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer
  *
- * Copyright (C) 2014(2018) Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2014(2020) Renesas Electronics Corporation. All rights reserved.
  *********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_usb_atapi_driver.c
@@ -37,6 +37,7 @@
  *                           Change Function name "usb_pmsc_atapi_analyze_cbwcb()"->"pmsc_atapi_analyze_cbwcb()"
  *                           "usb_pmsc_atapi_command_execute()"->"pmsc_atapi_command_processing()"
  *         : 31.03.2018 1.23 Supporting Smart Configurator
+ *         : 01.03.2020 1.30 RX72N/RX66N is added and uITRON is supported.
  ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -949,8 +950,6 @@ void pmsc_atapi_init (void)
     g_usb_atapi_cbwcb = USB_NULL;
     g_usb_atapi_cur_lba = 0;
 } /* End of function pmsc_atapi_init() */
-
-
 
 /***********************************************************************************************************************
  End Of File

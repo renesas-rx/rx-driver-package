@@ -5,12 +5,12 @@ r_mmcif_rx (MMC Mode MMCIF Driver)
 
 Document Number 
 ---------------
-R01AN4234JJ0106
-R01AN4234EJ0106
+R01AN4234JJ0107
+R01AN4234EJ0107
 
 Version
 -------
-v1.06
+v1.07
 
 Overview
 --------
@@ -30,8 +30,10 @@ Supported MCUs
 --------------
 * RX64M Group
 * RX65N Group
+* RX66N Group
 * RX71M Group
 * RX72M Group
+* RX72N Group
 
 Boards Tested On
 ----------------
@@ -40,6 +42,7 @@ Boards Tested On
 * RSK for RX65N_2MB
 * RSK for RX71M
 * RSK for RX72M
+* RSK for RX72N
  
 Limitations
 -----------
@@ -51,7 +54,7 @@ Peripherals Used Directly
 
 Required Packages
 -----------------
-* r_bsp    v5.20
+* r_bsp    v5.50
 
 How to add to your project
 --------------------------
@@ -94,10 +97,10 @@ r_mmcif_rx
 +---doc
 |   |
 |   +---en
-|   |       r01an4234ej0106-rx-communication.pdf
+|   |       r01an4234ej0107-rx-communication.pdf
 |   |
 |   +---ja
-|           r01an4234jj0106-rx-communication.pdf
+|           r01an4234jj0107-rx-communication.pdf
 |
 +---ref
 |       r_mmcif_rx_config_reference.h
@@ -126,11 +129,22 @@ r_mmcif_rx
         |       r_mmcif_register.c
         |       r_mmcif_rx_target.h
         |
+        +---rx66n
+        |       r_mmcif_dev.c
+        |       r_mmcif_register.c
+        |       r_mmcif_rx_target.h
+        |
         +---rx71m
         |       r_mmcif_dev.c
         |       r_mmcif_register.c
         |       r_mmcif_rx_target.h
+        |
         +---rx72m
+        |       r_mmcif_dev.c
+        |       r_mmcif_register.c
+        |       r_mmcif_rx_target.h
+        |
+        +---rx72n
                 r_mmcif_dev.c
                 r_mmcif_register.c
                 r_mmcif_rx_target.h

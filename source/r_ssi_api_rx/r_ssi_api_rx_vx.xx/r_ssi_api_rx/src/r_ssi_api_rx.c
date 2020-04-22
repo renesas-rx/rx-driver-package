@@ -56,6 +56,7 @@ Includes   <System Includes> , "Project Includes"
 /* Function prototypes and device specific info needed for SSI API */
 #include "r_ssi_api_rx_if.h"
 
+#if (defined(SSI0) || defined(SSI1))
 /* Information needed for SSI API. */
 #include "r_ssi_api_rx_private.h"
 
@@ -255,7 +256,15 @@ void r_ssi_clear_flag_roirq ( volatile struct st_ssi R_SSI_EVENACCESS * p_ssi_re
 R_BSP_PRAGMA_STATIC_INLINE(r_ssi_module_stop)
 void r_ssi_module_stop (const ssi_ch_t Channel, const ssi_mstp_t ssi_mstp)
 {
+#if (R_BSP_VERSION_MAJOR >= 5) && (R_BSP_VERSION_MINOR >= 30)
+	bsp_int_ctrl_t int_ctrl;
+#endif
+
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
+
+#if (R_BSP_VERSION_MAJOR >= 5) && (R_BSP_VERSION_MINOR >= 30)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
 
     switch (Channel)
     {
@@ -272,6 +281,9 @@ void r_ssi_module_stop (const ssi_ch_t Channel, const ssi_mstp_t ssi_mstp)
             ; /* no operation */
         break;
     }
+#if (R_BSP_VERSION_MAJOR >= 5) && (R_BSP_VERSION_MINOR >= 30)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
 
     R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);
 } /* End of Function  */
@@ -427,14 +439,19 @@ ssi_ret_t r_ssi_check_param_mute (const ssi_ch_t Channel,
     return ret;
 } /* End of Function r_ssi_check_param_mute */
 
-/******************************************************************************
-* Function Name: R_SSI_Open
-* Description  : Opens SSI module & should be called once before use SSI
-                   peripheral.
-
-* Arguments    : const ssi_ch_t Channel      : [I] Channel Number of SSI
-* Return Value : Extcution Result
-******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_SSI_Open
+ ******************************************************************************************************************//**
+ * @brief Locks to keep a specified SSI channel and initializes it corresponding to r_ssi_api_rx_config.h.
+ * @param[in] Channel It specifies an SSI channel to lock. Choose one enumerator member from the enumerator typedef
+ * ssi_ch_t. It is described in file r_ssi_api_rx_if.h.
+ * @retval SSI_SUCCESS Successful, the specified SSI channel is configured.
+ * @retval SSI_ERR_PARAM Not successful, the parameter is illegal.
+ * @retval SSI_ERR_CHANNEL Not successful, the specified SSI channel can't be locked.
+ * @retval SSI_ERR_EXCEPT Not successful, the specified SSI channel is in unwanted hardware condition.
+ * @details Call this function certainly once before starting to use a specified SSI channel individually.
+ * @note -
+ */
 ssi_ret_t R_SSI_Open ( const ssi_ch_t Channel )
 {
     ssi_ret_t ret = SSI_SUCCESS;
@@ -575,12 +592,18 @@ ssi_ret_t R_SSI_Open ( const ssi_ch_t Channel )
 End of function  R_SSI_Open
 ******************************************************************************/
 
-/******************************************************************************
-* Function Name: R_SSI_Start
-* Description  : Starts transmit or receive operation using SSI peripheral.
-* Arguments    : const ssi_ch_t Channel      : [I] Channel Number of SSI
-* Return Value : Extcution Result
-******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_SSI_Start
+ ******************************************************************************************************************//**
+ * @brief Enables PCM data transmit and/or receive operations for a specified SSI channel.
+ * @param[in] Channel It specifies an SSI channel to enable PCM data transmit and/or receive operations. Choose one
+ * enumerator member from the enumerator typedef ssi_ch_t. It is described in file r_ssi_api_rx_if.h.
+ * @retval SSI_SUCCESS Successful, PCM data transmit and/or receive operations are enabled for the specified SSI channel.
+ * @retval SSI_ERR_PARAM Not successful, the parameter is illegal.
+ * @retval SSI_ERR_CHANNEL Not successful, the specified SSI channel has not been locked.
+ * @details Call this function to enable PCM data transmit and/or receive operation with a specified SSI channel.
+ * @note -
+ */
 ssi_ret_t R_SSI_Start ( const ssi_ch_t Channel )
 {
     ssi_ret_t ret = SSI_SUCCESS;
@@ -710,12 +733,19 @@ ssi_ret_t R_SSI_Start ( const ssi_ch_t Channel )
 End of function  R_SSI_Start
 ******************************************************************************/
 
-/******************************************************************************
-* Function Name: R_SSI_Stop
-* Description  : Stops SSI transmit or receive operation.
-* Arguments    : const ssi_ch_t Channel      : [I] Channel Number of SSI
-* Return Value : Extcution Result
-******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_SSI_Stop
+ ******************************************************************************************************************//**
+ * @brief Disables PCM data transmit and/or receive operations for a specified SSI channel.
+ * @param[in] Channel It specifies an SSI channel to disable PCM data transmit and/or receive operations. Choose one
+ * enumerator member from the enumerator typedef ssi_ch. It is described in file r_ssi_api_rx_if.h.
+ * @retval SSI_SUCCESS Successful, PCM data transmit and/or receive operations are disabled for the specified SSI channel.
+ * @retval SSI_ERR_PARAM Not successful, the parameter is illegal.
+ * @retval SSI_ERR_CHANNEL Not successful, the specified SSI channel has not been locked.
+ * @retval SSI_ERR_EXCEPT Not successful, the specified SSI channel is in unwanted hardware condition.
+ * @details Call this function to disable PCM data transmit and/or receive operation with a specified SSI channel.
+ * @note -
+ */
 ssi_ret_t R_SSI_Stop(const ssi_ch_t Channel)
 {
     ssi_ret_t ret = SSI_SUCCESS;
@@ -923,14 +953,18 @@ ssi_ret_t R_SSI_Stop(const ssi_ch_t Channel)
 End of function  R_SSI_Stop
 ******************************************************************************/
 
-/******************************************************************************
-* Function Name: R_SSI_Close
-* Description  : Closes SSI module & should be called when stop using SSI module.
-* Arguments    : const ssi_ch_t Channel      : [I] Channel Number of SSI
-* Return Value : Extcution Result
-* Note         : Need to wait more than a periof of 3 AUDIO_CLK before
-*                R_SSI_Open() to be called after R_SSI_Close().
-******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_SSI_Close
+ ******************************************************************************************************************//**
+ * @brief Unlocks to release a specified SSI channel.
+ * @param[in] Channel It specifies an SSI channel to release. Choose one enumerator member from the enumerator typedef
+ * ssi_ch_t. It is described in file r_ssi_api_rx_if.h.
+ * @retval SSI_SUCCESS Successful, the specified SSI channel is released.
+ * @retval SSI_ERR_PARAM Not successful, the parameter is illegal.
+ * @retval SSI_ERR_CHANNEL Not successful, the specified SSI channel can't be unlocked or has not been locked.
+ * @details Call this function when finish to use a specified SSI channel.
+ * @note -
+ */
 ssi_ret_t R_SSI_Close(const ssi_ch_t Channel)
 {
     ssi_ret_t ret = SSI_SUCCESS;
@@ -1014,14 +1048,26 @@ ssi_ret_t R_SSI_Close(const ssi_ch_t Channel)
 End of function  R_SSI_Close
 ******************************************************************************/
 
-/******************************************************************************
-* Function Name: R_SSI_Write
-* Description  : Writes PCM data to SSI Tx FIFO from pointed buffer memory.
-* Arguments    : const ssi_ch_t Channel     : [I] Channel Number of SSI
-*              : const void * pBuf          : [I/O] Pointer to Output Buffer
-*              : const uint8_t Samples      : [I] Number of samples to write 
-* Return Value : Extcution Result(<0) or Number of Samples written to Tx FIFO(>=0)
-******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_SSI_Write
+ ******************************************************************************************************************//**
+ * @brief Writes PCM data to a specified SSI channel for transmit operation. For the operation, adequate amount of
+ * buffer memory must be declared in user application software.
+ * @param[in] Channel It specifies an SSI channel to write PCM data. Choose one enumerator member from the enumerator
+ * typedef ssi_ch_t. It is described in file r_ssi_api_rx_if.h.
+ * @param[in] pBuf It specifies the beginning address of PCM buffer memory storing PCM data to writes to Transmit FIFO
+ * Data Register.
+ * @param[in] Samples It specifies the request number of PCM data samples to write to Transmit FIFO Data Register.
+ * @return The number of written samples: Shows the number of PCM data samples written to Transmit FIFO Data
+ * Register of a specified SSI channel.
+ * @retval SSI_ERR_PARAM Not successful, the parameter is illegal.
+ * @retval SSI_ERR_CHANNEL Not successful, the specified SSI channel has not been locked. Or the SSI channel
+ * is configured for receive operation.
+ * @retval SSI_ERR_EXCEPT Not successful, the specified SSI channel is in unwanted hardware condition.
+ * @details Call this function to write PCM data to a specified SSI channel's Transmit FIFO Data Register.
+ * @note that R_SSI_Write() should be called repeatedly to write PCM data to the specified SSI channel during
+ * transmit operation.
+ */
 int8_t R_SSI_Write( const ssi_ch_t Channel,
                     const  void * pBuf,
                     const  uint8_t Samples)
@@ -1141,14 +1187,26 @@ int8_t R_SSI_Write( const ssi_ch_t Channel,
 End of function  R_SSI_Write
 ******************************************************************************/
 
-/******************************************************************************
-* Function Name: R_SSI_Read
-* Description  : Reads PCM data from SSI Rx FIFO to pointed buffer memory.
-* Arguments    : const ssi_ch_t Channel     : [I] Channel Number of SSI
-*              : void * pBuf                : [I/O] Pointer to Input Buffer
-*              : const uint8_t Samples      : [I] Number of samples to read 
-* Return Value : Extcution Result(<0) or Number of Samples read from Rx FIFO(>=0)
-******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_SSI_Read
+ ******************************************************************************************************************//**
+ * @brief Reads PCM data from a specified SSI channel for receive operation. For the operation, adequate amount of
+ * buffer memory must be declared in user application software.
+ * @param[in] Channel It specifies an SSI channel to read PCM data. Choose one enumerator member from the enumerator
+ * typedef ssi_ch_t. It is described in file r_ssi_api_rx_if.h.
+ * @param[out] pBuf It specifies the beginning address of buffer memory storing PCM data read from Receive FIFO Data
+ * Register.
+ * @param[in] Samples It specifies the request number of PCM data samples to read from Receive FIFO Data Register.
+ * @return The number of read samples: Shows the number of PCM data samples read from Receive FIFO Data
+ * Register of a specified SSI channel.
+ * @retval SSI_ERR_PARAM Not successful, the parameter is illegal.
+ * @retval SSI_ERR_CHANNEL Not successful, the specified SSI channel has not been locked. Or returns
+ * SSI_ERR_CHANNEL when the SSI channel is configured for transmit operation.
+ * @retval SSI_ERR_EXCEPT Not successful, the specified SSI channel is in unwanted hardware condition.
+ * @details Call this function to read PCM data from a specified SSI channel's Receive FIFO Data Register.
+ * @note that R_SSI_Read() should be called repeatedly to read PCM data from the specified SSI channel
+ * during receive operation.
+ */
 int8_t R_SSI_Read( const ssi_ch_t Channel,
                     void * pBuf,
                     const uint8_t Samples)
@@ -1267,13 +1325,23 @@ int8_t R_SSI_Read( const ssi_ch_t Channel,
 End of function  R_SSI_Read
 ******************************************************************************/
 
-/******************************************************************************
-* Function Name: R_SSI_Mute
-* Description  : Executes mute(assert/deassert) operation. 
-* Arguments    : const ssi_ch_t Channel      : [I] Channel Number of SSI
-*              : const ssi_mute_t OnOff      : [I] Mute ON/OFF Switch
-* Return Value : Extcution Result
-******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_SSI_Mute
+ ******************************************************************************************************************//**
+ * @brief Sets or releases mute on a specified SSI channel during transmit operation.
+ * During mute, the transmitting PCM data of the specified SSI channel is turned 0.
+ * @param[in] Channel It specifies an SSI channel to set or release mute. Choose one enumerator member from the
+ * enumerator typedef ssi_ch_t. It is described in file r_ssi_api_rx_if.h.
+ * @param[in] OnOff It specifies to set or release mute. Choose one enumerator member from the enumerator typedef
+ * ssi_mute_t. It is described in file r_ssi_api_rx_if.h.
+ * @retval SSI_SUCCESS Successful, for the specified SSI channel.
+ * @retval SSI_ERR_PARAM Not successful, the parameter is illegal.
+ * @retval SSI_ERR_CHANNEL Not successful, the specified SSI channel has not been locked. Or the SSI channel
+ * is configured for operations other than transmit.
+ * @retval SSI_ERR_EXCEPT Not successful, the specified SSI channel is in unwanted hardware condition.
+ * @details Call this function to set or release mute for an SSI channel during transmit operation.
+ * @note -
+ */
 ssi_ret_t R_SSI_Mute(const ssi_ch_t Channel, const ssi_mute_t OnOff)
 {
     uint32_t timeout;
@@ -1455,15 +1523,15 @@ ssi_ret_t R_SSI_Mute(const ssi_ch_t Channel, const ssi_mute_t OnOff)
 End of function  R_SSI_Mute
 ******************************************************************************/
 
-/*******************************************************************************
-* Function Name: R_SSI_GetVersion
-* Description : Returns the version of this module. The version number is
-* encoded where the top 2 bytes are the major version number and
-* the bottom 2 bytes are the minor version number. For example,
-* Rev 4.25 would be 0x00040019.
-* Arguments : none
-* Return Value : Version Number
-*******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_SSI_GetVersion
+ ******************************************************************************************************************//**
+ * @brief Returns the module version.
+ * @return Version number with major and minor version digits packed into a single 32-bit value.
+ * @details The function returns the version of this module. The version number is encoded such that the top two bytes
+ * are the major version number and the bottom two bytes are the minor version number.
+ * @note -
+ */
 uint32_t R_SSI_GetVersion( void )
 {
     uint32_t version_number = 0u;
@@ -1481,12 +1549,18 @@ uint32_t R_SSI_GetVersion( void )
 End of function  R_SSI_GetVersion
 ******************************************************************************/
 
-/******************************************************************************
-* Function Name: R_SSI_ClearFlagTxUnderFlow
-* Description  : Clears Tx Under Flow flag. 
-* Arguments    : Channel: shows SSI0 or SSI1 
-* Return Value : Extcution Result
-******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_SSI_ClearFlagTxUnderFlow
+ ******************************************************************************************************************//**
+ * @brief Clears a specified SSI channel's TUIRQ flag of SSISR to 0.
+ * @param[in] Channel It specifies an SSI channel to clear the TUIRQ flag. Choose one enumerator member from the
+ * enumerator typedef ssi_ch_t. It is described in file r_ssi_api_rx_if.h.
+ * @retval SSI_SUCCESS Successful, this function cleared the TUIRQ flag of the specified SSI channel.
+ * @retval SSI_ERR_PARAM Not successful, the parameter is illegal.
+ * @retval SSI_ERR_CHANNEL Not successful, the specified SSI channel has not been locked.
+ * @details Call this function to clear the TUIRQ flag when the flag is 1.
+ * @note -
+ */
 ssi_ret_t R_SSI_ClearFlagTxUnderFlow ( const ssi_ch_t Channel )
 {
     ssi_ret_t ret = SSI_SUCCESS;
@@ -1513,12 +1587,18 @@ ssi_ret_t R_SSI_ClearFlagTxUnderFlow ( const ssi_ch_t Channel )
 End of function R_SSI_ClearFlagTxUnderFlow
 ******************************************************************************/
 
-/******************************************************************************
-* Function Name: R_SSI_ClearFlagTxOverFlow
-* Description  : Clears Tx Over Flow flag. 
-* Arguments    : Channel: shows SSI0 or SSI1 
-* Return Value : Extcution Result
-******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_SSI_ClearFlagTxOverFlow
+ ******************************************************************************************************************//**
+ * @brief Clears transmitter’s overflow status by setting the TOIRQ flag to 0.
+ * @param[in] Channel It specifies an SSI channel to clear the TOIRQ flag. Choose one enumerator member from the
+ * enumerator typedef ssi_ch_t. It is described in file r_ssi_api_rx_if.h.
+ * @retval SSI_SUCCESS Successful, this function cleared the TOIRQ flag of the specified SSI channel.
+ * @retval SSI_ERR_PARAM Not successful, the parameter is illegal.
+ * @retval SSI_ERR_CHANNEL Not successful, the specified SSI channel has not been locked.
+ * @details Call this function to clear the TOIRQ flag when the flag is 1.
+ * @note -
+ */
 ssi_ret_t R_SSI_ClearFlagTxOverFlow ( const ssi_ch_t Channel )
 {
     ssi_ret_t ret = SSI_SUCCESS;
@@ -1545,12 +1625,18 @@ ssi_ret_t R_SSI_ClearFlagTxOverFlow ( const ssi_ch_t Channel )
 End of function R_SSI_ClearFlagTxOverFlow
 ******************************************************************************/
 
-/******************************************************************************
-* Function Name: R_SSI_ClearFlagRxUnderFlow
-* Description  : Clears Rx Under Flow flag. 
-* Arguments    : Channel: shows SSI0 or SSI1 
-* Return Value : Extcution Result
-******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_SSI_ClearFlagRxUnderFlow
+ ******************************************************************************************************************//**
+ * @brief Clears a specified SSI channel's RUIRQ flag of SSISR to 0.
+ * @param[in] Channel It specifies an SSI channel to clear the RUIRQ flag. Choose one enumerator member from the
+ * enumerator typedef ssi_ch_t. It is described in file r_ssi_api_rx_if.h.
+ * @retval SSI_SUCCESS Successful, this function cleared the RUIRQ flag of the specified SSI channel.
+ * @retval SSI_ERR_PARAM Not successful, the parameter is illegal.
+ * @retval SSI_ERR_CHANNEL Not successful, the specified SSI channel has not been locked.
+ * @details Call this function to clear the RUIRQ flag when the flag is 1.
+ * @note -
+ */
 ssi_ret_t R_SSI_ClearFlagRxUnderFlow ( const ssi_ch_t Channel )
 {
     ssi_ret_t ret = SSI_SUCCESS;
@@ -1577,12 +1663,18 @@ ssi_ret_t R_SSI_ClearFlagRxUnderFlow ( const ssi_ch_t Channel )
 End of function R_SSI_ClearFlagRxUnderFlow
 ******************************************************************************/
 
-/******************************************************************************
-* Function Name: R_SSI_ClearFlagRxOverFlow
-* Description  : Clears Rx Over Flow flag. 
-* Arguments    : Channel: SSI_CH0 or SSI_CH1 
-* Return Value : Extcution Result
-******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_SSI_ClearFlagRxOverFlow
+ ******************************************************************************************************************//**
+ * @brief Clears a specified SSI channel's ROIRQ flag of SSISR to 0.
+ * @param[in] Channel It specifies an SSI channel to clear ROIRQ flag. Choose one enumerator member from the
+ * enumerator typedef ssi_ch_t. It is described in file r_ssi_api_rx_if.h.
+ * @retval SSI_SUCCESS Successful, this function cleared the ROIRQ flag of the specified SSI channel.
+ * @retval SSI_ERR_PARAM Not successful, the parameter is illegal.
+ * @retval SSI_ERR_CHANNEL Not successful, the specified SSI channel has not been locked.
+ * @details Call this function to clear the ROIRQ flag when the flag is 1.
+ * @note -
+ */
 ssi_ret_t R_SSI_ClearFlagRxOverFlow ( const ssi_ch_t Channel )
 {
     ssi_ret_t ret = SSI_SUCCESS;
@@ -1609,14 +1701,20 @@ ssi_ret_t R_SSI_ClearFlagRxOverFlow ( const ssi_ch_t Channel )
 End of function R_SSI_ClearFlagRxOverFlow
 ******************************************************************************/
 
-/******************************************************************************
-* Function Name: R_SSI_GetFlagTxUnderFlow
-* Description  : checks Tx Under Flow flag and return the flag is set or not. 
-* Arguments    : Channel: target SSI channel number to check flag
-* Return Value : shows the flag is "0" or "1" as follows;
-*                 SSI_FLAG_CLR : flag is 0
-*                 SSI_FLAG_SET : flag is 1
-******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_SSI_GetFlagTxUnderFlow
+ ******************************************************************************************************************//**
+ * @brief Returns a state of whether transmit underflow or not. The state is the value corresponding to a
+ * specified SSI channel's TUIRQ flag of SSISR.
+ * @param[in] Channel It specifies an SSI channel to get a state of the TUIRQ flag. Choose one enumerator member
+ * from the enumerator typedef ssi_ch_t. It is described in file r_ssi_api_rx_if.h.
+ * @retval SSI_CLR The specified SSI channel’s TUIRQ flag is 0.
+ * @retval SSI_SET The specified SSI channel’s TUIRQ flag is 1.
+ * @retval SSI_ERR_PARAM Not successful, the parameter is illegal.
+ * @retval SSI_ERR_CHANNEL Not successful, the specified SSI channel has not been locked.
+ * @details Call this function to read a state of the TUIRQ flag of the SSISR register of a specified SSI channel.
+ * @note -
+ */
 ssi_ret_t R_SSI_GetFlagTxUnderFlow ( const ssi_ch_t Channel )
 {
     ssi_ret_t ret = SSI_SUCCESS;
@@ -1650,14 +1748,20 @@ ssi_ret_t R_SSI_GetFlagTxUnderFlow ( const ssi_ch_t Channel )
 End of function  R_SSI_GetFlagTxUnderFlow
 ******************************************************************************/
 
-/******************************************************************************
-* Function Name: R_SSI_GetFlagTxOverFlow
-* Description  : checks Tx Over Flow flag and return the flag is set or not. 
-* Arguments    : Channel: target SSI channel number to check flag
-* Return Value : shows the flag is "0" or "1" as follows;
-*                 SSI_FLAG_CLR : flag is 0
-*                 SSI_FLAG_SET : flag is 1
-******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_SSI_GetFlagTxOverFlow
+ ******************************************************************************************************************//**
+ * @brief Returns a state of whether transmit overflow occurs or not. The state is the value corresponding to a
+ * specified SSI channel's TOIRQ flag of SSISR.
+ * @param[in] Channel It specifies an SSI channel to get a state of the TOIRQ flag. Choose one enumerator member
+ * from the enumerator typedef ssi_ch_t. It is described in file r_ssi_api_rx_if.h.
+ * @retval SSI_CLR The specified SSI channel’s TOIRQ flag is 0.
+ * @retval SSI_SET The specified SSI channel’s TOIRQ flag is 1.
+ * @retval SSI_ERR_PARAM Not successful, the parameter is illegal.
+ * @retval SSI_ERR_CHANNEL Not successful, the specified SSI channel has not been locked.
+ * @details Call this function to read a state of the TOIRQ flag of the SSISR register of a specified SSI channel.
+ * @note -
+ */
 ssi_ret_t R_SSI_GetFlagTxOverFlow ( const ssi_ch_t Channel )
 {
     ssi_ret_t ret = SSI_SUCCESS;
@@ -1691,14 +1795,20 @@ ssi_ret_t R_SSI_GetFlagTxOverFlow ( const ssi_ch_t Channel )
 End of function  R_SSI_GetFlagTxOverFlow
 ******************************************************************************/
 
-/******************************************************************************
-* Function Name: R_SSI_GetFlagRxUnderFlow
-* Description  : checks Rx Under Flow flag and return the flag is set or not. 
-* Arguments    : Channel: target SSI channel number to check flag
-* Return Value : shows the flag is "0" or "1" as follows;
-*                 SSI_FLAG_CLR : flag is 0
-*                 SSI_FLAG_SET : flag is 1
-******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_SSI_GetFlagRxUnderFlow
+ ******************************************************************************************************************//**
+ * @brief Returns a state of whether receive underflow occurs or not. The state is the value corresponding to a
+ * specified SSI channel's RUIRQ flag of SSISR.
+ * @param[in] Channel It specifies an SSI channel to get a state of the RUIRQ flag. Choose one enumerator member
+ * from the enumerator typedef ssi_ch_t. It is described in file r_ssi_api_rx_if.h.
+ * @retval SSI_CLR The specified SSI channel’s RUIRQ flag is 0.
+ * @retval SSI_SET The specified SSI channel’s RUIRQ flag is 1.
+ * @retval SSI_ERR_PARAM Not successful, the parameter is illegal.
+ * @retval SSI_ERR_CHANNEL Not successful, the specified SSI channel has not been locked.
+ * @details Call this function to read a state of the RUIRQ flag of the SSISR register of a specified SSI channel.
+ * @note -
+ */
 ssi_ret_t R_SSI_GetFlagRxUnderFlow ( const ssi_ch_t Channel )
 {
     ssi_ret_t ret = SSI_SUCCESS;
@@ -1732,14 +1842,20 @@ ssi_ret_t R_SSI_GetFlagRxUnderFlow ( const ssi_ch_t Channel )
 End of function  R_SSI_GetFlagRxUnderFlow
 ******************************************************************************/
 
-/******************************************************************************
-* Function Name: R_SSI_GetFlagRxOverFlow
-* Description  : checks Rx Over Flow flag and return the flag is set or not. 
-* Arguments    : Channel: target SSI channel number to check flag
-* Return Value : shows the flag is "0" or "1" as follows;
-*                 SSI_FLAG_CLR : flag is 0
-*                 SSI_FLAG_SET : flag is 1
-******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_SSI_GetFlagRxOverFlow
+ ******************************************************************************************************************//**
+ * @brief Returns a state of whether receive overflow occurs or not. The state is the value corresponding to a
+ * specified SSI channel's ROIRQ flag of SSISR.
+ * @param[in] Channel It specifies an SSI channel to get a state of the ROIRQ flag. Choose one enumerator member
+ * from the enumerator typedef ssi_ch_t. It is described in file r_ssi_api_rx_if.h.
+ * @retval SSI_CLR The specified SSI channel’s ROIRQ flag is 0.
+ * @retval SSI_SET The specified SSI channel’s ROIRQ flag is 1.
+ * @retval SSI_ERR_PARAM Not successful, the parameter is illegal.
+ * @retval SSI_ERR_CHANNEL Not successful, the specified SSI channel has not been locked.
+ * @details Call this function to read a state of the ROIRQ flag of the SSISR register of a specified SSI channel.
+ * @note -
+ */
 ssi_ret_t R_SSI_GetFlagRxOverFlow ( const ssi_ch_t Channel )
 {
     ssi_ret_t ret = SSI_SUCCESS;
@@ -1773,3 +1889,5 @@ ssi_ret_t R_SSI_GetFlagRxOverFlow ( const ssi_ch_t Channel )
 End of function R_SSI_GetFlagRxOverFlow
 ******************************************************************************/
 
+#endif
+/* End of file */

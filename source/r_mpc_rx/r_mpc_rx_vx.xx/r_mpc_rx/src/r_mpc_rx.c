@@ -35,6 +35,9 @@
 *         : 20.05.2019 3.00    Added support for GNUC and ICCRX.
 *         : 28.06.2019 3.10    Added support RX23W
 *         : 15.08.2019 3.20    Added support RX72M
+*         : 25.11.2019 3.30    Added support RX13T
+*                              Modified comment of API function to Doxygen style
+*         : 30.12.2019 3.40    Added support RX72N, RX66N
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -48,7 +51,7 @@ Includes   <System Includes> , "Project Includes"
 #include "r_mpc_rx_config.h"
 
 /***********************************************************************************************************************
-Macro definitions
+* Macro definitions
 ***********************************************************************************************************************/
 /* Base register of PFS used to calculate all PFS register addresses. This is constant for all supported MCUs */
 #define     MPC_PRV_PFS_BASE_REG    ((uint8_t volatile *)(&MPC.PWPR.BYTE+33))
@@ -59,23 +62,25 @@ Macro definitions
 #define     MPC_PRV_PFS_BIT_PSEL            ((uint8_t)0x3F)
 
 /***********************************************************************************************************************
-Typedef definitions
+* Typedef definitions
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
-Private global variables and functions
+* Private global variables and functions
 ***********************************************************************************************************************/
 static uint8_t volatile * mpc_base_addr_get(uint8_t volatile * base_addr, uint16_t index);
 
 /***********************************************************************************************************************
 * Function Name: R_MPC_Read
-* Description  : Reads the MPC information for a given pin.
-* Arguments    : pin -
-*                    Which pin to use
-*                pconfig -
-*                    Pointer of where to store pin configuration info
-* Return Value : none
-***********************************************************************************************************************/
+********************************************************************************************************************//**
+* @brief This function reads the function configuration of a pin.
+* @param[in] pin - Which pin to read configuration information for.
+* @param[in] pconfig - Pointer to structure where pin configuration information will be stored. See Section 2.9.1, MPC
+* Pin Configuration.
+* @details This function will read the configuration information for a pin and store it in a structure supplied by the
+* user.
+* @note None.
+*/
 void R_MPC_Read (gpio_port_pin_t pin, mpc_config_t * pconfig)
 {
     uint8_t volatile * pfs_reg;
@@ -109,16 +114,23 @@ void R_MPC_Read (gpio_port_pin_t pin, mpc_config_t * pconfig)
 
 /***********************************************************************************************************************
 * Function Name: R_MPC_Write
-* Description  : Writes the PFS register for a given pin.
-* Arguments    : pin -
-*                    Which pin to use
-*                pconfig -
-*                    Pointer to structure with pin configuration info
-* Return Value : MPC_SUCCESS -
-*                    MPC register set successfully
-*                MPC_ERR_INVALID_CFG -
-*                    Input configuration is invalid
-***********************************************************************************************************************/
+********************************************************************************************************************//**
+* @brief This function sets the function of a pin.
+* @param[in] pin - Which pin to configure.
+* @param[in] pconfig - Pointer to structure with pin configuration information. See section 2.9.1, MPC Pin
+* Configuration.
+* @retval [MPC_SUCCESS] Successful; pin configured.
+* @retval [MPC_ERR_INVALID_CFG] Error; invalid configuration input.
+* @details This function will configure a pin based on the information in the mpc_config_t structure. Not all pins
+* support the same functionality. For example, not all pins are able to be configured as analog pins for ADC or DAC use.
+* Also, not all combinations of functionality are capable. For example, a pin cannot be configured as an analog pin and
+* for peripheral use at the same time.
+* To see what functions are available for a pin, refer to the Multi-Function Pin Controller (MPC) section of your MCU’s
+* hardware manual. Select the Pin Function Control Register for the port that your pin is on. On this page you will
+* find a table with available functions for each pin on the selected port.
+* Which pin is to be configured by this function is defined using the gpio_port_pin_t type from the r_gpio_rx module.
+* @note None.
+*/
 mpc_err_t R_MPC_Write (gpio_port_pin_t pin, mpc_config_t * pconfig)
 {
     uint8_t volatile * pfs_reg;
@@ -168,12 +180,14 @@ mpc_err_t R_MPC_Write (gpio_port_pin_t pin, mpc_config_t * pconfig)
 
 /***********************************************************************************************************************
 * Function Name: R_MPC_GetVersion
-* Description  : Returns the current version of this module. The version number is encoded where the top 2 bytes are the
-*                major version number and the bottom 2 bytes are the minor version number. For example, Version 4.25
-*                would be returned as 0x00040019.
-* Arguments    : none
-* Return Value : Version of this module.
-***********************************************************************************************************************/
+********************************************************************************************************************//**
+* @brief Returns the current version of this API.
+* @return  Version of this API.
+* @details This function will return the version of the currently running API. The version number is encoded where
+* the top 2 bytes are the major version number and the bottom 2 bytes are the minor version number. For example,
+* Version 4.25 would be returned as 0x00040019.
+* @note None.
+*/
 uint32_t R_MPC_GetVersion (void)
 {
     /* These version macros are defined in r_mpc_rx_if.h. */

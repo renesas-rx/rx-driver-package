@@ -5,12 +5,12 @@ r_uid_rx
 
 Document Number 
 ---------------
-r01an2191ej0112
-r01an2191jj0112
+r01an2191ej0113
+r01an2191jj0113
 
 Version
 -------
-v1.12
+v1.13
 
 Overview
 --------
@@ -26,6 +26,7 @@ Supported MCUs
 * RX111 Group
 * RX113 Group
 * RX130 Group
+* RX13T Group
 
 Boards Tested On
 ----------------
@@ -33,6 +34,7 @@ Boards Tested On
 * RSKRX111
 * RSKRX113
 * RSKRX130
+* RX13T CPU Card
 
 
 Limitations
@@ -45,7 +47,7 @@ Peripherals Used Directly
 
 Required Packages
 -----------------
-* r_bsp      V5.20
+* r_bsp      V5.30
 
 Toolchain(s) Used
 -----------------
@@ -62,10 +64,10 @@ r_uid_rx
 |
 +---doc
 |   +---en
-|   |   r01an2191ej0112-rx-uid.pdf
+|   |   r01an2191ej0113-rx-uid.pdf
 |   |
 |   +---ja
-|       r01an2191jj0112-rx-uid.pdf
+|       r01an2191jj0113-rx-uid.pdf
 |
 +---src
     +-- r_uid_rx.c

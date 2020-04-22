@@ -5,17 +5,17 @@ r_pdc_rx
 
 Document Number
 ---------------
-R01AN3167EJ0204-rx-pdc (English version)
-R01AN3167JJ0204-rx-pdc (Japanese version)
+R01AN3167EJ0205-rx-pdc (English version)
+R01AN3167JJ0205-rx-pdc (Japanese version)
 
 Version
 -------
-v2.04
+v2.05
 
 Overview
 --------
 The PDC fit module provides a method to capture the parallel data output from the device including image sensors.
-The source was tested on the board RSKRX64M and RSKRX71M, RSKRX65N, RSKRX65N_2MB, RSKRX72M, IDE e2studio with RX compiler
+The source was tested on the board RSKRX64M and RSKRX71M, RSKRX65N, RSKRX65N_2MB, RSKRX72M, RSKRX66N, RSKRX72N, IDE e2studio with RX compiler
 The driver includes API functions to initialize PDC, Control of PDC module, registrasion of the callback function etc..
 All configuration options can be found in "r_config\r_pdc_rx_config.h".
 An original copy of the configuration file is stored in "r_pdc_rx\ref\r_pdc_rx_config_reference.h".
@@ -31,6 +31,8 @@ Supported MCUs
 * RX651 Group
 * RX65N Group
 * RX72M Group
+* RX66N Group
+* RX72N Group
 
 Boards Tested On
 ----------------
@@ -39,6 +41,7 @@ Boards Tested On
 * RSKRX65N
 * RSKRX65N_2MB
 * RSKRX72M
+* RSKRX72N
 
 Limitations
 -----------
@@ -81,10 +84,10 @@ r_pdc_rx
 +---doc
 |   |
 |   +---en
-|   |   r01an3167ej0204-rx-pdc.pdf
+|   |   r01an3167ej0205-rx-pdc.pdf
 |   |
 |   \---ja
-|       r01an3167jj0204-rx-pdc.pdf
+|       r01an3167jj0205-rx-pdc.pdf
 |
 +---ref
 |       r_pdc_rx_config_reference.h

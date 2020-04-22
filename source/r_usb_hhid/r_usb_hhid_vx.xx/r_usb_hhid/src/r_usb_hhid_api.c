@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer
  *
- * Copyright (C) 2014(2018) Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2014(2020) Renesas Electronics Corporation. All rights reserved.
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_usb_hhid_api.c
@@ -28,12 +28,13 @@
  *         : 30.09.2016 1.20 RX65N/RX651 is added.
  *         : 30.09.2017 1.22 "R_USB_HhidDriverRelease","R_USB_HhidTransferEnd","R_USB_HhidChangeDeviceState"
  *                           "R_USB_HhidGetReportLength","R_USB_HhidClassRequest","R_USB_HhidPipeTransfer" is deleted.
- *         : 31.03.2018 1.23 Supporting Smart Configurator 
+ *         : 31.03.2018 1.23 Supporting Smart Configurator.
+ *         : 01.03.2020 1.30 RX72N/RX66N is added and uITRON is supported.
  ***********************************************************************************************************************/
 
-/******************************************************************************
+/***********************************************************************************************************************
  Includes   <System Includes> , "Project Includes"
- ******************************************************************************/
+************************************************************************************************************************/
 
 #include "r_usb_basic_if.h"
 #include "r_usb_typedef.h"
@@ -43,17 +44,24 @@
 #include "r_usb_hhid_if.h"
 #include "r_usb_hhid.h"
 
-/******************************************************************************
+/***********************************************************************************************************************
  Renesas Abstracted USB Driver functions
- ******************************************************************************/
+************************************************************************************************************************/
 
-/******************************************************************************
-Function Name   : R_USB_HhidGetType
-Description     : Get HID protocol.(USB Mouse/USB Keyboard/Protocon non.)
-Arguments       : usb_ctrl_t *p_ctrl    : Pointer to usb_ctrl_t structure
-                : uint8_t *p_type       : Address for stored HID protocol value.
-Return value    : usb_err_t error code  : USB_SUCCESS,USB_ERR_NG etc.
-******************************************************************************/
+/***********************************************************************************************************************
+ * Function Name   : R_USB_HhidGetType
+ *******************************************************************************************************************//**
+ * @brief  Obtains type information for the HID device.
+ * @param[in]  p_ctrl          Pointer to usb_ctrl_t structure area
+ * @param[out] p_type          Pointer to the area to store the type information
+ * @retval     USB_SUCCESS     Successfully completed
+ * @retval     USB_ERR_PARA    Parameter error
+ * @retval     USB_ERR_NG      Other error
+ * @details Based on the information assigned to the usb_crtl_t structure (the member module and address), 
+ * obtains type information (mouse, keyboard, etc.) for the connected HID device. 
+ * The type information is set to the area indicated by the second argument (p_type).
+ * @note The argument (p_ctrl) is not supported when using RX100/RX200 series MCU.
+ */
 usb_err_t R_USB_HhidGetType(usb_ctrl_t *p_ctrl, uint8_t *p_type)
 {
     usb_err_t   err;
@@ -92,21 +100,27 @@ usb_err_t R_USB_HhidGetType(usb_ctrl_t *p_ctrl, uint8_t *p_type)
     return USB_SUCCESS;
 
 }
-/******************************************************************************
+/***********************************************************************************************************************
  End of function R_USB_HhidGetType
- ******************************************************************************/
+************************************************************************************************************************/
 
 
-/******************************************************************************
-Function Name   : R_USB_HhidGetMxps
-Description     : Obtains max packet size for the connected HID device
-                : The max packet size is set to the area
-                : Set the direction (USB_IN/USB_OUT)
-Arguments       : usb_ctrl_t *p_ctrl    : Pointer to usb_ctrl_t structure area
-                : uint16_t *p_mxps      : Pointer to the area to store the max package size
-                : uint8_t dir           : Transfer direction
-Return value    : usb_err_t error code  : USB_SUCCESS,USB_ERR_NG etc.
-******************************************************************************/
+/***********************************************************************************************************************
+ * Function Name   : R_USB_HhidGetMxps
+ *******************************************************************************************************************//**
+ * @brief  Obtains the max packet size for the HID device.
+ * @param[in]  p_ctrl          Pointer to usb_ctrl_t structure area
+ * @param[out] p_mxps          Pointer to the area to store the max packe size
+ * @param[in]  dir             Transfer direction
+ * @retval     USB_SUCCESS     Successfully completed
+ * @retval     USB_ERR_PARA    Parameter error
+ * @retval     USB_ERR_NG      Other error
+ * @details Based on the information assigned to the usb_crtl_t structure (the member module and address), 
+ * obtains max packet size for the connected HID device. The max packet size is set to the area indicated 
+ * by the second argument (p_mxps). 
+ * Set the direction (USB_IN / USB_OUT) of the max packet size which the user want to obtain  to the third argument (3rd)
+ * @note The argument (p_ctrl) is not supported when using RX100/RX200 series MCU.
+ */
 usb_err_t R_USB_HhidGetMxps(usb_ctrl_t *p_ctrl, uint16_t *p_mxps, uint8_t dir)
 {
     usb_err_t   err;
@@ -178,12 +192,10 @@ usb_err_t R_USB_HhidGetMxps(usb_ctrl_t *p_ctrl, uint16_t *p_mxps, uint8_t dir)
     return USB_SUCCESS;
 
 }
-/******************************************************************************
+/***********************************************************************************************************************
  End of function R_USB_HhidGetMxps
- ******************************************************************************/
+************************************************************************************************************************/
 
-
-
-/******************************************************************************
+/***********************************************************************************************************************
  End  Of File
- ******************************************************************************/
+************************************************************************************************************************/

@@ -48,6 +48,8 @@
 *         : 18.06.2019 3.01    Removed "defined(__BIG_ENDIAN__)" from DTC_BIG_ENDIAN macro definition.
 *         : 28.06.2019 3.10    Added support for RX23W.
 *         : 15.08.2019 3.20    Added support for RX72M.
+*         : 25.11.2019 3.30    Added support for RX13T.
+*         : 30.12.2019 3.40    Added support for RX66N, RX72N.
 *******************************************************************************/
 #ifndef DTC_RX_PRIVATE_H
 #define DTC_RX_PRIVATE_H
@@ -94,6 +96,15 @@ Includes   <System Includes> , "Project Includes"
         #error "Change to DTC_CFG_USE_DMAC_FIT_MODULE (DTC_DISABLE) in r_dtc_rx_config.h."
     #endif
     #if (DTC_CFG_USE_SEQUENCE_TRANSFER == DTC_ENABLE)
+        #error "Change to DTC_CFG_USE_SEQUENCE_TRANSFER (DTC_DISABLE) in r_dtc_rx_config.h."
+    #endif
+#elif defined(BSP_MCU_RX13T)
+    #include ".\src\targets\rx13t\r_dtc_rx_target.h"
+    #if (DTC_CFG_USE_DMAC_FIT_MODULE == DTC_ENABLE)
+        #error "This MCU does not have DMAC module."
+        #error "Change to DTC_CFG_USE_DMAC_FIT_MODULE (DTC_DISABLE) in r_dtc_rx_config.h."
+    #endif
+    #if (DTC_CFG_USE_SEQUENCE_TRANSFER == DTC_ENABLE) && (DTC_ENABLE == DTC_CFG_SHORT_ADDRESS_MODE)
         #error "Change to DTC_CFG_USE_SEQUENCE_TRANSFER (DTC_DISABLE) in r_dtc_rx_config.h."
     #endif
 #elif defined(BSP_MCU_RX113)
@@ -158,6 +169,11 @@ Includes   <System Includes> , "Project Includes"
     #if (DTC_CFG_USE_SEQUENCE_TRANSFER == DTC_ENABLE)
         #error "Change to DTC_CFG_USE_SEQUENCE_TRANSFER (DTC_DISABLE) in r_dtc_rx_config.h."
     #endif
+#elif defined(BSP_MCU_RX66N)
+    #if (DTC_CFG_USE_SEQUENCE_TRANSFER == DTC_ENABLE) && (DTC_ENABLE == DTC_CFG_SHORT_ADDRESS_MODE)
+        #error "Change to DTC_CFG_USE_SEQUENCE_TRANSFER (DTC_DISABLE) in r_dtc_rx_config.h."
+    #endif
+    #include ".\src\targets\rx66n\r_dtc_rx_target.h"
 #elif defined(BSP_MCU_RX72T)
     #include ".\src\targets\rx72t\r_dtc_rx_target.h"
     #if (DTC_CFG_USE_SEQUENCE_TRANSFER == DTC_ENABLE)
@@ -168,6 +184,11 @@ Includes   <System Includes> , "Project Includes"
         #error "Change to DTC_CFG_USE_SEQUENCE_TRANSFER (DTC_DISABLE) in r_dtc_rx_config.h."
     #endif
     #include ".\src\targets\rx72m\r_dtc_rx_target.h"
+#elif defined(BSP_MCU_RX72N)
+    #if (DTC_CFG_USE_SEQUENCE_TRANSFER == DTC_ENABLE) && (DTC_ENABLE == DTC_CFG_SHORT_ADDRESS_MODE)
+        #error "Change to DTC_CFG_USE_SEQUENCE_TRANSFER (DTC_DISABLE) in r_dtc_rx_config.h."
+    #endif
+    #include ".\src\targets\rx72n\r_dtc_rx_target.h"
 #else
     #error "This MCU is not supported by the current r_dtc_rx module."
 #endif

@@ -24,6 +24,7 @@
  * History : DD.MM.YYYY Version Description           
  *         : 01.10.2016 1.00    First Release
  *         : 01.04.2019 1.41    Added "WAIT_LOOP" keyword.
+ *         : 14.11.2019 2.00    Added support for GNUC and ICCRX.
  **********************************************************************************************************************/
 
 /*********************************************************************************************************************
@@ -212,21 +213,21 @@ lpc_err_t lpc_low_power_mode_configure (lpc_low_power_mode_t e_mode)
     {
         case LPC_LP_SLEEP:
             R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
-            SYSTEM.SBYCR.BIT.SSBY = 0;      /* Move to Sleep on wait();DSLPE also needs to be cleared */
-            SYSTEM.MSTPCRC.BIT.DSLPE = 0;   /* Move to Sleep on wait() */
+            SYSTEM.SBYCR.BIT.SSBY = 0;      /* Move to Sleep on R_BSP_WAIT();DSLPE also needs to be cleared */
+            SYSTEM.MSTPCRC.BIT.DSLPE = 0;   /* Move to Sleep on R_BSP_WAIT() */
             R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);
         break;
         
         case LPC_LP_DEEP_SLEEP:
             R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
-            SYSTEM.SBYCR.BIT.SSBY = 0;      /* Move to DeepSleep on wait(). DSLPE also needs to be set */
-            SYSTEM.MSTPCRC.BIT.DSLPE = 1;   /* Move to DeepSleep on wait() */
+            SYSTEM.SBYCR.BIT.SSBY = 0;      /* Move to DeepSleep on R_BSP_WAIT(). DSLPE also needs to be set */
+            SYSTEM.MSTPCRC.BIT.DSLPE = 1;   /* Move to DeepSleep on R_BSP_WAIT() */
             R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);
         break;
 
         case LPC_LP_SW_STANDBY:
             R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
-            SYSTEM.SBYCR.BIT.SSBY = 1;      /* Move to Sw Stby on wait() */
+            SYSTEM.SBYCR.BIT.SSBY = 1;      /* Move to Sw Stby on R_BSP_WAIT() */
             R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);
         break;
     
@@ -244,7 +245,7 @@ lpc_err_t lpc_low_power_mode_configure (lpc_low_power_mode_t e_mode)
 
 /*********************************************************************************************************************
  * Function Name: lpc_lowpower_activate
- * Description  : This function will activate the pre-configured low power mode. The wait() function re-enables
+ * Description  : This function will activate the pre-configured low power mode. The R_BSP_WAIT() function re-enables
  *                interrupts.
  * Arguments    : void (*pcallback)(void* pdata)-
  *                Call back function to configure any un-configured interrupt that can be used to wake up from the low
@@ -284,15 +285,15 @@ lpc_err_t lpc_lowpower_activate (lpc_callback_set_t pcallback)
     }
     else
     {
-        nop();
-        nop();
-        nop();
-        nop();
-        nop(); /* Read last written IO register to make sure it is complete */
-        nop(); /* or wait for 4-5 cycles till any prior write is complete */
+        R_BSP_NOP();
+        R_BSP_NOP();
+        R_BSP_NOP();
+        R_BSP_NOP();
+        R_BSP_NOP(); /* Read last written IO register to make sure it is complete */
+        R_BSP_NOP(); /* or wait for 4-5 cycles till any prior write is complete */
     }
 
-    wait();                         /* Enter Low Power mode */
+    R_BSP_WAIT();                         /* Enter Low Power mode */
     return LPC_SUCCESS;
 }
 /*********************************************************************************************************************

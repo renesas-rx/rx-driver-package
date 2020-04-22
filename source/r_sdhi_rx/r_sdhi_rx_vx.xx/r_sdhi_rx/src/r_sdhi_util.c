@@ -19,7 +19,7 @@
 /**********************************************************************************************************************
 * System Name  : SDHI Driver
 * File Name    : r_sdhi_util.c
-* Version      : 2.05
+* Version      : 2.06
 * Device       : RX
 * Abstract     : API & Sub module
 * Tool-Chain   : For RX e2_studio
@@ -34,6 +34,7 @@
 *              : 20.05.2019 2.04    Added support for GNUC and ICCRX.
 *                                   Fixed coding style. 
 *              : 30.07.2019 2.05    Added  WAIT LOOP 
+*              : 22.11.2019 2.06    Modified comment of API function to Doxygen style.
 **********************************************************************************************************************/
 
 /**********************************************************************************************************************
@@ -62,17 +63,26 @@ static longq_hdl_t     p_sdhi_long_que = 0;                 /* LONGQ module     
 #endif /* SDHI_CFG_LONGQ_ENABLE */
 
 /**********************************************************************************************************************
-* Outline      : Control SD Clock
-* Function Name: R_SDHI_SetClock
-* Description  : Supplies or halts the SD clock.
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-*              : uint32_t           div                  ;   PCLK Clock divide ratio for SDHI clock
-*              : int32_t            enable               ;   SDHI_CLOCK_ENABLE or SDHI_CLOCK_DISABLE
-* Return Value : SDHI_SUCCESS                            ;   Successful operation
-*              : SDHI_ERR                                ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_SetClock
+ *****************************************************************************************************************/ /**
+ * @brief This function turns the SD clock on and off.
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @param[in] div
+ *             Use the following setting values:\n 
+ *              High-speed mode: SDHI_CFG_DIV_HIGH_SPEED\n 
+ *              Default-speed mode: SDHI_CFG_DIV_DEFAULT_SPEED\n 
+ *              Card-recognition mode: SDHI_CFG_DIV_INIT_SPEED\n 
+ *              Refer to 2.7 in application note, regarding the definitions of the above.
+ * @param[in] enable
+ *             Use the following setting values:\n 
+ *              Clock stopped: SDHI_CLOCK_DISABLE\n 
+ *              Clock supplied: SDHI_CLOCK_ENABLE
+ * @retval    SDHI_SUCCESS Successful operation
+ * @retval    SDHI_ERR     General error
+ * @details   Turns the SD clock on and off.
+ * @note      Before running this function, initialization processing by the R_SDHI_Open() function is required.
+ */
 sdhi_status_t R_SDHI_SetClock(uint32_t channel, uint32_t div, int32_t enable)
 {
     sdhi_sdhndl_t   * p_hndl = 0;
@@ -219,16 +229,21 @@ sdhi_status_t R_SDHI_SetClock(uint32_t channel, uint32_t div, int32_t enable)
 } /* End of function R_SDHI_SetClock() */
 
 /**********************************************************************************************************************
-* Outline      : Control SD Bus Width
-* Function Name: R_SDHI_SetBus
-* Description  : Changes the SD bus width.
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-*              : int32_t            width                ;   SDHI_PORT_1BIT or SDHI_PORT_4BIT
-* Return Value : SDHI_SUCCESS                            ;   Successful operation
-*              : SDHI_ERR                                ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_SetBus
+ *****************************************************************************************************************/ /**
+ * @brief This function makes SD bus settings.
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @param[in] width
+ *             Use the following setting values:\n 
+ *              1-bit bus: SDHI_PORT_1BIT\n 
+ *              4-bit bus: SDHI_PORT_4BIT
+ * @retval    SDHI_SUCCESS Successful operation
+ * @retval    SDHI_ERR     General error
+ * @details   Controls the SD bus width select bit (SDOPT.WIDTH) to set the SD bus to 1-bit or 4-bit operation.
+ * @note      Before running this function, initialization processing by the R_SDHI_Open() function is required.\n 
+ *            Do not call this function while a command sequence is running (SDSTS2.CBSY = 1).
+ */
 sdhi_status_t R_SDHI_SetBus(uint32_t channel, int32_t width)
 {
     sdhi_sdhndl_t    * p_hndl = 0;
@@ -284,16 +299,22 @@ sdhi_status_t R_SDHI_SetBus(uint32_t channel, int32_t width)
 } /* End of function R_SDHI_SetBus() */
 
 /**********************************************************************************************************************
-* Outline      : Check Hardware Write Protect
-* Function Name: R_SDHI_GetWP
-* Description  : Checks the hardware write protect using the SDHI register.
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-*              : uint32_t         * p_wp                 ;   SDHI_SDSTS1 WP bit
-* Return Value : SDHI_SUCCESS                            ;   Successful operation
-*              : SDHI_ERR                                ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_GetWP
+ *****************************************************************************************************************/ /**
+ * @brief This function gets the state of the SDHI_WP (SD write protect) pin.
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @param[out] *p_wp
+ *             Pointer to storage destination of SDHI_WP pin state \n 
+ *              0: SDHI_WP pin level is high.\n 
+ *              1: SDHI_WP pin level is low.
+ * @retval    SDHI_SUCCESS Successful operation
+ * @retval    SDHI_ERR     General error
+ * @details   Gets the SDHI_WP pin state.
+ * @note      Before running this function, initialization processing by the R_SDHI_Open() function is required.\n 
+ *            To execute this function, the terminal setting processing of the SDHI_WP terminal is necessary. 
+ *            For details, refer to section 4 in application note.
+ */
 sdhi_status_t R_SDHI_GetWP(uint32_t channel, uint32_t * p_wp)
 {
     sdhi_sdhndl_t   * p_hndl = 0;
@@ -329,21 +350,26 @@ sdhi_status_t R_SDHI_GetWP(uint32_t channel, uint32_t * p_wp)
 } /* End of function R_SDHI_GetWP() */
 
 /**********************************************************************************************************************
-* Outline      : Get Response and Check Response Errors
-* Function Name: R_SDHI_GetResp
-* Description  : Gets the response value from the RESP register.
-*              : After finishing this function, start the data transfer. 
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-*              : sdhi_get_resp_t    * p_resp_reg         ;   Response register
-*              :    sdrsp10                              ;   SDRSP10 register
-*              :    sdrsp32                              ;   SDRSP32 register
-*              :    sdrsp54                              ;   SDRSP54 register
-*              :    sdrsp76                              ;   SDRSP76 register
-* Return Value : SDHI_SUCCESS                            ;   Successful operation
-*              : SDHI_ERR                                ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_GetResp
+ *****************************************************************************************************************/ /**
+ * @brief This function gets the response from the SD card.
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @param[out] *p_resp_reg
+ *             Response register information structure\n 
+ *              sdrsp10: Variable stored in response register 10\n 
+ *              sdrsp32: Variable stored in response register 32\n 
+ *              sdrsp54: Variable stored in response register 54\n 
+ *              sdrsp76: Variable stored in response register 76
+ * @retval    SDHI_SUCCESS Successful operation
+ * @retval    SDHI_ERR     General error
+ * @details   Stores the values contained in the response registers (SDRSP10, SDRSP32, SDRSP54, and SDRSP76) 
+ *            in the response register information structure. Divides and stores the contents of the response 
+ *            among register sdrsp10, sdrsp32, sdrsp54, and sdrsp76, according to the response type. 
+ *            Section 3.17 in application note shows the correspondence between the response register information
+ *            structure and response storage destinations.
+ * @note      Before running this function, initialization processing by the R_SDHI_Open() function is required.
+ */
 sdhi_status_t R_SDHI_GetResp(uint32_t channel, sdhi_get_resp_t * p_resp_reg)
 {
     sdhi_sdhndl_t * p_hndl = 0;
@@ -381,16 +407,19 @@ sdhi_status_t R_SDHI_GetResp(uint32_t channel, sdhi_get_resp_t * p_resp_reg)
 } /* End of function R_SDHI_GetResp() */
 
 /**********************************************************************************************************************
-* Outline      : Get Buffer Register Address
-* Function Name: R_SDHI_GetBuffRegAddress
-* Description  : Gets the Buffer Register Address.
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-*              : uint32_t           * p_reg_buff         ;   Buffer Register Address
-* Return Value : SDHI_SUCCESS                            ;   Successful operation
-*              : SDHI_ERR                                ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_GetBuffRegAddress
+ *****************************************************************************************************************/ /**
+ * @brief This function gets the address of the SD buffer register.
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @param[out] *p_reg_buff
+ *             Pointer to SD buffer register address
+ * @retval    SDHI_SUCCESS Successful operation
+ * @retval    SDHI_ERR     General error
+ * @details   Gets the SD buffer register address and stores it in the buffer.\n 
+ *            Used for example when setting data register addresses to be used for DMAC or DTC transfers.
+ * @note      Before running this function, initialization processing by the R_SDHI_Open() function is required.
+ */
 sdhi_status_t R_SDHI_GetBuffRegAddress(uint32_t channel, uint32_t * p_reg_buff)
 {
     sdhi_sdhndl_t  * p_hndl = 0;
@@ -426,17 +455,21 @@ sdhi_status_t R_SDHI_GetBuffRegAddress(uint32_t channel, uint32_t * p_reg_buff)
 } /* End of function R_SDHI_GetBuffRegAddress() */
 
 /**********************************************************************************************************************
-* Outline      : Set SDHI Register
-* Function Name: R_SDHI_OutReg
-* Description  : Sets SDHI register.
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-*              : uint32_t           reg                  ;   SDHI register
-*              : uint32_t           data                 ;   Data
-* Return Value : SDHI_SUCCESS                            ;   Successful operation
-*              : SDHI_ERR                                ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_OutReg
+ *****************************************************************************************************************/ /**
+ * @brief This function sets the SDHI registers.
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @param[in] reg
+ *             SDHI base register offset value. Refer to the table in section 3.18 in application note, 
+ *             when setting macro definitions.
+ * @param[in] data
+ *             Register setting value
+ * @retval    SDHI_SUCCESS Successful operation
+ * @retval    SDHI_ERR     General error
+ * @details   Sets SDHI registers.
+ * @note      Before running this function, initialization processing by the R_SDHI_Open() function is required.
+ */
 sdhi_status_t R_SDHI_OutReg(uint32_t channel, uint32_t reg, uint32_t data)
 {
     sdhi_sdhndl_t  * p_hndl = 0;
@@ -469,17 +502,21 @@ sdhi_status_t R_SDHI_OutReg(uint32_t channel, uint32_t reg, uint32_t data)
 } /* End of function R_SDHI_OutReg() */
 
 /**********************************************************************************************************************
-* Outline      : Get SDHI Register
-* Function Name: R_SDHI_InReg
-* Description  : Gets SDHI register.
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-*              : uint32_t           reg                  ;   SDHI register
-*              : uint32_t           * p_data             ;   Data pointer
-* Return Value : SDHI_SUCCESS                            ;   Successful operation
-*              : SDHI_ERR                                ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_InReg
+ *****************************************************************************************************************/ /**
+ * @brief This function gets the value of an SDHI register.
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @param[in] reg
+ *             SDHI base register offset value. Refer to the table in section 3.18 in application note, 
+ *             when setting macro definitions.
+ * @param[out] *p_data
+ *             Pointer to storage destination of acquired register value
+ * @retval    SDHI_SUCCESS Successful operation
+ * @retval    SDHI_ERR     General error
+ * @details   Sets SDHI registers.
+ * @note      Before running this function, initialization processing by the R_SDHI_Open() function is required.
+ */
 sdhi_status_t R_SDHI_InReg(uint32_t channel, uint32_t reg, uint32_t * p_data)
 {
     sdhi_sdhndl_t  * p_hndl = 0;
@@ -514,16 +551,14 @@ sdhi_status_t R_SDHI_InReg(uint32_t channel, uint32_t reg, uint32_t * p_data)
 } /* End of function R_SDHI_InReg() */
 
 /**********************************************************************************************************************
-* Outline      : Get Version
-* Function Name: R_SDHI_GetVersion
-* Description  : Returns the version of this module. The version number is
-*                encoded such that the top two bytes are the major version
-*                number and the bottom two bytes are the minor version number.
-* Arguments    : none
-* Return Value : version number
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_GetVersion
+ *****************************************************************************************************************/ /**
+ * @brief This function gets the driver version information.
+ * @return    Upper 2 bytes: Major version (decimal notation).\n
+ *            Lower 2 bytes: Minor version (decimal notation).
+ * @details   Returns the driver version information.
+ * @note      None.
+ */
 uint32_t  R_SDHI_GetVersion(void)
 {
     uint32_t const version = ((RX_SDHI_VERSION_MAJOR << SDHI_BIT_SHIFT_16) | RX_SDHI_VERSION_MINOR);
@@ -531,23 +566,29 @@ uint32_t  R_SDHI_GetVersion(void)
     return version;
 } /* End of function R_SDHI_GetVersion() */
 
-#ifdef SDHI_CFG_LONGQ_ENABLE                                /* Uses FIT LONGQ module                */
 /**********************************************************************************************************************
-* Outline      : Get Log HNDL Address
-* Function Name: R_SDHI_SetLogHdlAddress
-* Description  : Gets the Log HNDL Address.
-* Arguments    : uint32_t           user_byte_que        ;   user_byte_que
-* Return Value : SDHI_SUCCESS                            ;   Successful operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_SetLogHdlAddress
+ *****************************************************************************************************************/ /**
+ * @brief This function gets the handler address of the LONGQ FIT module.
+ * @param[in] user_long_que
+ *             LONGQ FIT module handler address
+ * @retval    SDHI_SUCCESS Successful operation
+ * @details   Sets the handler address of the LONGQ FIT module to point to the SDHI FIT module.
+ * @note      Preparatory processing is performed to obtain error logs using the LONGQ FIT module. 
+ *            Perform this processing before calling the R_SDHI_Open() function.\n 
+ *            Add the separately available LONGQ FIT module to your project.\n
+ *            If the SDHI_CFG_LONGQ_ENABLE disable and this function is called, this function does nothing.
+ */
 sdhi_status_t R_SDHI_SetLogHdlAddress(uint32_t user_long_que)
 {
+#ifdef SDHI_CFG_LONGQ_ENABLE
     p_sdhi_long_que = (longq_hdl_t)user_long_que;
+#endif /* SDHI_CFG_LONGQ_ENABLE */
 
     return SDHI_SUCCESS;
 } /* End of function R_SDHI_SetLogHdlAddress() */
 
+#ifdef SDHI_CFG_LONGQ_ENABLE                                /* Uses FIT LONGQ module                */
 /**********************************************************************************************************************
 * Outline      : Store Debugging Information
 * Function Name: r_sdhi_log
@@ -588,33 +629,25 @@ uint32_t r_sdhi_log(uint32_t flg, uint32_t fid, uint32_t line)
 
     return 0;
 } /* End of function r_sdhi_log() */
-#else
-/**********************************************************************************************************************
-* Outline      : Get Log HNDL Address
-* Function Name: R_SDHI_SetLogHdlAddress
-* Description  : Gets the Log HNDL Address.
-* Arguments    : uint32_t           user_byte_que        ;   user_byte_que
-* Return Value : SDHI_SUCCESS                            ;   Successful operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
-sdhi_status_t R_SDHI_SetLogHdlAddress(uint32_t user_long_que)
-{
-    return SDHI_SUCCESS;
-} /* End of function R_SDHI_SetLogHdlAddress() */
 #endif /* SDHI_CFG_LONGQ_ENABLE */
 
 /**********************************************************************************************************************
-* Outline      : Store Debugging Information
-* Function Name: R_SDHI_Log
-* Description  : Stores the debugging information.
-* Arguments    : uint32_t           flg                  ;   Breakpoint processing
-*              : uint32_t           fid                  ;   SDHI driver file No.
-*              : uint32_t           line                 ;   SDHI driver line No.
-* Return Value : 0
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_Log
+ *****************************************************************************************************************/ /**
+ * @brief This function gets the error log.
+ * @param[in] flg
+ *             0x00000001 (fixed value)
+ * @param[in] fid
+ *             0x0000003f (fixed value)
+ * @param[in] line
+ *             0x00001fff (fixed value)
+ * @retval    0 Successful operation
+ * @details   Gets the error log.\n 
+ *            To end getting the error log, call the function.
+ * @note      Use the debugging module.\n 
+ *            Add the separately available LONGQ FIT module to your project.\n
+ *            If the SDHI_CFG_LONGQ_ENABLE disable and this function is called, this function does nothing.
+ */
 uint32_t R_SDHI_Log(uint32_t flg, uint32_t fid, uint32_t line)
 {
     SDHI_LOG_FUNC(flg, fid, line);

@@ -19,7 +19,7 @@
 /**********************************************************************************************************************
 * System Name  : MMC Driver
 * File Name    : r_mmcif_dev_port.c
-* Version      : 1.06
+* Version      : 1.07
 * Device       : RX65N
 * Abstract     : API & Sub module
 * Tool-Chain   : For RX65N Group
@@ -36,6 +36,8 @@
 *              : 20.05.2019 1.05    Added support for GNUC and ICCRX.
 *                                   Fixed coding style.
 *              : 30.07.2019 1.06    Added WAIT LOOP .
+*              : 22.11.2019 1.07    Added support for atomic control.
+*                                   Modified comment of API function to Doxygen style.
 **********************************************************************************************************************/
 
 /**********************************************************************************************************************
@@ -92,9 +94,19 @@ R_BSP_ATTRIB_STATIC_INTERRUPT void r_mmcif_mbfai_isr(void)
 **********************************************************************************************************************/
 mmc_status_t r_mmcif_dev_init(uint32_t channel)
 {
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+#endif  /* ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) */
+
 #ifdef MMC_CFG_USE_FIT
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);  /* Enable writing to MSTP registers. */
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif  /* ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) */
     MSTP_MMCIF = 0;               /* MMC ON */
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif  /* ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) */
     if (0 == MSTP_MMCIF)
     {
         R_BSP_NOP();  /* Wait for the write completion. */
@@ -106,7 +118,13 @@ mmc_status_t r_mmcif_dev_init(uint32_t channel)
     {
         R_BSP_NOP();  /* Wait for the write completion. */
     }
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif  /* ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) */
     MSTP_MMCIF = 0;               /* MMC ON */
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif  /* ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) */
     if (0 == MSTP_MMCIF)
     {
         R_BSP_NOP();  /* Wait for the write completion. */
@@ -156,9 +174,19 @@ mmc_status_t r_mmcif_dev_init(uint32_t channel)
 **********************************************************************************************************************/
 mmc_status_t r_mmcif_dev_finalize(uint32_t channel)
 {
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+#endif  /* ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) */
+
 #ifdef MMC_CFG_USE_FIT
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);  /* Enable writing to MSTP registers. */
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif  /* ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) */
     MSTP_MMCIF = 1;               /* MMC OFF */
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif  /* ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) */
     if (1 == MSTP_MMCIF)
     {
         R_BSP_NOP();  /* Wait for the write completion. */
@@ -170,7 +198,13 @@ mmc_status_t r_mmcif_dev_finalize(uint32_t channel)
     {
         R_BSP_NOP();  /* Wait for the write completion. */
     }
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif  /* ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) */
     MSTP_MMCIF = 1;               /* MMC OFF */
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif  /* ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) */
     if (1 == MSTP_MMCIF)
     {
         R_BSP_NOP();  /* Wait for the write completion. */
@@ -451,6 +485,9 @@ mmc_status_t r_mmcif_dev_disable_int(uint32_t channel)
 #ifdef MMC_CFG_USE_FIT
 #if (MMC_CFG_DRIVER_MODE & MMC_MODE_HWINT)
     uint32_t ipl = 0;
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+#endif  /* ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) */
 #endif  /* (MMC_CFG_DRIVER_MODE & MMC_MODE_HWINT) */
 #endif /* MMC_CFG_USE_FIT */
 
@@ -464,9 +501,15 @@ mmc_status_t r_mmcif_dev_disable_int(uint32_t channel)
         }
 #if (MMC_CFG_DRIVER_MODE & MMC_MODE_HWINT)
         /* ---- Disable interrupt request (IENn) of IER. ---- */
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif  /* ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) */
         ICU.GENBL1.BIT.EN8  = 0;       /* MMC ACCI */
         ICU.GENBL1.BIT.EN7  = 0;       /* MMC ERRI */
         ICU.GENBL1.BIT.EN6  = 0;       /* MMC CDTEI */
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif  /* ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) */
         if (0 == ICU.GENBL1.BIT.EN6)
         {
             R_BSP_NOP();  /* Wait for the write completion. */
@@ -496,9 +539,15 @@ mmc_status_t r_mmcif_dev_disable_int(uint32_t channel)
         }
     #if (MMC_CFG_DRIVER_MODE & MMC_MODE_HWINT)
         /* ---- Disable interrupt request (IENn) of IER. ---- */
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif  /* ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) */
         ICU.GENBL1.BIT.EN8  = 0;       /* MMC ACCI */
         ICU.GENBL1.BIT.EN7  = 0;       /* MMC ERRI */
         ICU.GENBL1.BIT.EN6  = 0;       /* MMC CDTEI */
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif  /* ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) */
         if (0 == ICU.GENBL1.BIT.EN6)
         {
             R_BSP_NOP();  /* Wait for the write completion. */
@@ -537,6 +586,9 @@ mmc_status_t r_mmcif_dev_enable_int(uint32_t channel)
 #if (MMC_CFG_DRIVER_MODE & MMC_MODE_HWINT)
 #ifdef MMC_CFG_USE_FIT
     uint32_t ipl = 0;
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+#endif  /* ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) */
 #endif /* MMC_CFG_USE_FIT */
 #endif  /* (MMC_CFG_DRIVER_MODE & MMC_MODE_HWINT) */
 
@@ -546,9 +598,15 @@ mmc_status_t r_mmcif_dev_enable_int(uint32_t channel)
         IPR(MMCIF,MBFAI)    = MMC_CFG_CH0_INT_LEVEL_DMADTC;
 #if (MMC_CFG_DRIVER_MODE & MMC_MODE_HWINT)
         /* ---- Enable interrupt request (IENn) of IER. ---- */
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif  /* ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) */
         ICU.GENBL1.BIT.EN6  = 1;       /* MMC CDTEI */
         ICU.GENBL1.BIT.EN7  = 1;       /* MMC ERRI */
         ICU.GENBL1.BIT.EN8  = 1;       /* MMC ACCI */
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif  /* ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) */        
         if (1 == ICU.GENBL1.BIT.EN8)
         {
             R_BSP_NOP();  /* Wait for the write completion. */
@@ -574,9 +632,15 @@ mmc_status_t r_mmcif_dev_enable_int(uint32_t channel)
         IPR(MMCIF,MBFAI)    = MMC_CFG_CH1_INT_LEVEL_DMADTC;
 #if (MMC_CFG_DRIVER_MODE & MMC_MODE_HWINT)
         /* ---- Enable interrupt request (IENn) of IER. ---- */
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif  /* ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) */
         ICU.GENBL1.BIT.EN6  = 1;       /* MMC CDTEI */
         ICU.GENBL1.BIT.EN7  = 1;       /* MMC ERRI */
         ICU.GENBL1.BIT.EN8  = 1;       /* MMC ACCI */
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif  /* ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) */
         if (1 == ICU.GENBL1.BIT.EN8)
         {
             R_BSP_NOP();  /* Wait for the write completion. */
@@ -679,16 +743,21 @@ mmc_status_t r_mmcif_dev_dmacdtc_trans(uint32_t channel, int32_t cnt)
 
 
 /**********************************************************************************************************************
-* Outline      : Set DMAC/DTC transfer End Flag
-* Function Name: R_MMCIF_Set_DmacDtc_Trans_Flg
-* Description  : Sets DMAC/DTC transfer end flg.
-* Arguments    : uint32_t               channel         ;   MMC Channel No.
-*              : mmc_enum_trans_t       flg             ;   Transfer:1  No transfer:0 
-* Return Value : MMC_SUCCESS                            ;   Successful operation
-*              : MMC_ERR                                ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_MMCIF_Set_DmacDtc_Trans_Flg
+ *****************************************************************************************************************/ /**
+ * @brief This function sets the DMAC/DTC transfer complete flag.
+ * @param[in] channel
+ *             Channel number : The number of the MMCIF channel used (numbering starts at 0)
+ * @param[in] flg
+ *             DMAC/DTC transfer complete flag : MMC_SET_TRANS_STOP
+ * @retval    MMC_SUCCESS Successful operation
+ * @retval    MMC_ERR     General error (channel error)
+ * @details   This function sets the DMAC/DTC transfer complete flag.\n 
+ *            See Section 3.21 in application note for details.
+ * @note      Both initialization processing by the R_MMCIF_Open() function and mount processing by the R_MMCIF_Mount()
+ *            function are required prior to executing this function.\n 
+ *            Note that the error code cannot be acquired with the R_MMCIF_Get_ErrCode() function.
+ */
 mmc_status_t R_MMCIF_Set_DmacDtc_Trans_Flg(uint32_t channel, mmc_enum_trans_t flg)
 {
 #if (BSP_CFG_PARAM_CHECKING_ENABLE)
@@ -758,14 +827,20 @@ mmc_status_t r_mmcif_dev_cd_layout(uint32_t channel)
 
 
 /**********************************************************************************************************************
-* Outline      : CE_INT Interrupt Handler
-* Function Name: R_MMCIF_Int_Handler0
-* Description  : Checks the relevant elements (without masked) and call a callback function.
-* Arguments    : uint32_t           channel             ;   MMC Channel No.
-* Return Value : None
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_MMCIF_Int_Handler0
+ *****************************************************************************************************************/ /**
+ * @brief This function is the MMCIF interrupt handler.
+ * @param[in] *vect
+ *             Vector table
+ * @details   This function is the interrupt handler for the MMCIF driver.\n 
+ *            This function is already embedded in the system as the interrupt factor processing routine 
+ *            for the MMCIF.\n 
+ *            When an MMC card insertion interrupt setup callback function and a status verification interrupt
+ *            callback function are registered, these callback functions will be called from this function.
+ * @note      Both initialization processing by the R_MMCIF_Open() function and mount processing by the R_MMCIF_Mount()
+ *            function are required prior to executing this function.\n 
+ *            Note that the error code cannot be acquired with the R_MMCIF_Get_ErrCode() function.
+ */
 void R_MMCIF_Int_Handler0(void * vect)
 {
     mmc_mmchndl_t       *p_hndl = 0;
@@ -822,14 +897,20 @@ void R_MMCIF_Int_Handler0(void * vect)
 
 
 /**********************************************************************************************************************
-* Outline      : CE_INT Interrupt Handler
-* Function Name: R_MMCIF_Int_Handler1
-* Description  : Checks the relevant elements (without masked) and call a callback function.
-* Arguments    : uint32_t           channel             ;   MMC Channel No.
-* Return Value : None
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_MMCIF_Int_Handler1
+ *****************************************************************************************************************/ /**
+ * @brief This function is the MMCIF interrupt handler.
+ * @param[in] *vect
+ *             Vector table
+ * @details   This function is the interrupt handler for the MMCIF driver.\n 
+ *            This function is already embedded in the system as the interrupt factor processing routine 
+ *            for the MMCIF.\n 
+ *            When an MMC card insertion interrupt setup callback function and a status verification interrupt
+ *            callback function are registered, these callback functions will be called from this function.
+ * @note      Both initialization processing by the R_MMCIF_Open() function and mount processing by the R_MMCIF_Mount()
+ *            function are required prior to executing this function.\n 
+ *            Note that the error code cannot be acquired with the R_MMCIF_Get_ErrCode() function.
+ */
 void R_MMCIF_Int_Handler1(void * vect)
 {
     mmc_mmchndl_t       *p_hndl = 0;
@@ -886,14 +967,15 @@ void R_MMCIF_Int_Handler1(void * vect)
 
 
 /**********************************************************************************************************************
-* Outline      : MMC 1ms Interval
-* Function Name: R_MMCIF_1ms_Interval
-* Description  : 1ms Interval Timer call function.
-* Arguments    : None
-* Return Value : None
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_MMCIF_1ms_Interval
+ *****************************************************************************************************************/ /**
+ * @brief This function increments the MMCIF driver's internal timer counter.
+ * @details   The internal timer counter is incremented each time this function is called.
+ * @note      The application must call this function once each millisecond. However, this is not required if the timer
+ *            functionality has been replaced by the r_mmcif_dev_int_wait() and r_mmcif_dev_wait() functions in 
+ *            r_mmcif_dev.c.\n 
+ *            Note that the error code cannot be acquired with the R_MMCIF_Get_ErrCode() function.
+ */
 void R_MMCIF_1ms_Interval(void)
 {
     uint32_t channel = 0;

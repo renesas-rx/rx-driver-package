@@ -18,7 +18,7 @@
 * Copyright (C) 2019 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
-* File Name    : r_can_rx_config.h
+* File Name    : r_can_rx_config_reference.h
 * Description  : Configures RX CAN FIT code.
 ************************************************************************************************************************
 * History : DD.MM.YYYY Version Description
@@ -28,9 +28,11 @@
 *         : 1.30.2017  2.11    Tested with 65N 2MB. (Only comments change.)
 *         : 8.14.2017  2.12    Release version for 65N 2MB. Bug fix in r_can_rx.c.
 *         : 27.04.2018 2.13WS  - Added RX66T
-*         : 26.09.2018 2.13    Revised r_can_rx_config.h for use with Smart Configurator
+*         : 26.09.2018 2.13    Revised r_can_rx_config_reference.h for use with Smart Configurator
 *         : 08.01.2019 2.15   - Added RX72T
 *         : 30.04.2019 3.10   - Added RX72M
+*         : 30.12.2019 3.20   - Added support RX66N, RX72N
+*         :                   - Fixed to comply with GSCE Coding Standards Rev.6.00.
 ***********************************************************************************************************************/
 #ifndef CAN_CONFIG_HEADER_FILE
 #define CAN_CONFIG_HEADER_FILE
@@ -73,16 +75,16 @@ mailboxes for messages sent and received. */
  * Pins defined here for unused CAN channels are ignored and remain available for other uses.
  ***********************************************************************************************************************/
 #define CAN_USE_CAN0    (1)
-#define CAN0_RX_PORT    (P33) /* Options for RX64M, RX65N, RX71M, RX72M: P33, PD2. RX72T, RX66T: P22, PA1, PA7, PB6, PC6, PE0, PF3 */
-#define CAN0_TX_PORT    (P32) /* Options for RX64M, RX65N, RX71M, RX72M: P32, PD1. RX72T, RX66T: P23, PA0, PA6, PB5, PC5, PD7, PF2 */
+#define CAN0_RX_PORT    (P33) /* Options for RX64M, RX65N, RX71M, RX72M, RX72N, RX66N: P33, PD2. RX72T, RX66T: P22, PA1, PA7, PB6, PC6, PE0, PF3 */
+#define CAN0_TX_PORT    (P32) /* Options for RX64M, RX65N, RX71M, RX72M, RX72N, RX66N: P32, PD1. RX72T, RX66T: P23, PA0, PA6, PB5, PC5, PD7, PF2 */
 
 #define CAN_USE_CAN1    (0)
-#define CAN1_RX_PORT    (P15) /* Options for RX64M, RX65N, RX71M, RX72M: P15, P55. */
-#define CAN1_TX_PORT    (P14) /* Options for RX64M, RX65N, RX71M, RX72M: P14, P54. */
+#define CAN1_RX_PORT    (P15) /* Options for RX64M, RX65N, RX71M, RX72M, RX72N, RX66N: P15, P55. */
+#define CAN1_TX_PORT    (P14) /* Options for RX64M, RX65N, RX71M, RX72M, RX72N, RX66N: P14, P54. */
 
 #define CAN_USE_CAN2    (0)
-#define CAN2_RX_PORT    (P67) /* RX64M, RX71M, RX72M only */
-#define CAN2_TX_PORT    (P66) /* RX64M, RX71M, RX72M only */
+#define CAN2_RX_PORT    (P67) /* RX64M, RX71M, RX72M, RX72N, RX66N only */
+#define CAN2_TX_PORT    (P66) /* RX64M, RX71M, RX72M, RX72N, RX66N only */
 
 
 /**********************************************************************************************************************
@@ -92,42 +94,42 @@ mailboxes for messages sent and received. */
 #define CAN_USE_CAN0_STANDBY_ENABLE_PINS (0)
 #if (CAN_USE_CAN0_STANDBY_ENABLE_PINS == 1)
 /* Configure CAN0 STBn GPIO output pin. */
-    #define CAN0_TRX_STB_PORT       0
-    #define CAN0_TRX_STB_PIN        0
-    #define CAN0_TRX_STB_LVL        0  /* Choose High or Low active state for CAN Transceiver standby pin. */
+    #define CAN0_TRX_STB_PORT       (0)
+    #define CAN0_TRX_STB_PIN        (0)
+    #define CAN0_TRX_STB_LVL        (0)  /* Choose High or Low active state for CAN Transceiver standby pin. */
 
     /* Configure CAN0 EN GPIO output pin. */
-    #define CAN0_TRX_ENABLE_PORT    0
-    #define CAN0_TRX_ENABLE_PIN     0
-    #define CAN0_TRX_ENABLE_LVL     0   /* Choose High or Low active state for CAN Transceiver standby pin. */
+    #define CAN0_TRX_ENABLE_PORT    (0)
+    #define CAN0_TRX_ENABLE_PIN     (0)
+    #define CAN0_TRX_ENABLE_LVL     (0)   /* Choose High or Low active state for CAN Transceiver standby pin. */
 #endif
 
 #define CAN_USE_CAN1_STANDBY_ENABLE_PINS (0)
 #if (CAN_USE_CAN1_STANDBY_ENABLE_PINS == 1)
     /* Configure CAN1 STBn GPIO output pin.
     Output. High = not standby. */
-    #define CAN1_TRX_STB_PORT       0
-    #define CAN1_TRX_STB_PIN        0
-    #define CAN1_TRX_STB_LVL        0   /* Choose High or Low active state for CAN Transceiver standby pin. */
+    #define CAN1_TRX_STB_PORT       (0)
+    #define CAN1_TRX_STB_PIN        (0)
+    #define CAN1_TRX_STB_LVL        (0)   /* Choose High or Low active state for CAN Transceiver standby pin. */
 
     /* Configure CAN1 EN GPIO output pin. */
-    #define CAN1_TRX_ENABLE_PORT    0
-    #define CAN1_TRX_ENABLE_PIN     0
-    #define CAN1_TRX_ENABLE_LVL     0  /* Choose High or Low active state for CAN Transceiver standby pin. */
+    #define CAN1_TRX_ENABLE_PORT    (0)
+    #define CAN1_TRX_ENABLE_PIN     (0)
+    #define CAN1_TRX_ENABLE_LVL     (0)  /* Choose High or Low active state for CAN Transceiver standby pin. */
 #endif
 
 #define CAN_USE_CAN2_STANDBY_ENABLE_PINS (0)
 #if (CAN_USE_CAN2_STANDBY_ENABLE_PINS == 1)
     /* Configure CAN2 STB GPIO output pin.
     Output. High = not standby. */
-    #define CAN2_TRX_STB_PORT       0
-    #define CAN2_TRX_STB_PIN        0
-    #define CAN2_TRX_STB_LVL        0   /* Choose High or Low active state for CAN Transceiver standby pin. */
+    #define CAN2_TRX_STB_PORT       (0)
+    #define CAN2_TRX_STB_PIN        (0)
+    #define CAN2_TRX_STB_LVL        (0)   /* Choose High or Low active state for CAN Transceiver standby pin. */
 
     /* Configure CAN2 EN GPIO output pin. */
-    #define CAN2_TRX_ENABLE_PORT    0
-    #define CAN2_TRX_ENABLE_PIN     0
-    #define CAN2_TRX_ENABLE_LVL     0   /* Choose High or Low active state for CAN Transceiver standby pin. */
+    #define CAN2_TRX_ENABLE_PORT    (0)
+    #define CAN2_TRX_ENABLE_PIN     (0)
+    #define CAN2_TRX_ENABLE_LVL     (0)   /* Choose High or Low active state for CAN Transceiver standby pin. */
 #endif
 
 

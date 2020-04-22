@@ -24,7 +24,7 @@
 /*******************************************************************************
 * System Name  : QSPI single master driver
 * File Name    : r_qspi_smstr_rx_if.h
-* Version      : 1.13
+* Version      : 1.14
 * Device       : RX
 * Abstract     : Interface file for QSPI single master driver
 * Tool-Chain   : Renesas RXC Toolchain v3.01.00
@@ -47,6 +47,7 @@
 *              : 20.05.2019 1.12     Added support for GNUC and ICCRX.
 *              :                     Fixed coding style. 
 *              : 30.07.2019 1.13     Added RX72M.
+*              : 22.11.2019 1.14     Added RX72N and RX66N.
 *******************************************************************************/
 #ifndef QSPI_SMSTR_IF_H_
 #define QSPI_SMSTR_IF_H_
@@ -61,8 +62,12 @@ Includes <System Includes> , "Project Includes"
 /*******************************************************************************
 Macro definitions
 *******************************************************************************/
+#if R_BSP_VERSION_MAJOR < 5
+    #error "This module must use BSP module of Rev.5.00 or higher. Please use the BSP module of Rev.5.00 or higher."
+#endif
+
 #define QSPI_SMSTR_VERSION_MAJOR      (1)
-#define QSPI_SMSTR_VERSION_MINOR      (13)
+#define QSPI_SMSTR_VERSION_MINOR      (14)
 
 
 /*******************************************************************************

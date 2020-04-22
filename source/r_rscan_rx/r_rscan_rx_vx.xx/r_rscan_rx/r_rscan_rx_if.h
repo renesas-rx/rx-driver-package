@@ -28,7 +28,9 @@
 *           06.12.2018 1.20    Fixed big endian bug. Added __evenaccess to private structure and union definitions.
 *           01.02.2019 1.21    Changed Minor version to 1.21.
 *           20.05.2019 2.00    Add support for GNUC and ICCRX.
-*           28.06.2019 2.10    Added support for RX23W.
+*           28.05.2019 2.10    Added support for RX23W.
+*           15.10.2019 2.20    Added support for RX23E-A
+*                              Fixed warning in IAR
 ***********************************************************************************************************************/
 
 #ifndef CAN_INTERFACE_HEADER_FILE
@@ -50,7 +52,7 @@ Macro definitions
 
 /* Version Number of API. */
 #define CAN_VERSION_MAJOR           (2)
-#define CAN_VERSION_MINOR           (10)
+#define CAN_VERSION_MINOR           (20)
 
 
 /* Channel numbers */
@@ -218,27 +220,27 @@ typedef struct st_can_bitrate
 } can_bitrate_t;
 
 /* Sample settings for 500kbps */
-#define CAN_RSK_27MHZ_PCLKB_500KBPS_PRESCALER   3
-#define CAN_RSK_27MHZ_PCLKB_500KBPS_TSEG1       5
-#define CAN_RSK_27MHZ_PCLKB_500KBPS_TSEG2       3
-#define CAN_RSK_27MHZ_PCLKB_500KBPS_SJW         1
+#define CAN_RSK_27MHZ_PCLKB_500KBPS_PRESCALER   (3)
+#define CAN_RSK_27MHZ_PCLKB_500KBPS_TSEG1       (5)
+#define CAN_RSK_27MHZ_PCLKB_500KBPS_TSEG2       (3)
+#define CAN_RSK_27MHZ_PCLKB_500KBPS_SJW         (1)
 
-#define CAN_RSK_32MHZ_PCLKB_500KBPS_PRESCALER   2
-#define CAN_RSK_32MHZ_PCLKB_500KBPS_TSEG1       11
-#define CAN_RSK_32MHZ_PCLKB_500KBPS_TSEG2       4
-#define CAN_RSK_32MHZ_PCLKB_500KBPS_SJW         4
+#define CAN_RSK_32MHZ_PCLKB_500KBPS_PRESCALER   (2)
+#define CAN_RSK_32MHZ_PCLKB_500KBPS_TSEG1       (11)
+#define CAN_RSK_32MHZ_PCLKB_500KBPS_TSEG2       (4)
+#define CAN_RSK_32MHZ_PCLKB_500KBPS_SJW         (4)
 
-/* RSKRX231 has an 8MHz XTAL clock                      alternate settings*/
-#define CAN_RSK_8MHZ_XTAL_500KBPS_PRESCALER     1       /* 2 */
-#define CAN_RSK_8MHZ_XTAL_500KBPS_TSEG1         10      /* 5 */
-#define CAN_RSK_8MHZ_XTAL_500KBPS_TSEG2         5       /* 2 */
-#define CAN_RSK_8MHZ_XTAL_500KBPS_SJW           1       /* 1 */
+/* RSKRX231/RSKRX23W/RSKRX23E-A has an 8MHz XTAL clock                      alternate settings*/
+#define CAN_RSK_8MHZ_XTAL_500KBPS_PRESCALER     (1)       /* 2 */
+#define CAN_RSK_8MHZ_XTAL_500KBPS_TSEG1         (10)      /* 5 */
+#define CAN_RSK_8MHZ_XTAL_500KBPS_TSEG2         (5)       /* 2 */
+#define CAN_RSK_8MHZ_XTAL_500KBPS_SJW           (1)       /* 1 */
 
 /* RSKRX24T and RSKRX24U have a 20MHz XTAL clock*/
-#define CAN_RSK_20MHZ_XTAL_500KBPS_PRESCALER    2
-#define CAN_RSK_20MHZ_XTAL_500KBPS_TSEG1        15
-#define CAN_RSK_20MHZ_XTAL_500KBPS_TSEG2        4
-#define CAN_RSK_20MHZ_XTAL_500KBPS_SJW          1
+#define CAN_RSK_20MHZ_XTAL_500KBPS_PRESCALER    (2)
+#define CAN_RSK_20MHZ_XTAL_500KBPS_TSEG1        (15)
+#define CAN_RSK_20MHZ_XTAL_500KBPS_TSEG2        (4)
+#define CAN_RSK_20MHZ_XTAL_500KBPS_SJW          (1)
 
 
 /* R_CAN_ConfigFIFO() */
@@ -258,9 +260,9 @@ typedef enum e_can_fifo_threshold       /* NOTE: History FIFO (8 deep) can only 
 
 typedef struct st_can_filter
 {
-    bool        check_ide;
+    uint8_t     check_ide:1;
     uint8_t     ide;
-    bool        check_rtr;
+    uint8_t     check_rtr:1;
     uint8_t     rtr;
     uint32_t    id;
     uint32_t    id_mask;

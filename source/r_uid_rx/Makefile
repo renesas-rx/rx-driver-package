@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_uid_rx
-VERSION = 		v1.12
+VERSION = 		v1.13
 
 TARGET_FOLDER = ../../FITModules
 

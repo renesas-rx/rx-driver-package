@@ -10,7 +10,7 @@ R01AN2027JJ
 
 Version
 -------
-v1.27
+v1.30
 
 Overview
 --------
@@ -30,6 +30,8 @@ Supported MCUs
 * RX66T Group
 * RX72T Group
 * RX72M Group
+* RX72N Group
+* RX66N Group
 
 
 Boards Tested On
@@ -40,6 +42,7 @@ Boards Tested On
 * RSKRX65N_2MB
 * RSKRX72T
 * RSKRX72M
+* RSKRX72N
 
 
 Limitations
@@ -71,9 +74,9 @@ r_usb_hcdc
 |
 +---doc
 |     \en
-|     |   r01an2027ej0127_usb.pdf
+|     |   r01an2027ej0130_usb.pdf
 |     \jp
-|         r01an2027jj0127_usb.pdf
+|         r01an2027jj0130_usb.pdf
 |
 +---ref
 |       r_usb_hcdc_config_reference.h

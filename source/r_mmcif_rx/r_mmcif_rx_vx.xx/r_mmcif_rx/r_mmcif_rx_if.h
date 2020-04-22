@@ -35,6 +35,8 @@
 *                                   Fixed coding style.
 *              : 30.07.2019 1.06    Changed Minor version to 1.06
 *              :                    Added RX72M.
+*              : 22.11.2019 1.07    Changed Minor version to 1.07
+*              :                    Added RX72N and RX66N.
 **********************************************************************************************************************/
 
 #ifndef _MMC_IF_H
@@ -49,9 +51,13 @@ Includes   <System Includes> , "Project Includes"
 /**********************************************************************************************************************
 Macro definitions
 **********************************************************************************************************************/
+#if R_BSP_VERSION_MAJOR < 5
+    #error "This module must use BSP module of Rev.5.00 or higher. Please use the BSP module of Rev.5.00 or higher."
+#endif
+
 /* Version Number of API. */
 #define RX_MMC_API_VERSION_MAJOR            (1)
-#define RX_MMC_API_VERSION_MINOR            (6)
+#define RX_MMC_API_VERSION_MINOR            (7)
 
 /* ==== IP selection ==== */
 #define MMC_MMCMEM_MAX_TRANS                (65535)

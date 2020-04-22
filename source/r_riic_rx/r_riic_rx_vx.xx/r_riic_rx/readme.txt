@@ -6,7 +6,7 @@ r_riic_rx
 Overview
 --------
 The RIIC fit module provides a method to transmit and receive data between 
-the master and slave devices using the I2C-bus interface (RIIC). 
+the master and slave devices using the I2C-bus interface (RIIC).
 The RIIC is in compliance with single master mode of the XP I2C-bus (Inter-IC-Bus) interface.
 
 The driver supports one channels available on the mcu.
@@ -19,7 +19,7 @@ Features
 * Master transmission, master reception, slave transmission, and slave reception.
 * Multi-master configuration which is that communication is arbitrated between multiple masters and a single slave.
 * Communication mode can be normal or fast mode and the maximum communication rate is 400 kbps at a maximum. 
-  However channel 0 of RX64M and RX65N, RX71M, RX72M supports fast mode plus and the maximum communication rate is 1 Mbps.
+  However channel 0 of RX64M, RX65N, RX66N, RX71M, RX72M and RX72N supports fast mode plus and the maximum communication rate is 1 Mbps.
 
 File Structure
 --------------
@@ -61,6 +61,10 @@ r_riic_rx
         |      r_riic_rx130.c
         |      r_riic_rx130_private.h
         |
+        +---rx13t
+        |      r_riic_rx13t.c
+        |      r_riic_rx13t_private.h
+        |
         +---rx230
         |      r_riic_rx230.c
         |      r_riic_rx230_private.h
@@ -97,6 +101,10 @@ r_riic_rx
         |      r_riic_rx66t.c
         |      r_riic_rx66t_private.h
         |
+        +---rx66n
+        |      r_riic_rx66n.c
+        |      r_riic_rx66n_private.h
+        |
         +---rx71m
         |       r_riic_rx71m.c
         |       r_riic_rx71m_private.h
@@ -106,9 +114,14 @@ r_riic_rx
         |      r_riic_rx72t_private.h
         |
         +---rx72m
-               r_riic_rx72m.c
-               r_riic_rx72m_private.h 
-                       
+        |      r_riic_rx72m.c
+        |      r_riic_rx72m_private.h
+        |
+        +---rx72n
+               r_riic_rx72n.c
+               r_riic_rx72n_private.h
+         
+
 r_config
     r_riic_rx_config.h
     r_riic_rx_pin_config.h

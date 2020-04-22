@@ -18,8 +18,8 @@
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_pdc_rx_private.h
- * Version      : 2.04
- * Device       : RX64M/RX71M/RX651/RX65N/RX72M
+ * Version      : 2.05
+ * Device       : RX64M/RX71M/RX651/RX65N/RX72M/RX66N/RX72N
  * Tool-Chain   : RX Family C Compiler
  * H/W Platform : 
  * Description  : File that defines macro and structure seen only in "r_pdc_rx.c" file.
@@ -30,13 +30,14 @@
  *         : 02.10.2017 2.01     Removed BSP version error.
  *         :                     Change loop values of PDC reset wating process "219" to "10000000".
  *         : 30.07.2019 2.04     Added changes for RX72M.
+ *         : 22.11.2019 2.05     Added changes for RX66N and RX72N.
  ***********************************************************************************************************************/
 /* Guards against multiple inclusion */
 #ifndef PDC_RX_PRIVATE_H
     #define PDC_RX_PRIVATE_H
 
 /* This checks that the module of the PDC is supported to the MCU that has been selected for sure. */
-    #if (defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX72M))
+    #if (defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX72M) || defined(BSP_MCU_RX66N) || defined(BSP_MCU_RX72N))
 
     #else
         #error "This MCU is not supported by the current r_pdc_rx module."

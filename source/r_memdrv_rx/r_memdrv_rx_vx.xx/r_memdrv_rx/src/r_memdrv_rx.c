@@ -24,7 +24,7 @@
 /************************************************************************************************
 * System Name  : memdrv software
 * File Name    : r_memdrv_rx.c
-* Version      : 1.01
+* Version      : 1.02
 * Device       : -
 * Abstract     : IO I/F module
 * Tool-Chain   : -
@@ -38,6 +38,7 @@
 *              : 15.12.2018 1.00     Initial Release
 *              : 04.04.2019 1.01     Added support for GNUC and ICCRX.
 *                                    Fixed coding style.
+*              : 22.11.2019 1.02     Modified comment of API function to Doxygen style.
 *************************************************************************************************/
 
 /************************************************************************************************
@@ -60,8 +61,8 @@ Exported global variables (to be accessed by other files)
 *************************************************************************************************/
 const uint32_t g_memdrv_dummy_tx = 0xffffffff; /* @suppress("Source line ordering") */
 uint32_t g_memdrv_dummy_rx;
-#if (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI) | \
-    (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI)
+#if ((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR == MEMDRV_DRVR_RX_FIT_RSPI)) || \
+    ((MEMDRV_CFG_DEV1_INCLUDED == 1) && (MEMDRV_CFG_DEV1_MODE_DRVR == MEMDRV_DRVR_RX_FIT_RSPI))
 extern rspi_handle_t g_rspi_handle;
 extern volatile bool  g_transfer_busy;
 #endif
@@ -125,56 +126,59 @@ static const st_memdrv_func_t r_memdrv_tbl[MEMDRV_INDX_DRVR_NUM][MEMDRV_INDX_FUN
     },
 };
 
-/************************************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_MEMDRV_ClearDMACFlagTx
-* Description  : Clears DMAC driver flag for writing data.
-* Arguments    : uint8_t            channel
-* Return Value : None
-*------------------------------------------------------------------------------------------------
-* Notes        : None
-*************************************************************************************************/
+*******************************************************************************************************************/ /**
+* @brief This function clears the transmit empty interrupt flag set at DMAC transfer end.
+* @param[in] channel Device channel number
+* @details   Clears the transmit empty interrupt flag. Use an interrupt generated at DMAC transfer end.
+* @note      None
+*/
 void R_MEMDRV_ClearDMACFlagTx(uint8_t channel)
 {
-#if (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI) | \
-    (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI)
+#if ((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR == MEMDRV_DRVR_RX_FIT_RSPI)) || \
+    ((MEMDRV_CFG_DEV1_INCLUDED == 1) && (MEMDRV_CFG_DEV1_MODE_DRVR == MEMDRV_DRVR_RX_FIT_RSPI))
     g_rspi_handle->channel = channel;
 
     R_RSPI_IntSptiIerClear(g_rspi_handle);
-    R_RSPI_IntSptiDmacdtcFlagSet(g_rspi_handle, RSPI_SET_TRANS_STOP);
 #endif
-#if (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_QSPI_SMSTR) | \
-    (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_QSPI_SMSTR)
+#if ((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR == MEMDRV_DRVR_RX_FIT_QSPI_SMSTR)) || \
+    ((MEMDRV_CFG_DEV1_INCLUDED == 1) && (MEMDRV_CFG_DEV1_MODE_DRVR == MEMDRV_DRVR_RX_FIT_QSPI_SMSTR))
     R_QSPI_SMstr_Int_Spti_Ier_Clear(channel);
     R_QSPI_SMstr_Int_Spti_Dmacdtc_Flag_Set(channel, QSPI_SET_TRANS_STOP);
 #endif
 } /* End of function R_MEMDRV_ClearDMACFlagTx() */
 
-/************************************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_MEMDRV_ClearDMACFlagRx
-* Description  : Clears DMAC driver flag for reading data.
-* Arguments    : uint8_t            channel
-* Return Value : None
-*------------------------------------------------------------------------------------------------
-* Notes        : None
-*************************************************************************************************/
+*******************************************************************************************************************/ /**
+* @brief This function clears the receive buffer full interrupt flag set at DMAC transfer end.
+* @param[in] channel Device channel number
+* @details   Clears the receive buffer full interrupt flag. Use an interrupt generated at DMAC transfer end.
+* @note      None
+*/
 void R_MEMDRV_ClearDMACFlagRx(uint8_t channel)
 {
-#if (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI) | \
-    (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI)
+#if ((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR == MEMDRV_DRVR_RX_FIT_RSPI)) || \
+    ((MEMDRV_CFG_DEV1_INCLUDED == 1) && (MEMDRV_CFG_DEV1_MODE_DRVR == MEMDRV_DRVR_RX_FIT_RSPI))
     g_rspi_handle->channel = channel;
     
     R_RSPI_IntSptiIerClear(g_rspi_handle);
     R_RSPI_IntSpriIerClear(g_rspi_handle);
     if (0 == channel)
     {
+#if ((MEMDRV_CFG_DEV0_MODE_DRVR_CH & MEMDRV_DRVR_MASK_CH) == MEMDRV_DRVR_CH0) | \
+    ((MEMDRV_CFG_DEV1_MODE_DRVR_CH & MEMDRV_DRVR_MASK_CH) == MEMDRV_DRVR_CH0)
         RSPI0.SPCR.BIT.SPE   = 0;  // Disable RSPI.
 #if RSPI_CFG_REQUIRE_LOCK == 1
         R_BSP_HardwareUnlock((mcu_lock_t)(BSP_LOCK_RSPI0 + channel));
 #endif
+#endif
     }
     else if (1 == channel)
     {
-#if RSPI_NUM_CHANNELS >= 2
+#if ((MEMDRV_CFG_DEV0_MODE_DRVR_CH & MEMDRV_DRVR_MASK_CH) == MEMDRV_DRVR_CH1) | \
+    ((MEMDRV_CFG_DEV1_MODE_DRVR_CH & MEMDRV_DRVR_MASK_CH) == MEMDRV_DRVR_CH1)
         RSPI1.SPCR.BIT.SPE   = 0;  // Disable RSPI.
 #if RSPI_CFG_REQUIRE_LOCK == 1
         R_BSP_HardwareUnlock((mcu_lock_t)(BSP_LOCK_RSPI0 + channel));
@@ -183,7 +187,8 @@ void R_MEMDRV_ClearDMACFlagRx(uint8_t channel)
     }
     else if (2 == channel)
     {
-#if RSPI_NUM_CHANNELS >= 2
+#if ((MEMDRV_CFG_DEV0_MODE_DRVR_CH & MEMDRV_DRVR_MASK_CH) == MEMDRV_DRVR_CH2) | \
+    ((MEMDRV_CFG_DEV1_MODE_DRVR_CH & MEMDRV_DRVR_MASK_CH) == MEMDRV_DRVR_CH2)
         RSPI2.SPCR.BIT.SPE   = 0;  // Disable RSPI.
 #if RSPI_CFG_REQUIRE_LOCK == 1
         R_BSP_HardwareUnlock((mcu_lock_t)(BSP_LOCK_RSPI0 + channel));
@@ -203,14 +208,13 @@ void R_MEMDRV_ClearDMACFlagRx(uint8_t channel)
 #endif
 } /* End of function R_MEMDRV_ClearDMACFlagRx() */
 
-/************************************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_MEMDRV_1msInterval
-* Description  : 1ms Interval Timer call function for driver interface.
-* Arguments    : None
-* Return Value : None
-*------------------------------------------------------------------------------------------------
-* Notes        : None
-*************************************************************************************************/
+*******************************************************************************************************************/ /**
+* @brief This function performs interval timer count processing.
+* @details   Increments the driver software's internal timer counter while waiting for DMAC or DTC transfer end.
+* @note      None
+*/
 void R_MEMDRV_1msInterval(void)
 {
 #if (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI) | \
@@ -227,17 +231,18 @@ void R_MEMDRV_1msInterval(void)
 #endif
 } /* End of function R_MEMDRV_1msInterval() */
 
-#if MEMDRV_CFG_LONGQ_ENABLE == 1
-/*******************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_MEMDRV_SetLogHdlAddress
-* Description  : Sets handler address.
-* Arguments    : user_long_que -
-*                    Handler address
-* Return Value : MEMDRV_SUCCESS -
-*                    Successful operation
-*******************************************************************************/
+*******************************************************************************************************************/ /**
+* @brief This function processes setting of the LONGQ FIT module handler address.
+* @param[in] user_long_que LONGQ FIT module handler address
+* @retval    MEMDRV_SUCCESS: Normal end
+* @details   Sets the handler address of the LONGQ FIT module in the memory driver.
+* @note      If the MEMDRV_CFG_LONGQ_ENABLE == 0 and this function is called, this function does nothing.
+*/
 memdrv_err_t R_MEMDRV_SetLogHdlAddress(uint32_t user_long_que)
 {
+#if MEMDRV_CFG_LONGQ_ENABLE == 1
     p_memdrv_long_que = (longq_hdl_t)user_long_que;
 
 #if (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI) | \
@@ -248,10 +253,12 @@ memdrv_err_t R_MEMDRV_SetLogHdlAddress(uint32_t user_long_que)
     (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_QSPI_SMSTR)
     R_QSPI_SMstr_Set_LogHdlAddress(user_long_que);
 #endif
+#endif  /* MEMDRV_CFG_LONGQ_ENABLE */
 
     return MEMDRV_SUCCESS;
 }
 
+#if MEMDRV_CFG_LONGQ_ENABLE == 1
 /*******************************************************************************
 * Function Name: r_memdrv_log
 * Description  : Stores error information to LONGQ buffer.
@@ -293,31 +300,15 @@ uint32_t r_memdrv_log(uint32_t flg, uint32_t fid, uint32_t line)
 }
 #endif
 
-#if MEMDRV_CFG_LONGQ_ENABLE == 0
-/*******************************************************************************
-* Function Name: R_MEMDRV_SetLogHdlAddress
-* Description  : Sets handler address.
-* Arguments    : user_long_que -
-*                    Handler address
-* Return Value : MEMDRV_SUCCESS -
-*                    Successful operation
-*******************************************************************************/
-memdrv_err_t R_MEMDRV_SetLogHdlAddress(uint32_t user_long_que)
-{
-    return MEMDRV_SUCCESS;
-}
-#endif  /* MEMDRV_CFG_LONGQ_ENABLE */
-
 /***********************************************************************************************************************
 * Function Name: R_MEMDRV_GetVersion 
-* Description : Returns the version of this module. The version number is
-* encoded where the top 2 bytes are the major version number and
-* the bottom 2 bytes are the minor version number.
-* For example, Rev 4.25 would be 0x00040019.
-* NOTE: This function is inlined using #pragma inline directive.
-* Arguments : none
-* Return Value : Version Number
-***********************************************************************************************************************/
+*******************************************************************************************************************/ /**
+* @brief This function gets the memory driver version information.
+* @return    Upper 2 bytes: Major version (decimal notation).\n
+*            Lower 2 bytes: Minor version (decimal notation).
+* @details   Returns the driver version information.
+* @note      None
+*/
 uint32_t R_MEMDRV_GetVersion(void)
 {
     uint32_t version_number = 0;
@@ -454,21 +445,19 @@ static memdrv_err_t memdrv_param_check(uint8_t devno, st_memdrv_info_t * memdrv_
     return MEMDRV_SUCCESS;
 } /* End of function memdrv_param_check() */
 #endif
-/************************************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_MEMDRV_Open
-* Description  : Initializes I/O driver.
-* Arguments    : uint8_t         devno                  ;   Device No. (MEMDRV_DEVn)
-*              : st_memdrv_info_t * p_memdrv_info
-*              :    uint32_t    cnt                     ;   Number of bytes
-*              :    uint8_t   * p_data                  ;   Buffer pointer
-*              :    uint8_t     io_mode                 ;   Single/Dual/Quad
-*              :    uint8_t     rsv[3]                  ;   Reserved
-* Return Value : MEMDRV_SUCCESS                         ;   Successful operation
-*              : MEMDRV_ERR_PARAM                       ;   parameter error
-*              : MEMDRV_ERR_OTHER                       ;   Other error
-*------------------------------------------------------------------------------------------------
-* Notes        : None
-*************************************************************************************************/
+*******************************************************************************************************************/ /**
+* @brief This function opens the memory driver. This function must be run before calling other API functions.
+* @param[in] devno Device number
+* @param[in] *p_memdrv_info Memory driver information structure
+* @retval    MEMDRV_SUCCESS: Normal end
+* @retval    MEMDRV_ERR_PARAM: parameter error
+* @retval    MEMDRV_ERR_OTHER: Other error
+* @details   Initializes the FIT module used for SPI/QSPI/SCI communication and data transfer (only when DTC/DMAC is
+*            selected).
+* @note      None
+*/
 memdrv_err_t R_MEMDRV_Open(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 {
 #if MEMDRV_CFG_PARAM_CHECKING_ENABLE == 1
@@ -483,21 +472,19 @@ memdrv_err_t R_MEMDRV_Open(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 
 } /* End of function R_MEMDRV_Open() */
 
-/************************************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_MEMDRV_Close
-* Description  : Resets I/O driver.
-* Arguments    : uint8_t         devno                  ;   Device No. (MEMDRV_DEVn)
-*              : st_memdrv_info_t * p_memdrv_info
-*              :    uint32_t    cnt                     ;   Number of bytes
-*              :    uint8_t   * p_data                  ;   Buffer pointer
-*              :    uint8_t     io_mode                 ;   Single/Dual/Quad
-*              :    uint8_t     rsv[3]                  ;   Reserved
-* Return Value : MEMDRV_SUCCESS                         ;   Successful operation
-*              : MEMDRV_ERR_PARAM                       ;   parameter error
-*              : MEMDRV_ERR_OTHER                       ;   Other error
-*------------------------------------------------------------------------------------------------
-* Notes        : None
-*************************************************************************************************/
+*******************************************************************************************************************/ /**
+* @brief This function closes the memory driver.
+* @param[in] devno Device number
+* @param[in] *p_memdrv_info Memory driver information structure
+* @retval    MEMDRV_SUCCESS: Normal end
+* @retval    MEMDRV_ERR_PARAM: parameter error
+* @retval    MEMDRV_ERR_OTHER: Other error
+* @details   Closes the FIT module used for SPI/QSPI/SCI communication and data transfer (only when DTC/DMAC is
+*            selected).
+* @note      None
+*/
 memdrv_err_t R_MEMDRV_Close(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 {
 #if MEMDRV_CFG_PARAM_CHECKING_ENABLE == 1
@@ -512,21 +499,17 @@ memdrv_err_t R_MEMDRV_Close(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 
 } /* End of function R_MEMDRV_Close() */
 
-/************************************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_MEMDRV_Disable
-* Description  : Disables I/O driver.
-* Arguments    : uint8_t         devno                  ;   Device No. (MEMDRV_DEVn)
-*              : st_memdrv_info_t * p_memdrv_info
-*              :    uint32_t    cnt                     ;   Number of bytes
-*              :    uint8_t   * p_data                  ;   Buffer pointer
-*              :    uint8_t     io_mode                 ;   Single/Dual/Quad
-*              :    uint8_t     rsv[3]                  ;   Reserved
-* Return Value : MEMDRV_SUCCESS                       ;   Successful operation
-*              : MEMDRV_ERR_PARAM                       ;   parameter error
-*              : MEMDRV_ERR_OTHER                     ;   Other error
-*------------------------------------------------------------------------------------------------
-* Notes        : None
-*************************************************************************************************/
+*******************************************************************************************************************/ /**
+* @brief This function disables the memory driver.
+* @param[in] devno Device number
+* @param[in] *p_memdrv_info Memory driver information structure
+* @retval    MEMDRV_SUCCESS: Normal end
+* @retval    MEMDRV_ERR_PARAM: parameter error
+* @details   Disables the memory driver communication settings.
+* @note      None
+*/
 memdrv_err_t R_MEMDRV_Disable(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 {
 #if MEMDRV_CFG_PARAM_CHECKING_ENABLE == 1
@@ -540,21 +523,18 @@ memdrv_err_t R_MEMDRV_Disable(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
                        [MEMDRV_INDX_DISABLE].p_func(devno, p_memdrv_info);
 } /* End of function R_MEMDRV_Disable() */
 
-/************************************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_MEMDRV_DisableTxData
-* Description  : Disables I/O driver for writing data.
-* Arguments    : uint8_t         devno                  ;   Device No. (MEMDRV_DEVn)
-*              : st_memdrv_info_t * p_memdrv_info
-*              :    uint32_t    cnt                     ;   Number of bytes
-*              :    uint8_t   * p_data                  ;   Buffer pointer
-*              :    uint8_t     io_mode                 ;   Single/Dual/Quad
-*              :    uint8_t     rsv[3]                  ;   Reserved
-* Return Value : MEMDRV_SUCCESS                         ;   Successful operation
-*              : MEMDRV_ERR_PARAM                       ;   parameter error
-*              : MEMDRV_ERR_OTHER                       ;   Other error
-*------------------------------------------------------------------------------------------------
-* Notes        : None
-*************************************************************************************************/
+*******************************************************************************************************************/ /**
+* @brief This function disables data transmission by the memory driver.
+* @param[in] devno Device number
+* @param[in] *p_memdrv_info Memory driver information structure
+* @retval    MEMDRV_SUCCESS: Normal end
+* @retval    MEMDRV_ERR_PARAM: parameter error
+* @retval    MEMDRV_ERR_OTHER: Other error
+* @details   Disables the DMAC/DTC FIT module settings used for data transmission.
+* @note      None
+*/
 memdrv_err_t R_MEMDRV_DisableTxData(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 {
 #if MEMDRV_CFG_PARAM_CHECKING_ENABLE == 1
@@ -568,21 +548,18 @@ memdrv_err_t R_MEMDRV_DisableTxData(uint8_t devno, st_memdrv_info_t * p_memdrv_i
                        [MEMDRV_INDX_DISABLE_TX_DATA].p_func(devno, p_memdrv_info);
 } /* End of function R_MEMDRV_Disable_tx_data() */
 
-/************************************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_MEMDRV_DisableRxData
-* Description  : Disables I/O driver for reading data.
-* Arguments    : uint8_t         devno                  ;   Device No. (MEMDRV_DEVn)
-*              : st_memdrv_info_t * p_memdrv_info
-*              :    uint32_t    cnt                     ;   Number of bytes
-*              :    uint8_t   * p_data                  ;   Buffer pointer
-*              :    uint8_t     io_mode                 ;   Single/Dual/Quad
-*              :    uint8_t     rsv[3]                  ;   Reserved
-* Return Value : MEMDRV_SUCCESS                         ;   Successful operation
-*              : MEMDRV_ERR_PARAM                       ;   parameter error
-*              : MEMDRV_ERR_OTHER                       ;   Other error
-*------------------------------------------------------------------------------------------------
-* Notes        : None
-*************************************************************************************************/
+*******************************************************************************************************************/ /**
+* @brief This function disables data reception by the memory driver.
+* @param[in] devno Device number
+* @param[in] *p_memdrv_info Memory driver information structure
+* @retval    MEMDRV_SUCCESS: Normal end
+* @retval    MEMDRV_ERR_PARAM: parameter error
+* @retval    MEMDRV_ERR_OTHER: Other error
+* @details   Disables the DMAC/DTC FIT module settings used for data reception.
+* @note      None
+*/
 memdrv_err_t R_MEMDRV_DisableRxData(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 {
 #if MEMDRV_CFG_PARAM_CHECKING_ENABLE == 1
@@ -596,21 +573,18 @@ memdrv_err_t R_MEMDRV_DisableRxData(uint8_t devno, st_memdrv_info_t * p_memdrv_i
                        [MEMDRV_INDX_DISABLE_RX_DATA].p_func(devno, p_memdrv_info);
 } /* End of function R_MEMDRV_Disable_rx_data() */
 
-/************************************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_MEMDRV_Enable
-* Description  : Enables I/O driver.
-* Arguments    : uint8_t         devno                  ;   Device No. (MEMDRV_DEVn)
-*              : st_memdrv_info_t * p_memdrv_info
-*              :    uint32_t    cnt                     ;   Number of bytes
-*              :    uint8_t   * p_data                  ;   Buffer pointer
-*              :    uint8_t     io_mode                 ;   Single/Dual/Quad
-*              :    uint8_t     rsv[3]                  ;   Reserved
-* Return Value : MEMDRV_SUCCESS                         ;   Successful operation
-*              : MEMDRV_ERR_PARAM                       ;   parameter error
-*              : MEMDRV_ERR_OTHER                       ;   Other error
-*------------------------------------------------------------------------------------------------
-* Notes        : None
-*************************************************************************************************/
+*******************************************************************************************************************/ /**
+* @brief This function enables the memory driver.
+* @param[in] devno Device number
+* @param[in] *p_memdrv_info Memory driver information structure
+* @retval    MEMDRV_SUCCESS: Normal end
+* @retval    MEMDRV_ERR_PARAM: parameter error
+* @retval    MEMDRV_ERR_OTHER: Other error
+* @details   Processing to enable the memory driver.
+* @note      None
+*/
 memdrv_err_t R_MEMDRV_Enable(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 {
 #if MEMDRV_CFG_PARAM_CHECKING_ENABLE == 1
@@ -624,21 +598,18 @@ memdrv_err_t R_MEMDRV_Enable(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
                        [MEMDRV_INDX_ENABLE].p_func(devno, p_memdrv_info);
 } /* End of function R_MEMDRV_Enable() */
 
-/************************************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_MEMDRV_EnableTxData
-* Description  : Enables I/O driver for writing data.
-* Arguments    : uint8_t         devno                  ;   Device No. (MEMDRV_DEVn)
-*              : st_memdrv_info_t * p_memdrv_info
-*              :    uint32_t    cnt                     ;   Number of bytes
-*              :    uint8_t   * p_data                  ;   Buffer pointer
-*              :    uint8_t     io_mode                 ;   Single/Dual/Quad
-*              :    uint8_t     rsv[3]                  ;   Reserved
-* Return Value : MEMDRV_SUCCESS                         ;   Successful operation
-*              : MEMDRV_ERR_PARAM                       ;   parameter error
-*              : MEMDRV_ERR_OTHER                       ;   Other error
-*------------------------------------------------------------------------------------------------
-* Notes        : None
-*************************************************************************************************/
+*******************************************************************************************************************/ /**
+* @brief This function enables data transmission.
+* @param[in] devno Device number
+* @param[in] *p_memdrv_info Memory driver information structure
+* @retval    MEMDRV_SUCCESS: Normal end
+* @retval    MEMDRV_ERR_PARAM: parameter error
+* @retval    MEMDRV_ERR_OTHER: Other error
+* @details   Enables the DMAC/DTC FIT module used for data transmission.
+* @note      None
+*/
 memdrv_err_t R_MEMDRV_EnableTxData(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 {
 #if MEMDRV_CFG_PARAM_CHECKING_ENABLE == 1
@@ -652,21 +623,18 @@ memdrv_err_t R_MEMDRV_EnableTxData(uint8_t devno, st_memdrv_info_t * p_memdrv_in
                        [MEMDRV_INDX_ENABLE_TX_DATA].p_func(devno, p_memdrv_info);
 } /* End of function R_MEMDRV_Enable_tx_data() */
 
-/************************************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_MEMDRV_EnableRxData
-* Description  : Enables I/O driver for reading data.
-* Arguments    : uint8_t         devno                  ;   Device No. (MEMDRV_DEVn)
-*              : st_memdrv_info_t * p_memdrv_info
-*              :    uint32_t    cnt                     ;   Number of bytes
-*              :    uint8_t   * p_data                  ;   Buffer pointer
-*              :    uint8_t     io_mode                 ;   Single/Dual/Quad
-*              :    uint8_t     rsv[3]                  ;   Reserved
-* Return Value : MEMDRV_SUCCESS                         ;   Successful operation
-*              : MEMDRV_ERR_PARAM                       ;   parameter error
-*              : MEMDRV_ERR_OTHER                       ;   Other error
-*------------------------------------------------------------------------------------------------
-* Notes        : None
-*************************************************************************************************/
+*******************************************************************************************************************/ /**
+* @brief This function enables data reception.
+* @param[in] devno Device number
+* @param[in] *p_memdrv_info Memory driver information structure
+* @retval    MEMDRV_SUCCESS: Normal end
+* @retval    MEMDRV_ERR_PARAM: parameter error
+* @retval    MEMDRV_ERR_OTHER: Other error
+* @details   Enables the DMAC/DTC FIT module settings used for data reception.
+* @note      None
+*/
 memdrv_err_t R_MEMDRV_EnableRxData(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 {
 #if MEMDRV_CFG_PARAM_CHECKING_ENABLE == 1
@@ -680,22 +648,19 @@ memdrv_err_t R_MEMDRV_EnableRxData(uint8_t devno, st_memdrv_info_t * p_memdrv_in
                        [MEMDRV_INDX_ENABLE_RX_DATA].p_func(devno, p_memdrv_info);
 } /* End of function R_MEMDRV_Enable_rx_data() */
 
-/************************************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_MEMDRV_Tx
-* Description  : Transmits data for command and status register.
-* Arguments    : uint8_t         devno                  ;   Device No. (MEMDRV_DEVn)
-*              : st_memdrv_info_t * p_memdrv_info
-*              :    uint32_t    cnt                     ;   Number of bytes
-*              :    uint8_t   * p_data                  ;   Buffer pointer
-*              :    uint8_t     io_mode                 ;   Single/Dual/Quad
-*              :    uint8_t     rsv[3]                  ;   Reserved
-* Return Value : MEMDRV_SUCCESS                         ;   Successful operation
-*              : MEMDRV_ERR_PARAM                       ;   parameter error
-*              : MEMDRV_ERR_HARD                        ;   Hardware error
-*              : MEMDRV_ERR_OTHER                       ;   Other error
-*------------------------------------------------------------------------------------------------
-* Notes        : None
-*************************************************************************************************/
+*******************************************************************************************************************/ /**
+* @brief This function performs command transmission processing.
+* @param[in] devno Device number
+* @param[in] *p_memdrv_info Memory driver information structure
+* @retval    MEMDRV_SUCCESS: Normal end
+* @retval    MEMDRV_ERR_PARAM: parameter error
+* @retval    MEMDRV_ERR_HARD: Hardware error
+* @retval    MEMDRV_ERR_OTHER: Other error
+* @details   Transmits the data specified by the memory driver information structure. Supports CPU transfer only.
+* @note      None
+*/
 memdrv_err_t R_MEMDRV_Tx(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 {
 #if MEMDRV_CFG_PARAM_CHECKING_ENABLE == 1
@@ -709,22 +674,20 @@ memdrv_err_t R_MEMDRV_Tx(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
                        [MEMDRV_INDX_TX].p_func(devno, p_memdrv_info);
 } /* End of function R_MEMDRV_Tx() */
 
-/************************************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_MEMDRV_TxData
-* Description  : Transmits data using the single mode.
-* Arguments    : uint8_t         devno                  ;   Device No. (MEMDRV_DEVn)
-*              : st_memdrv_info_t * p_memdrv_info
-*              :    uint32_t    cnt                     ;   Number of bytes
-*              :    uint8_t   * p_data                  ;   Buffer pointer
-*              :    uint8_t     io_mode                 ;   Single/Dual/Quad
-*              :    uint8_t     rsv[3]                  ;   Reserved
-* Return Value : MEMDRV_SUCCESS                         ;   Successful operation
-*              : MEMDRV_ERR_PARAM                       ;   parameter error
-*              : MEMDRV_ERR_HARD                        ;   Hardware error
-*              : MEMDRV_ERR_OTHER                       ;   Other error
-*------------------------------------------------------------------------------------------------
-* Notes        : None
-*************************************************************************************************/
+*******************************************************************************************************************/ /**
+* @brief This function performs data transmission processing.
+* @param[in] devno Device number
+* @param[in] *p_memdrv_info Memory driver information structure
+* @retval    MEMDRV_SUCCESS: Normal end
+* @retval    MEMDRV_ERR_PARAM: parameter error
+* @retval    MEMDRV_ERR_HARD: Hardware error
+* @retval    MEMDRV_ERR_OTHER: Other error
+* @details   Transmits the data specified by the memory driver information structure. Supports CPU, DMAC, and DTC
+*            transfer.
+* @note      None
+*/
 memdrv_err_t R_MEMDRV_TxData(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 {
 #if MEMDRV_CFG_PARAM_CHECKING_ENABLE == 1
@@ -738,22 +701,19 @@ memdrv_err_t R_MEMDRV_TxData(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
                        [MEMDRV_INDX_TX_DATA].p_func(devno, p_memdrv_info);
 } /* End of function R_MEMDRV_Tx_data() */
 
-/************************************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_MEMDRV_Rx
-* Description  : Receives data for status register and Read ID.
-* Arguments    : uint8_t         devno                  ;   Device No. (MEMDRV_DEVn)
-*              : st_memdrv_info_t * p_memdrv_info
-*              :    uint32_t    cnt                     ;   Number of bytes
-*              :    uint8_t   * p_data                  ;   Buffer pointer
-*              :    uint8_t     io_mode                 ;   Single/Dual/Quad
-*              :    uint8_t     rsv[3]                  ;   Reserved
-* Return Value : MEMDRV_SUCCESS                         ;   Successful operation
-*              : MEMDRV_ERR_PARAM                       ;   parameter error
-*              : MEMDRV_ERR_HARD                        ;   Hardware error
-*              : MEMDRV_ERR_OTHER                       ;   Other error
-*------------------------------------------------------------------------------------------------
-* Notes        : None
-*************************************************************************************************/
+*******************************************************************************************************************/ /**
+* @brief This function performs processing to receive the state and ID.
+* @param[in] devno Device number
+* @param[in] *p_memdrv_info Memory driver information structure
+* @retval    MEMDRV_SUCCESS: Normal end
+* @retval    MEMDRV_ERR_PARAM: parameter error
+* @retval    MEMDRV_ERR_HARD: Hardware error
+* @retval    MEMDRV_ERR_OTHER: Other error
+* @details   Receives the data specified by the memory driver information structure. Supports CPU transfer only.
+* @note      None
+*/
 memdrv_err_t R_MEMDRV_Rx(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 {
 #if MEMDRV_CFG_PARAM_CHECKING_ENABLE == 1
@@ -767,22 +727,20 @@ memdrv_err_t R_MEMDRV_Rx(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
                        [MEMDRV_INDX_RX].p_func(devno, p_memdrv_info);
 } /* End of function R_MEMDRV_Rx() */
 
-/************************************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_MEMDRV_RxData
-* Description  : Receives data using the single mode.
-* Arguments    : uint8_t         devno                  ;   Device No. (MEMDRV_DEVn)
-*              : st_memdrv_info_t * p_memdrv_info
-*              :    uint32_t    cnt                     ;   Number of bytes
-*              :    uint8_t   * p_data                  ;   Buffer pointer
-*              :    uint8_t     io_mode                 ;   Single/Dual/Quad
-*              :    uint8_t     rsv[3]                  ;   Reserved
-* Return Value : MEMDRV_SUCCESS                         ;   Successful operation
-*              : MEMDRV_ERR_PARAM                       ;   parameter error
-*              : MEMDRV_ERR_HARD                        ;   Hardware error
-*              : MEMDRV_ERR_OTHER                       ;   Other error
-*------------------------------------------------------------------------------------------------
-* Notes        : None
-*************************************************************************************************/
+*******************************************************************************************************************/ /**
+* @brief This function performs data reception processing.
+* @param[in] devno Device number
+* @param[in] *p_memdrv_info Memory driver information structure
+* @retval    MEMDRV_SUCCESS: Normal end
+* @retval    MEMDRV_ERR_PARAM: parameter error
+* @retval    MEMDRV_ERR_HARD: Hardware error
+* @retval    MEMDRV_ERR_OTHER: Other error
+* @details   Receives the data specified by the memory driver information structure. Supports CPU, DMAC, and DTC
+*            transfer.
+* @note      None
+*/
 memdrv_err_t R_MEMDRV_RxData(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 {
 #if MEMDRV_CFG_PARAM_CHECKING_ENABLE == 1

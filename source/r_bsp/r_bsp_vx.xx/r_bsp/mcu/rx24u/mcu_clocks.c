@@ -35,6 +35,7 @@
 *                               - BSP_PRV_CKSEL_PLL
 *                               - BSP_PRV_NORMALIZE_X10
 *                               Deleted the error check of BSP_CFG_CLOCK_SOURCE in the clock_source_select function.
+*         : 17.12.2019 2.01     Deleted the unused variables of clock_source_select function.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -314,10 +315,6 @@ static void operating_frequency_set (void)
 ***********************************************************************************************************************/
 static void clock_source_select (void)
 {
-    /* Declared volatile for software delay purposes. */
-    volatile uint8_t read_verify;
-    volatile uint32_t i;
-
     /* Set to High-speed operating mode if ICLK is > 12MHz. */
     if( BSP_ICLK_HZ > BSP_MIDDLE_SPEED_MAX_FREQUENCY )
     {

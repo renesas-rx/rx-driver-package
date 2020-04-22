@@ -31,8 +31,9 @@
 *                                    Add WAIT_LOOP comments
 *                                    Fix GSCE coding checker errors
 *              : 01.02.2019 2.50     Added support for RX72T, RX65N-64pin
-*              : 20.05.2019 3.00    Added support for GNUC and ICCRX.
+*              : 20.05.2019 3.00     Added support for GNUC and ICCRX.
 *              : 28.06.2019 3.10     Added support for RX23W.
+*              : 25.11.2019 3.30     Modified comment of API function to Doxygen style.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -108,24 +109,33 @@ static void lvd_stop_lvd(lvd_channel_t ch);
 static void lvd_start_int(lvd_channel_t ch, void (*p_callback)(void *));
 static void lvd_stop_int(lvd_channel_t ch);
 
+
 /***********************************************************************************************************************
-* Outline      : Initializes the specified channel and starts the LVD.
 * Function Name: R_LVD_Open
-* Description  : This function initializes the specified channel and starts the LVD.
-* Arguments    : lvd_channel_t channel       ; Enumerated channel number to be initialized and for which the LVD starts.
-*              : lvd_config_t *p_cfg         ; Address of the configuration structure.
-*              : void (*p_callback)(void *)  ; Address of the function which is called from an interrupt upon the 
-*              :                             ; voltage detection.
-* Return Value : LVD_SUCCESS                 ; Successful : LVD started.
-*              : LVD ERR_INVALID_PTR         ; Error      : Address in the p_cfg parameter is invalid.
-*              : LVD ERR_INVALID_FUNC        ; Error      : Address in the p_callback parameter is invalid.
-*              : LVD ERR_INVALID_DATA        ; Error      : The definition of the configuration option is invalid.
-*              : LVD ERR_INVALID_CHAN        ; Error      : The channel parameter is invalid.
-*              : LVD ERR_INVALID_ARG         ; Error      : The argument of the p_cfg parameter is invalid.
-*              : LVD ERR_UNSUPPORTED         ; Error      : Selected function not supported.
-*              : LVD ERR_ALREADY_OPEN        ; Error      : The specified channel has already been open.
-*              : LVD ERR_LOCO_STOPPED        ; Error      : Setting invalid while LOCO stops.
-***********************************************************************************************************************/
+***********************************************************************************************************************//**
+ * @brief This function initializes the specified channel and starts the LVD.
+ * @param[in] channel Enumerated channel number to be initialized and for which the LVD starts.
+ * @param[in] p_cfg Address of the configuration structure.
+ * @param[in] p_callback Address of the function which is called from an interrupt upon the voltage detection.
+ * @retval LVD_SUCCESS Successful: The LVD has been started.
+ * @retval LVD_ERR_INVALID_PTR Error: Address in the p_cfg parameter is invalid.
+ * @retval LVD_ERR_INVALID_FUNC Error: Address in the p_callback parameter is invalid.
+ * @retval LVD_ERR_INVALID_DATA Error: The definition of the configuration option is invalid.
+ * @retval LVD_ERR_INVALID_CHAN Error: The channel parameter is invalid.
+ * @retval LVD_ERR_INVALID_ARG Error: The argument of the p_cfg parameter is invalid.
+ * @retval LVD_ERR_UNSUPPORTED  Error: Selected function not supported.
+ * @retval LVD_ERR_ALREADY_OPEN Error: The specified channel has already been open.
+ * @retval LVD_ERR_LOCO_STOPPED Error: Setting during LOCO is stopped is invalid.
+ * @details This function uses the p_cfg parameter and the configuration option settings to initialize the specified
+ * channel and configure settings for processing upon voltage detection, and starts the LVD. When this function
+ * completes its processing successfully, the status of the channel becomes ‘Opened’.
+ * This function is executed for each channel, however, the configuration option settings for the voltage detection
+ * level and the monitored voltage become effective only while all LVD circuits are stopped.
+ * The callback function may or may not need to be registered in the p_callback parameter depending on processing upon
+ * voltage detection, which is specified in the configuration option settings. For details, see the table below.
+ * @note
+ * See Section 3 in the application note for details.
+ */
 lvd_err_t R_LVD_Open(lvd_channel_t channel, lvd_config_t const *p_cfg, void (*p_callback)(void *))
 {
     lvd_err_t result_code = LVD_SUCCESS;
@@ -173,14 +183,19 @@ RETURN_R_LVD_OPEN:
 }
 } /* End of function R_LVD_Open() */
 
+
 /***********************************************************************************************************************
-* Outline      : Stops the specified LVD channel.
 * Function Name: R_LVD_Close
-* Description  : This function stops the specified LVD channel.
-* Arguments    : lvd_channel_t channel       ; Enumerated channel number to be stopped.
-* Return Value : LVD_SUCCESS                 ; Successful: LVD stopped.
-*              : LVD_ERR_INVALID_CHAN        ; Error     : The channel parameter is invalid.
-***********************************************************************************************************************/
+***********************************************************************************************************************//**
+ * @brief This function stops the specified LVD channel.
+ * @param[in] channel Enumerated channel number to be stopped.
+ * @retval LVD_SUCCESS Successful: The LVD has been stopped.
+ * @retval LVD_ERR_INVALID_CHAN Error: The channel parameter is invalid.
+ * @details This function stops the specified LVD channel. When this function completes its processing successfully,
+ * the status of the channel becomes ‘Not opened’.
+ * @note
+ * None.
+ */
 lvd_err_t R_LVD_Close(lvd_channel_t channel)
 {
     lvd_err_t result_code = LVD_SUCCESS;
@@ -205,19 +220,27 @@ RETURN_R_LVD_CLOSE:
 }
 } /* End of function R_LVD_Close() */
 
+
 /***********************************************************************************************************************
-* Outline      : Obtains the LVD status of the specified channel.
 * Function Name: R_LVD_GetStatus
-* Description  : This function obtains the LVD status of the specified channel.
-* Arguments    : lvd_channel_t channel                    ; Enumerated channel number to obtain the status.
-*              : lvd_status_position_t *p_status_position ; Address to store the enumerated voltage position status.
-*              : lvd_status_cross_t *p_status_cross       ; Address to store the enumerated voltage crossing status.
-* Return Value : LVD_SUCCESS                 ; Successful: LVD status obtained.
-*              : LVD_ERR_INVALID_PTR         ; Error     : Addresses in the p_status_position and p_status_cross 
-*              :                             ;           : parameters are invalid.
-*              : LVD_ERR_INVALID_CHAN        ; Error     : The channel parameter is invalid.
-*              : LVD_ERR_NOT_OPENED          ; Error     : The specified channel is not opened.
-***********************************************************************************************************************/
+***********************************************************************************************************************//**
+ * @brief This function obtains the LVD status of the specified channel.
+ * @param[in] channel Enumerated channel number to obtain the status.
+ * @param[in] p_status_position Address to store the enumerated voltage position status.
+ * @param[in] p_status_cross Address to store the enumerated voltage crossing status.
+ * @retval LVD_SUCCESS Successful: The LVD status has been obtained.
+ * @retval LVD_ERR_INVALID_PTR Error: Addresses in the p_status_position and p_status_cross parameters are invalid.
+ * @retval LVD_ERR_INVALID_CHAN Error: The channel parameter is invalid.
+ * @retval LVD_ERR_NOT_OPENED Error: The specified channel is not opened.
+ * @details This function stores the LVD statuses into parameters *p_status_position and *p_status_cross for the specified
+ * channel. Refer to Figure 3.1for details on the statuses. The voltage position status stored in the *p_status_position
+ * parameter can be obtained without dependence on the voltage detection condition. The voltage crossing status stored in
+ * the *p_status_cross parameter is dependent on the voltage detection condition and the status becomes ‘Crossed’ only when
+ * the condition is satisfied. Before this function is executed, the R_LVD_Open() function must be executed with the specified
+ * channel to make the channel status ‘Opened’.
+ * @note
+ * None.
+ */
 lvd_err_t R_LVD_GetStatus(lvd_channel_t channel, 
                           lvd_status_position_t *p_status_position, 
                           lvd_status_cross_t *p_status_cross)
@@ -262,15 +285,21 @@ RETURN_R_LVD_GETSTATUS:
 }
 } /* End of function R_LVD_GetStatus() */
 
+
 /***********************************************************************************************************************
-* Outline      : Clears the voltage crossing status.
 * Function Name: R_LVD_ClearStatus
-* Description  : This function clears the voltage crossing status.
-* Arguments    : lvd_channel_t channel       ; Enumerated channel number to clear the voltage crossing status.
-* Return Value : LVD_SUCCESS                 ; Successful: Voltage crossing status cleared.
-*              : LVD_ERR_INVALID_CHAN        ; Error     : The channel parameter is invalid.
-*              : LVD_ERR_NOT_OPENED          ; Error     : The specified channel is not opened.
-***********************************************************************************************************************/
+***********************************************************************************************************************//**
+ * @brief This function clears the voltage crossing status for the specified channel.
+ * @param[in] channel Enumerated channel number to clear the voltage crossing status.
+ * @retval LVD_SUCCESS Successful: The voltage crossing status has been cleared.
+ * @retval LVD_ERR_INVALID_CHAN Error: The channel parameter is invalid.
+ * @retval LVD_ERR_NOT_OPENED   Error: The specified channel is not opened.
+ * @details This function clears the voltage crossing status to ‘Not crossed’ for the specified channel. To clear the
+ * status, interrupt and reset are temporarily disabled. Before executing this function, the R_LVD_Open() function must
+ * be executed with the specified channel to make the channel status ‘Opened’.
+ * @note Note that no interrupt or reset will occur if a voltage is detected while interrupt and reset are temporarily disabled
+ * by this function.
+ */
 lvd_err_t R_LVD_ClearStatus(lvd_channel_t channel)
 {
     lvd_err_t result_code = LVD_SUCCESS;
@@ -307,13 +336,18 @@ RETURN_R_LVD_CLEARSTATUS:
 }
 } /* End of function R_LVD_ClearStatus() */
 
+
 /***********************************************************************************************************************
-* Outline      : Returns the current version of this module.
 * Function Name: R_LVD_GetVersion
-* Description  : This function returns the current version of the LVD FIT module.
-* Arguments    : none
-* Return Value : Version of this module.
-***********************************************************************************************************************/
+***********************************************************************************************************************//**
+ * @brief This function returns the current version of the LVD FIT module.
+ * @return Version number
+ * @details This function returns the version of the LVD FIT module. The version number is encoded where the top 2 bytes
+ * are the major version number and the bottom 2 bytes are the minor version number. For example, Version 4.25 would be
+ * returned as 0x00040019.
+ * @note
+ * None.
+ */
 uint32_t R_LVD_GetVersion(void)
 {
     uint32_t const version = (LVD_RX_VERSION_MAJOR << 16) | LVD_RX_VERSION_MINOR;

@@ -23,6 +23,7 @@
 /**********************************************************************************************************************
  * History : DD.MM.YYYY Version  Description
  *         : 30.07.2019 2.43     First Release
+ *         : 10.10.2019 2.44     Added support for atomic control.
  **********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -826,6 +827,11 @@ void riic_mcu_hardware_unlock (uint8_t channel)
  **********************************************************************************************************************/
 void riic_mcu_power_on (uint8_t channel)
 {
+    #if ((1U == RIIC_CFG_CH0_INCLUDED) || (1U == RIIC_CFG_CH1_INCLUDED) || (1U == RIIC_CFG_CH2_INCLUDED))
+    #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+    #endif
+    #endif
     /* Enable writing to MSTP registers. */
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
 
@@ -834,25 +840,49 @@ void riic_mcu_power_on (uint8_t channel)
     {
     #if (1U == RIIC_CFG_CH0_INCLUDED)
         case 0x00 :
-
+        
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
+        
             /* Bring module out of stop state. */
             MSTP(RIIC0) = 0U;
+            
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
         break;
     #endif
 
     #if (1U == RIIC_CFG_CH1_INCLUDED)
         case 0x01 :
 
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
+            
             /* Bring module out of stop state. */
             MSTP(RIIC1) = 0U;
+            
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
         break;
     #endif
 
     #if (1U == RIIC_CFG_CH2_INCLUDED)
         case 0x02:
-
+        
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
+            
             /* Bring module out of stop state. */
             MSTP(RIIC2) = 0U;
+            
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
         break;
     #endif
 
@@ -874,6 +904,11 @@ void riic_mcu_power_on (uint8_t channel)
  **********************************************************************************************************************/
 void riic_mcu_power_off (uint8_t channel)
 {
+    #if ((1U == RIIC_CFG_CH0_INCLUDED) || (1U == RIIC_CFG_CH1_INCLUDED) || (1U == RIIC_CFG_CH2_INCLUDED))
+    #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+    #endif
+    #endif
     /* Enable writing to MSTP registers. */
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
 
@@ -883,24 +918,48 @@ void riic_mcu_power_off (uint8_t channel)
     #if (1U == RIIC_CFG_CH0_INCLUDED)
         case 0x00 :
 
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
+            
             /* Put module in stop state. */
             MSTP(RIIC0) = 1U;
+            
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
         break;
     #endif
 
     #if (1U == RIIC_CFG_CH1_INCLUDED)
         case 0x01 :
 
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
+            
             /* Put module in stop state. */
             MSTP(RIIC1) = 1U;
+            
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
         break;
     #endif
 
     #if (1U == RIIC_CFG_CH2_INCLUDED)
         case 0x02:
-
+        
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
+            
             /* Put module in stop state. */
             MSTP(RIIC2) = 1U;
+            
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
         break;
     #endif
 
@@ -983,7 +1042,9 @@ void riic_mcu_int_enable (uint8_t channel)
     #if ((1U == RIIC_CFG_CH0_INCLUDED) || (1U == RIIC_CFG_CH1_INCLUDED) || (1U == RIIC_CFG_CH2_INCLUDED))
     volatile uint8_t uctmp = 0x00;
     volatile bsp_int_ctrl_t group_priority;
-
+    #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+    #endif
     group_priority.ipl = 0x00000000;
 
         #if (1U == RIIC_CFG_CH0_INCLUDED)
@@ -1029,10 +1090,22 @@ void riic_mcu_int_enable (uint8_t channel)
         case 0x00 : /* Channel 0 */
 
             /* Enables interrupt. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
             RIIC_IER_EEI0_GPBL1 = RIIC_IER_ENABLE; /* Enables EEI0 groupBL1 interrupt request enable register. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
             RIIC_IER_RXI0 = RIIC_IER_ENABLE; /* Enables RXI0 interrupt request enable register. */
             RIIC_IER_TXI0 = RIIC_IER_ENABLE; /* Enables TXI0 interrupt request enable register. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
             RIIC_IER_TEI0_GPBL1 = RIIC_IER_ENABLE; /* Enables TEI0 groupBL1 interrupt request enable register. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
 
             /* Sets interrupt source priority. */
             RIIC_IPR_RXI0 = RIIC_IPR_CH0_RXI_SET; /* Sets RXI0 interrupt source priority register. */
@@ -1045,10 +1118,22 @@ void riic_mcu_int_enable (uint8_t channel)
         case 0x01 : /* Channel 1 */
 
             /* Enables interrupt. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
             RIIC_IER_EEI1_GPBL1 = RIIC_IER_ENABLE; /* Enables EEI1 groupBL1 interrupt request enable register. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
             RIIC_IER_RXI1 = RIIC_IER_ENABLE; /* Enables RXI1 interrupt request enable register. */
             RIIC_IER_TXI1 = RIIC_IER_ENABLE; /* Enables TXI1 interrupt request enable register. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
             RIIC_IER_TEI1_GPBL1 = RIIC_IER_ENABLE; /* Enables TEI1 groupBL1 interrupt request enable register. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
 
             /* Sets interrupt source priority. */
             RIIC_IPR_RXI1 = RIIC_IPR_CH1_RXI_SET; /* Sets RXI1 interrupt source priority register. */
@@ -1061,10 +1146,22 @@ void riic_mcu_int_enable (uint8_t channel)
         case 0x02: /* Channel 2 */
 
             /* Enables interrupt. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
             RIIC_IER_EEI2_GPBL1 = RIIC_IER_ENABLE; /* Enables EEI2 groupBL1 interrupt request enable register. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
             RIIC_IER_RXI2 = RIIC_IER_ENABLE; /* Enables RXI2 interrupt request enable register. */
             RIIC_IER_TXI2 = RIIC_IER_ENABLE; /* Enables TXI2 interrupt request enable register. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
             RIIC_IER_TEI2_GPBL1 = RIIC_IER_ENABLE; /* Enables TEI2 groupBL1 interrupt request enable register. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
 
             /* Sets interrupt source priority. */
             RIIC_IPR_RXI2 = RIIC_IPR_CH2_RXI_SET; /* Sets RXI2 interrupt source priority register. */
@@ -1093,6 +1190,9 @@ void riic_mcu_int_disable (uint8_t channel)
     #if ((1U == RIIC_CFG_CH0_INCLUDED) || (1U == RIIC_CFG_CH1_INCLUDED) || (1U == RIIC_CFG_CH2_INCLUDED))
     volatile uint8_t uctmp = 0x00;
     volatile bsp_int_ctrl_t group_priority;
+    #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+    #endif
     #endif
 
     /* Channel number? */
@@ -1102,10 +1202,22 @@ void riic_mcu_int_disable (uint8_t channel)
         case 0x00 : /* Channel 0 */
 
             /* Disables interrupt. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
             RIIC_IER_EEI0_GPBL1 = RIIC_IER_DISABLE; /* Disables TEI0 groupBL1 interrupt request enable register. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
             RIIC_IER_RXI0 = RIIC_IER_DISABLE; /* Disables RXI0 interrupt request enable register. */
             RIIC_IER_TXI0 = RIIC_IER_DISABLE; /* Disables TXI0 interrupt request enable register. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
             RIIC_IER_TEI0_GPBL1 = RIIC_IER_DISABLE; /* Disables TEI0 groupBL1 interrupt request enable register. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
 
             /* Sets interrupt source priority. */
             RIIC_IPR_RXI0 = RIIC_IPR_CH0_RXI_INIT; /* Sets RXI0 interrupt source priority register. */
@@ -1118,10 +1230,22 @@ void riic_mcu_int_disable (uint8_t channel)
         case 0x01 : /* Channel 1 */
 
             /* Disables interrupt. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
             RIIC_IER_EEI1_GPBL1 = RIIC_IER_DISABLE; /* Disables TEI1 groupBL1 interrupt request enable register. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
             RIIC_IER_RXI1 = RIIC_IER_DISABLE; /* Disables RXI1 interrupt request enable register. */
             RIIC_IER_TXI1 = RIIC_IER_DISABLE; /* Disables TXI1 interrupt request enable register. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
             RIIC_IER_TEI1_GPBL1 = RIIC_IER_DISABLE; /* Disables TEI1 groupBL1 interrupt request enable register. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
 
             /* Sets interrupt source priority. */
             RIIC_IPR_RXI1 = RIIC_IPR_CH1_RXI_INIT; /* Sets RXI1 interrupt source priority register. */
@@ -1134,10 +1258,22 @@ void riic_mcu_int_disable (uint8_t channel)
         case 0x02: /* Channel 2 */
 
             /* Disables interrupt. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
             RIIC_IER_EEI2_GPBL1 = RIIC_IER_DISABLE; /* Disables TEI2 groupBL1 interrupt request enable register. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
             RIIC_IER_RXI2 = RIIC_IER_DISABLE; /* Disables RXI2 interrupt request enable register. */
             RIIC_IER_TXI2 = RIIC_IER_DISABLE; /* Disables TXI2 interrupt request enable register. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+        #endif
             RIIC_IER_TEI2_GPBL1 = RIIC_IER_DISABLE; /* Disables TEI2 groupBL1 interrupt request enable register. */
+        #if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+            R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+        #endif
 
             /* Sets interrupt source priority. */
             RIIC_IPR_RXI2 = RIIC_IPR_CH2_RXI_INIT; /* Sets RXI2 interrupt source priority register. */

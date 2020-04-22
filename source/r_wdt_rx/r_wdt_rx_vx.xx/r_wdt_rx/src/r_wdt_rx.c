@@ -30,6 +30,8 @@
 *                              Bug fix: R_WDT_Open(), R_IWDT_Open() invalidated if either module is in auto-start mode.
 *           20.05.2019 2.00    Added support for GNUC and ICCRX.
 *           15.08.2019 2.20    Fixed warnings in IAR.
+*           30.12.2019 2.30    Added support RX66N, RX72N.
+*                              Modified comment of API function to Doxygen style.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -68,21 +70,30 @@ static inline void release_hw_lock(void);
 
 /***********************************************************************************************************************
 * Function Name: R_WDT_Open
-* Description  : This function configures the WDT counter options by initializing
-*                the associated registers. This API is affected in Register start mode only.
-* Arguments    : p_cfg -
-*                    Pointer to configuration structure of type wdt_ config_t.
-* Return Value : WDT_SUCCESS -
-*                    WDT is initialized successful.
-*                WDT_ERR_OPEN_IGNORED -
-*                    The calling to this function is ignored because it is already called.
-*                WDT_ERR_INVALID_ARG -
-*                    An element of the pCfg structure contains an invalid value.
-*                WDT_ERR_NULL_PTR -
-*                    pCfg pointer is NULL.
-*                WDT_ERR_BUSY -
-*                    WDT resource cannot be taken. Try to call this function again.
-***********************************************************************************************************************/
+********************************************************************************************************************//**
+* @brief This function initializes the WDT FIT module. This function must be executed before other API functions.
+* This Open function is not used when WDT Auto-Start mode is enabled in the OFS0 register in r_bsp_config.h.
+* @param[in] p_cfg - Pointer to configuration structure of type wdt_config_t.
+* See Section 3.R_WDT_Open() in the application note for details
+* @retval [WDT_SUCCESS]          - WDT initialized
+* @retval [WDT_ERR_OPEN_IGNORED] - Error: The module has already been opened
+* @retval [WDT_ERR_INVALID_ARG]  - Error: Argument is not valid
+* @retval [WDT_ERR_NULL_PTR]     - Error: Received null pointer
+* @retval [WDT_ERR_BUSY]         - Error: WDT resource is locked
+* @details This function initializes associated WDT registers. Options can be selected per MCU
+* @note The Open function is only available in Register-Start mode
+* (BSP_CFG_OFS0_REG_VALUE = 0xFFFFFFFF in r_bsp_config.h).
+* This function configures the WDT counter without starting the WDT counter.
+* The WDT_CMD_REFRESH_COUNTING argument must be specified in the R_WDT_Control function to start the WDT counter.
+* The R_WDT_Open() function should be called only once after a reset.
+* Any additional calls will return WDT_ERR_OPEN_IGNORED.
+* The setting to enable WDT underflow/refresh error interrupt in Interrupt Controller module (ICU)
+* must be enabled when non-maskable interrupts are selected and Auto-Start mode is enabled.
+* In both Auto-Start mode and Register-Start mode, the user application should have a function to handle this interrupt.
+* In Register-Start mode, the function should be registered right after calling R_WDT_Open() as shown in the example above.
+* In Auto-Start mode, the R_BSP_InterruptWrite() should occur right after enabling WDT interrupt.
+* See Section 3.R_WDT_Open() in the application note for details
+*/
 #if ((BSP_CFG_OFS0_REG_VALUE & OFS0_WDT_DISABLED) == OFS0_WDT_DISABLED) /*Register start mode*/
 wdt_err_t R_WDT_Open (void * const p_cfg)
 {
@@ -228,24 +239,28 @@ End of function wdt_parameter_check
 
 /***********************************************************************************************************************
 * Function Name: R_WDT_Control
-* Description  : This function performs getting WDT status (underflow error status,
-                  refresh error status and WDT counter value) and refreshing the down-counter of WDT.
-                 It is used in both Auto start mode and Register start mode.
-* Arguments    : cmd -
-*                    Command to refresh WDT counter or get WDT status
-*                p_status -
-*                    Stores the counter status.
-* Return Value : WDT_SUCCESS -
-*                    Setting to appropriate register for performing a refreshing successfully.
-*                WDT_ERR_INVALID_ARG -
-*                    Invalid argument.
-*                WDT_ERR_NULL_PTR -
-*                    p_status is NULL.
-*                WDT_ERR_NOT_OPENED -
-*                    Open function is not called yet.
-*                WDT_ERR_BUSY -
-*                    WDT resource cannot be taken. Try to call this function again.
-***********************************************************************************************************************/
+********************************************************************************************************************//**
+* @brief This function gets the WDT status and refreshes the WDT down-counter. This function may be used in both
+* Auto-Start and Register-Start modes.
+* @param[in] cmd - Run command
+* @param[in] p_status - Pointer to the storage of the counter and status flags. The following code is used for
+*  the cmd argument.
+* @code
+* WDT_CMD_GET_STATUS,         // Get WDT status
+* WDT_CMD_REFRESH_COUNTING,  // Refresh the counter
+* @endcode
+* @retval [WDT_SUCCESS]          - Command completed successfully.
+* @retval [WDT_ERR_INVALID_ARG]  - Error: Argument is not valid.
+* @retval [WDT_ERR_NULL_PTR]     - Error: Received null pointer.
+* @retval [WDT_ERR_NOT_OPENED]   - Error: Open function has not yet been called.
+* @retval [WDT_ERR_BUSY]         - Error: WDT resource is locked.
+* @details
+* If command WDT_CMD_REFRESH_COUNTING is selected, the watchdog counter is initialized to its starting value.
+* If command WDT_CMD_GET_STATUS is selected, the WDT status (underflow error status, refresh error status,
+* counter value) register is loaded into *p_status. The two high-order bits indicate whether a refresh error
+* (b15) or an underflow occurred (b14). The remaining bits (b13 - b0) indicate the current counter value.
+* @note The second argument is ignored for the WDT_CMD_REFRESH_COUNTING command.
+*/
 wdt_err_t R_WDT_Control(wdt_cmd_t const cmd, uint16_t * p_status)
 {
     bool ret = false;
@@ -317,11 +332,12 @@ End of function R_WDT_Control
 
 /***********************************************************************************************************************
 * Function Name: R_WDT_GetVersion
-* Description  : Returns the current version of this module. The version number is encoded where the top 2 bytes are the
-*                major version number and the bottom 2 bytes are the minor version number.
-* Arguments    : none
-* Return Value : Version of this module.
-***********************************************************************************************************************/
+********************************************************************************************************************//**
+* @brief This function returns the driver version number at runtime.
+* @return Version number
+* @details This function returns the driver version number.
+* @note None.
+*/
 uint32_t  R_WDT_GetVersion (void)
 {
     uint32_t const version = (WDT_RX_VERSION_MAJOR << 16) | WDT_RX_VERSION_MINOR;

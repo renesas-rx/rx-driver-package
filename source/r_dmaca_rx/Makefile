@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_dmaca_rx
-VERSION = 		v2.20
+VERSION = 		v2.30
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules

@@ -24,6 +24,9 @@
 /**********************************************************************************************************************
 * History : DD.MM.YYYY Version  Description
 *         : 08.04.2019 1.00     First Release
+*         : 08.10.2019 1.01     Added the following enumeration constant.
+*                               - BSP_LOCK_SWINT
+*                               - BSP_LOCK_SWINT2
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -181,6 +184,8 @@ typedef enum
     BSP_LOCK_WDT,
     BSP_LOCK_FLASHCONST,
     BSP_LOCK_TEMPSCONST,
+    BSP_LOCK_SWINT,
+    BSP_LOCK_SWINT2,
     BSP_NUM_LOCKS //This entry is not a valid lock. It is used for sizing g_bsp_Locks[] array below. Do not touch!
 } mcu_lock_t;
 

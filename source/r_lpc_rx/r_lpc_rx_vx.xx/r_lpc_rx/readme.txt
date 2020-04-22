@@ -22,11 +22,11 @@ r_lpc_rx
 |    |
 |    +---en
 |    |    |
-|    |    +---r01an2769ej0141_rx.pdf
+|    |    +---r01an2769ej0200_rx.pdf
 |    |
 |    +---ja
 |         |
-|         +---r01an2769jj0141_rx.pdf
+|         +---r01an2769jj0200_rx.pdf
 |    
 +---ref
 |    r_lpc_rx_config_reference.h
@@ -55,11 +55,6 @@ r_lpc_rx
           |    r_lpc_rx130_if.h
           |    r_lpc_rx130_private.h
           |
-          +---rx210
-          |    r_lpc_rx210.c
-          |    r_lpc_rx210_if.h
-          |    r_lpc_rx210_private.h
-          |
           +---rx230
           |    r_lpc_rx230.c
           |    r_lpc_rx230_if.h
@@ -69,6 +64,11 @@ r_lpc_rx
           |    r_lpc_rx231.c
           |    r_lpc_rx231_if.h
           |    r_lpc_rx231_private.h
+          |
+          +---rx23w
+          |    r_lpc_rx23w.c
+          |    r_lpc_rx23w_if.h
+          |    r_lpc_rx23w_private.h
           |
           +---rx64m
           |    r_lpc_rx64m.c

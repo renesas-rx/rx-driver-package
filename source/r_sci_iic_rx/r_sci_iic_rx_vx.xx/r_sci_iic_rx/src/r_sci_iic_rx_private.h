@@ -31,7 +31,7 @@
  *         : 27.02.2015 1.60     RX63N support added.
  *         : 29.05.2015 1.70     RX231 support added.
  *         : 31.10.2015 1.80     RX130, RX230, RX23T support added.
- *         : 04.03.2016 1.90     RX24T support added.Changed about the pin definisions.
+ *         : 04.03.2016 1.90     RX24T support added.Changed about the pin definitions.
  *         : 31.08.2017 2.20     Added parameter check of Configuration Options.
  *                               Added macro definition SCI_IIC_PRV_PCR_BASE_REG, SCI_IIC_PRV_PDR_BASE_REG,
  *                                SCI_IIC_PRV_PMR_BASE_REG, SCI_IIC_PRV_ODR0_BASE_REG, SCI_IIC_PRV_ODR1_BASE_REG,
@@ -43,6 +43,8 @@
  *                               Fixed coding style.
  *         : 20.06.2019 2.42     RX23W support added.
  *         : 30.07.2019 2.43     RX72M support added.
+ *         : 30.10.2019 2.44     RX13T support added.
+ *         : 22.11.2019 2.45     RX66N, RX72N support added.
  **********************************************************************************************************************/
 /* Guards against multiple inclusion */
 #ifndef SCI_IIC_PRIVATE_H

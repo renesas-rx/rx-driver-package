@@ -5,12 +5,12 @@ r_ether_rx
 
 Document Number
 ---------------
-R01AN2009EJ0117 (English version)
-R01AN2009JJ0117 (Japanese version)
+R01AN2009EJ0120 (English version)
+R01AN2009JJ0120 (Japanese version)
 
 Version
 -------
-v1.17
+v1.20
 
 Overview
 --------
@@ -33,20 +33,21 @@ Features
 
 Supported MCUs
 --------------
-* RX63N Group
 * RX65N Group
 * RX64M Group
 * RX71M Group
 * RX72M Group
+* RX72N Group
+* RX66N Group
 
 Boards Tested On
 ----------------
-* RSKRX63N
 * RSKRX65N
 * RSKRX65N_2MB
 * RSKRX64M
 * RSKRX71M
 * RSKRX72M
+* RSKRX72N
 
 Limitations
 -----------
@@ -83,10 +84,10 @@ r_ether_rx
 +---doc
 |   |
 |   +---en
-|   |   r01an2009ej0117-rx-ether.pdf
+|   |   r01an2009ej0120-rx-ether.pdf
 |   |
 |   \---ja
-|       r01an2009jj0117-rx-ether.pdf
+|       r01an2009jj0120-rx-ether.pdf
 |
 +---ref
 |       r_ether_config_reference.h
@@ -108,11 +109,14 @@ r_ether_rx
         +---rx71m
         |    r_ether_setting_rx71m.c
         |
-        +---rx63n
-        |    r_ether_setting_rx63n.c
-        |
         +---rx65n
         |    r_ether_setting_rx65n.c
         |
-        \---rx72m
-             r_ether_setting_rx72m.c
+        +---rx72m
+        |    r_ether_setting_rx72m.c
+        |
+        +---rx72n
+        |    r_ether_setting_rx72n.c
+        |    
+        \---rx66n
+             r_ether_setting_rx66n.c

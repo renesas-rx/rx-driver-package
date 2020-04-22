@@ -33,6 +33,7 @@
 *         : 01.02.2019 1.40    Added support for RX65N-64pin
 *         : 20.05.2019 2.00    Added support for GNUC and ICCRX.
 *         : 15.08.2019 2.10    Added support for RX72M
+*         : 30.12.2019 2.20    Added support RX66N, RX72N.
 ***********************************************************************************************************************/
 #ifndef CMTW_RX_IF_H
 #define CMTW_RX_IF_H
@@ -54,7 +55,7 @@ Macro definitions
 
 /* Version Number of API. */
 #define CMTW_RX_VERSION_MAJOR       (02)
-#define CMTW_RX_VERSION_MINOR       (10)
+#define CMTW_RX_VERSION_MINOR       (20)
 
 /***********************************************************************************************************************
 Typedef definitions

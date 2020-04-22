@@ -51,6 +51,8 @@
 *                               Removed the following macro definition.
 *                                - BSP_MAPPED_INT_CFG_A_VECT_MTU8_TGIU8
 *         : 28.02.2019 1.11     Fixed coding style.
+*         : 31.07.2019 1.20     Added the following macro definition.
+*                                - BSP_MAPPED_INT_CFG_B_VECT_SHA_SHARDY
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -414,6 +416,11 @@ void bsp_mapped_interrupt_open (void)
 #if BSP_PRV_VALID_MAP_INT(B, BSP_MAPPED_INT_CFG_B_VECT_S12ADC1_S12GBADI1)
     /* Casting is valid because it matches the type to the right side or argument. */
     BSP_PRV_INT_SELECT(BSP_PRV_B, BSP_MAPPED_INT_CFG_B_VECT_S12ADC1_S12GBADI1) = BSP_PRV_INT_B_NUM_S12ADC1_S12GBADI1;
+#endif
+
+#if BSP_PRV_VALID_MAP_INT(B, BSP_MAPPED_INT_CFG_B_VECT_SHA_SHARDY)
+    /* Casting is valid because it matches the type to the right side or argument. */
+    BSP_PRV_INT_SELECT(BSP_PRV_B, BSP_MAPPED_INT_CFG_B_VECT_SHA_SHARDY) = BSP_PRV_INT_B_NUM_SHA_SHARDY;
 #endif
 
 #if BSP_PRV_VALID_MAP_INT(B, BSP_MAPPED_INT_CFG_B_VECT_DES_DESEND)

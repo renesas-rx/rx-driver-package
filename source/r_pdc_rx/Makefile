@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_pdc_rx
-VERSION = 		v2.04
+VERSION = 		v2.05
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules

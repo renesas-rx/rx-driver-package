@@ -38,6 +38,7 @@
 *                               Fixed coding style. 
 *         : 20.06.2019 2.02     Supported RX23W.
 *         : 30.07.2019 2.03     Supported RX72M.
+*         : 22.11.2019 2.04     Supported RX72N and RX66N.
 ***********************************************************************************************************************/
 
 #ifndef RSPI_PRIVATE_H
@@ -57,7 +58,8 @@ Macro definitions
 #if defined(BSP_MCU_RX62N) || defined(BSP_MCU_RX621)   || defined(BSP_MCU_RX71M)
 #define RSPI_MAX_CHANNELS   (2)
 #elif defined(BSP_MCU_RX63N) || defined(BSP_MCU_RX630) || defined(BSP_MCU_RX631) \
-   || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX72M)
+   || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX72M) || defined(BSP_MCU_RX72N) \
+   || defined(BSP_MCU_RX66N)
 #define RSPI_MAX_CHANNELS   (3)
 #elif defined(BSP_MCU_RX210) || defined(BSP_MCU_RX110) || defined(BSP_MCU_RX111) \
    || defined(BSP_MCU_RX62T) || defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX113) \

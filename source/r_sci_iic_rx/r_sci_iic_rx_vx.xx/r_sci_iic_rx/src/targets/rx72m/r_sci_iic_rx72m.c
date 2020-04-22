@@ -23,6 +23,7 @@
 /***********************************************************************************************************************
  * History : DD.MM.YYYY Version  Description
  *         : 30.07.2019 2.43     First Release
+ *         : 22.11.2019 2.45     Modified the peripheral module clock of SCI7, SCI8 and SCI9.
  **********************************************************************************************************************/
 /***********************************************************************************************************************
  Includes   <System Includes> , "Project Includes"
@@ -1000,7 +1001,9 @@ static void sci_iic_set_frequency (sci_iic_info_t * p_sci_iic_info)
     /* Macro definition does not have the type of declaration. The cast for the calculation of the floating point, 
      has been cast in the double type. After that, it is cast to type long to fit on the left-hand side. 
      Calculation results are not affected by casting, it is no problem. */
-    if ((SCI_IIC_NUM_CH10 == p_sci_iic_info->ch_no) || (SCI_IIC_NUM_CH11 == p_sci_iic_info->ch_no))
+    if ((SCI_IIC_NUM_CH7 == p_sci_iic_info->ch_no) || (SCI_IIC_NUM_CH8 == p_sci_iic_info->ch_no) || \
+        (SCI_IIC_NUM_CH9 == p_sci_iic_info->ch_no) || (SCI_IIC_NUM_CH10 == p_sci_iic_info->ch_no) || \
+        (SCI_IIC_NUM_CH11 == p_sci_iic_info->ch_no))
     {
         brr_n_tmp = brr_n;
         brr_value = (uint32_t) ((double) ((double) ((double) BSP_PCLKA_HZ / (brr_n_tmp * (prom->bitrate)))) - 0.1);
@@ -1043,7 +1046,9 @@ static void sci_iic_set_frequency (sci_iic_info_t * p_sci_iic_info)
         /* Macro definition does not have the type of declaration. The cast for the calculation of the floating point, 
          has been cast in the double type. After that, it is cast to type long to fit on the left-hand side. 
          Calculation results are not affected by casting, it is no problem. */
-        if ((SCI_IIC_NUM_CH10 == p_sci_iic_info->ch_no) || (SCI_IIC_NUM_CH11 == p_sci_iic_info->ch_no))
+        if ((SCI_IIC_NUM_CH7 == p_sci_iic_info->ch_no) || (SCI_IIC_NUM_CH8 == p_sci_iic_info->ch_no) || \
+            (SCI_IIC_NUM_CH9 == p_sci_iic_info->ch_no) || (SCI_IIC_NUM_CH10 == p_sci_iic_info->ch_no) || \
+            (SCI_IIC_NUM_CH11 == p_sci_iic_info->ch_no))
         {
             brr_n_tmp = brr_n;
             brr_value = (uint32_t) ((double) (((double) BSP_PCLKA_HZ / (brr_n_tmp * (prom->bitrate)))) - 0.1);

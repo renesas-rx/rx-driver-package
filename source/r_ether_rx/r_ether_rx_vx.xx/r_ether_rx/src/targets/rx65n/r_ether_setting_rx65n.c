@@ -18,7 +18,7 @@
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * File Name    : r_ether_setting_rx65n.c
-* Version      : 1.13
+* Version      : 1.20
 * Device       : RX65N
 * Description  : Ethernet module device driver
 ***********************************************************************************************************************/
@@ -27,6 +27,7 @@
 *         : 01.10.2016 1.00     First Release
 *         : 01.10.2017 1.13     Removed ether_clear_icu_source function.
 *         :                     Added RX65N-2MB support.
+*         : 22.11.2019 1.20     Added support for atomic control. 
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -75,8 +76,17 @@ void ether_enable_icu(uint32_t channel)
     volatile uint32_t   dummy;
     bsp_int_ctrl_t int_ctrl;
 
-    ICU.GENAL1.BIT.EN4 = 1;
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t    ipl_value;
+#endif
 
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &ipl_value);
+#endif
+    ICU.GENAL1.BIT.EN4 = 1;
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &ipl_value);
+#endif
     int_ctrl.ipl = ETHER_CFG_AL1_INT_PRIORTY;
     R_BSP_InterruptControl(BSP_INT_SRC_AL1_EDMAC0_EINT0, BSP_INT_CMD_GROUP_INTERRUPT_ENABLE, &int_ctrl);
 
@@ -94,8 +104,17 @@ void ether_disable_icu(uint32_t channel)
 {
     volatile uint32_t   dummy;
 
-    ICU.GENAL1.BIT.EN4 = 0;
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t    int_ctrl;
+#endif
 
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
+    ICU.GENAL1.BIT.EN4 = 0;
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
     R_BSP_InterruptControl(BSP_INT_SRC_AL1_EDMAC0_EINT0, BSP_INT_CMD_GROUP_INTERRUPT_DISABLE, FIT_NO_PTR);
 
     dummy = channel;

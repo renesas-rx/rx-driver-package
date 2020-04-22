@@ -51,6 +51,8 @@
 *                               Removed the following macro definition.
 *                                - BSP_MAPPED_INT_CFG_A_VECT_MTU8_TGIU8
 *         : 28.02.2019 1.11     Fixed coding style.
+*         : 31.07.2019 1.20     Added the following macro definition.
+*                                - BSP_MAPPED_INT_CFG_B_VECT_SHA_SHARDY
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -59,6 +61,10 @@ Macro definitions
 /* Multiple inclusion prevention macro */
 #ifndef MCU_MAPPED_INTERRUPTS_H
 #define MCU_MAPPED_INTERRUPTS_H
+
+#if (BSP_CFG_MCU_PART_ENCRYPTION_INCLUDED == true) && !defined(BSP_MAPPED_INT_CFG_B_VECT_SHA_SHARDY)
+#warning "There is not the BSP_MAPPED_INT_CFG_B_VECT_SHA_SHARDY definitions in r_bsp_interrupt_config.h. Please check the version of Smart Configurator and BSP FIT module are the latest."
+#endif
 
 /* The following macros define the number for each interrupt request source as it pertains to being an Interrupt B or
  * Interrupt A interrupt. These values are used when setting the interrupt select registers (i.e. SLIBXRn, SLIBrn, and
@@ -131,6 +137,7 @@ Macro definitions
 #define BSP_PRV_INT_B_NUM_S12ADC0_S12GBADI0                               65
 #define BSP_PRV_INT_B_NUM_S12ADC1_S12ADI1                                 68
 #define BSP_PRV_INT_B_NUM_S12ADC1_S12GBADI1                               69
+#define BSP_PRV_INT_B_NUM_SHA_SHARDY                                      72
 #define BSP_PRV_INT_B_NUM_DES_DESEND                                      73
 #define BSP_PRV_INT_B_NUM_SHA_SHADEND                                     74
 #define BSP_PRV_INT_B_NUM_SHA_SHAEND                                      75
@@ -820,6 +827,15 @@ Macro definitions
 #define IPR_S12ADC1_S12GBADI1       BSP_PRV_IPR(BSP_PRV_B, BSP_MAPPED_INT_CFG_B_VECT_S12ADC1_S12GBADI1)
 #define IEN_S12ADC1_S12GBADI1       BSP_PRV_IEN(BSP_MAPPED_INT_CFG_B_VECT_S12ADC1_S12GBADI1)
 #define VECT_S12ADC1_S12GBADI1      BSP_PRV_VECT(BSP_PRV_B, BSP_MAPPED_INT_CFG_B_VECT_S12ADC1_S12GBADI1)
+#endif
+
+#if BSP_PRV_VALID_MAP_INT(B, BSP_MAPPED_INT_CFG_B_VECT_SHA_SHARDY)
+#define IR_SHA_SHARDY        BSP_PRV_IR(BSP_PRV_B, BSP_MAPPED_INT_CFG_B_VECT_SHA_SHARDY)
+#define DTCE_SHA_SHARDY      BSP_PRV_DTCE(BSP_PRV_B, BSP_MAPPED_INT_CFG_B_VECT_SHA_SHARDY)
+#define IER_SHA_SHARDY       BSP_PRIV_CALC_IER_REG(BSP_MAPPED_INT_CFG_B_VECT_SHA_SHARDY)
+#define IPR_SHA_SHARDY       BSP_PRV_IPR(BSP_PRV_B, BSP_MAPPED_INT_CFG_B_VECT_SHA_SHARDY)
+#define IEN_SHA_SHARDY       BSP_PRV_IEN(BSP_MAPPED_INT_CFG_B_VECT_SHA_SHARDY)
+#define VECT_SHA_SHARDY      BSP_PRV_VECT(BSP_PRV_B, BSP_MAPPED_INT_CFG_B_VECT_SHA_SHARDY)
 #endif
 
 #if BSP_PRV_VALID_MAP_INT(B, BSP_MAPPED_INT_CFG_B_VECT_DES_DESEND)

@@ -23,6 +23,8 @@
 /***********************************************************************************************************************
 * History : DD.MM.YYYY Version  Description
 *         : 08.04.2019 1.00     First Release
+*         : 26.07.2019 1.01     Added R_BSP_SoftwareReset function.
+*         : 31.07.2019 1.02     Deleted the compile condition for R_BSP_SoftwareReset.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -76,7 +78,7 @@ uint32_t R_BSP_CpuInterruptLevelRead(void);
 bool     R_BSP_CpuInterruptLevelWrite(uint32_t level);
 void     R_BSP_RegisterProtectEnable(bsp_reg_protect_t regs_to_protect);
 void     R_BSP_RegisterProtectDisable(bsp_reg_protect_t regs_to_unprotect);
-
+void     R_BSP_SoftwareReset(void);
 void     bsp_register_protect_open(void); //r_bsp internal function. DO NOT CALL.
 void     bsp_ram_initialize(void);
 

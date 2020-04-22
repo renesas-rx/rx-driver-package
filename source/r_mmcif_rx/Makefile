@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_mmcif_rx
-VERSION = 		v1.06
+VERSION = 		v1.07
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules

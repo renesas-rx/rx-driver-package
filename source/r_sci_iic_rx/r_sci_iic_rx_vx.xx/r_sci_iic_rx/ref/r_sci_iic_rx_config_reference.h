@@ -41,6 +41,8 @@
  *         : 21.09.2018 2.40     RX72T support added.
  *         : 20.06.2019 2.42     RX23W support added.
  *         : 30.07.2019 2.43     RX72M support added.
+ *         : 30.10.2019 2.44     RX13T support added.
+ *         : 22.11.2019 2.45     RX66N, RX72N support added.
  **********************************************************************************************************************/
 /* Guards against multiple inclusion */
 #ifndef SCI_IIC_CONFIG_H
@@ -60,6 +62,7 @@
 /*  RX111    :    , ch1,    ,    ,    , ch5,    ,    ,    ,    ,    ,    ,ch12 */
 /*  RX113    : ch0, ch1, ch2,    ,    , ch5, ch6,    , ch8, ch9,    ,    ,ch12 */
 /*  RX130    : ch0, ch1,    ,    ,    , ch5, ch6,    , ch8, ch9,    ,    ,ch12 */
+/*  RX13T    :    , ch1,    ,    ,    , ch5,    ,    ,    ,    ,    ,    ,ch12 */
 /*  RX230    : ch0, ch1,    ,    ,    , ch5, ch6,    , ch8, ch9,    ,    ,ch12 */
 /*  RX231    : ch0, ch1,    ,    ,    , ch5, ch6,    , ch8, ch9,    ,    ,ch12 */
 /*  RX23T    :    , ch1,    ,    ,    , ch5,    ,    ,    ,    ,    ,    ,     */
@@ -70,9 +73,11 @@
 /*  RX64M    : ch0, ch1, ch2, ch3, ch4, ch5, ch6, ch7,    ,    ,    ,    ,ch12 */
 /*  RX65N    : ch0, ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8, ch9,ch10,ch11,ch12 */
 /*  RX66T    :    , ch1,    ,    ,    , ch5, ch6,    , ch8, ch9,    ,ch11,ch12 */
+/*  RX66N    : ch0, ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8, ch9,ch10,ch11,ch12 */
 /*  RX71M    : ch0, ch1, ch2, ch3, ch4, ch5, ch6, ch7,    ,    ,    ,    ,ch12 */
 /*  RX72T    :    , ch1,    ,    ,    , ch5, ch6,    , ch8, ch9,    ,ch11,ch12 */
 /*  RX72M    : ch0, ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8, ch9,ch10,ch11,ch12 */
+/*  RX72N    : ch0, ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8, ch9,ch10,ch11,ch12 */
 /* Please change the definition value of channel to be used to '1'. */
     #define SCI_IIC_CFG_CH0_INCLUDED    (0)
     #define SCI_IIC_CFG_CH1_INCLUDED    (0)

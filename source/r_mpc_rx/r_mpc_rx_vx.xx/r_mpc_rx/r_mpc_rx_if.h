@@ -43,6 +43,8 @@
 *         : 20.05.2019 3.00    Added support for GNUC and ICCRX.
 *         : 28.06.2019 3.10    Added support RX23W
 *         : 15.08.2019 3.20    Added support RX72M
+*         : 25.11.2019 3.30    Added support RX13T
+*         : 30.12.2019 3.40    Added support RX72N, RX66N
 ***********************************************************************************************************************/
 
 #ifndef MPC_RX_INTERFACE_HEADER_FILE
@@ -66,7 +68,7 @@ Macro definitions
 
 /* Version Number of API. */
 #define MPC_RX_VERSION_MAJOR           (3)
-#define MPC_RX_VERSION_MINOR           (20)
+#define MPC_RX_VERSION_MINOR           (40)
 
 /***********************************************************************************************************************
 Typedef definitions

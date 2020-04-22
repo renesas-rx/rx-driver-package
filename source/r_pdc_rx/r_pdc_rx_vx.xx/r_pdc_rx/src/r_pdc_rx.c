@@ -18,7 +18,7 @@
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_pdc_rx.c
- * Version      : 2.04
+ * Version      : 2.05
  * Description  : PDC module device driver
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
@@ -27,6 +27,8 @@
  *         : 20.05.2019 2.02     Added support for GNUC and ICCRX.
  *                               Fixed coding style.
  *         : 30.07.2019 2.04     Added WAIT LOOP
+ *         : 22.11.2019 2.05     Added support for atomic control.
+ *                               Modified comment of API function to Doxygen style.
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  Includes   <System Includes> , "Project Includes"
@@ -78,27 +80,32 @@ static pdc_return_t pdc_get_status (pdc_stat_t *p_stat);
 static void pdc_module_enable (void);
 static void pdc_module_disable (void);
 
-/***********************************************************************************************************************
+/**********************************************************************************************************************
  * Function Name: R_PDC_Open
- * Description  : This function is used first to prepare the PDC for use.
- *                It makes initial settings to the PDC's registers as the first step in initializing the PDC.
- * Arguments    : p_data_cfg -
- *                    Pointer to PDC settings data structure
- * Return Values: PDC_SUCCESS -
- *                    Processing finished successfully.
- *                PDC_ERR_OPENED -
- *                    R_PDC_Open has already been run.
- *                PDC_ERR_INVALID_ARG -
- *                    Parameter values in PDC setting information are invalid.
- *                PDC_ERR_NULL_PTR -
- *                    Argument p_data_cfg is a NULL pointer.
- *                PDC_ERR_LOCK_FUNC -
- *                    The PDC has already been locked by another process.
- *                PDC_ERR_INTERNAL -
- *                    A module internal error was detected.
- *                PDC_ERR_RST_TIMEOUT -
- *                    PDC is resetting after constant time is passed.
- ***********************************************************************************************************************/
+ *****************************************************************************************************************/ /**
+ * @brief This function initializes the PDC FIT module. It must be run before using the other API functions.
+ * @param[in] *p_data_cfg
+ *             Pointer to PDC settings data structure.\n 
+ *             See section 3.1 in application note for members of referenced pdc_data_cfg_t structure and 
+ *             their setting values.
+ * @retval    PDC_SUCCESS         Processing finished successfully.
+ * @retval    PDC_ERR_OPENED      R_PDC_Open has already been run.
+ * @retval    PDC_ERR_INVALID_ARG Parameter values in PDC setting information are invalid.
+ * @retval    PDC_ERR_NULL_PTR    Argument p_data_cfg is a NULL pointer.
+ * @retval    PDC_ERR_LOCK_FUNC   The PDC has already been locked by another process.
+ * @retval    PDC_ERR_INTERNAL    A module internal error was detected.
+ * @retval    PDC_ERR_RST_TIMEOUT PDC reset was not canceled even after the specified amount of time elapsed.
+ * @details   This function is performed to initialize the PDC. See section 3.1 in application note for details.
+ * @note      This API function should be run when the device and the camera module are connected. Running this
+ *            API function enables PIXCLK input and then resets the PDC, but this is because the reset will not
+ *            complete if PIXCLK where the camera module output is not input to the device. If the return value
+ *            PDC_ERR_RST_TIMEOUT is confirmed, check the settings and hardware configuration of the camera module.\n 
+ *            An endianness setting is applied within this API function. The endianness setting should be selected
+ *            to match the corresponding compiler setting. If the compiler endianness setting is little-endian, 
+ *            the PDC endianness setting should be little-endian as well, and if the compiler endianness setting
+ *            is big-endian, the PDC endianness setting should also be big-endian.\n 
+ *            The arguments and return values of the registered callback function should be of type void.
+ */
 pdc_return_t R_PDC_Open (pdc_data_cfg_t *p_data_cfg)
 {
     pdc_return_t ret;
@@ -167,17 +174,21 @@ pdc_return_t R_PDC_Open (pdc_data_cfg_t *p_data_cfg)
     return ret;
 } /* End of function R_PDC_Open() */
 
-/***********************************************************************************************************************
+/**********************************************************************************************************************
  * Function Name: R_PDC_Close
- * Description  : Ends operation by the PDC and puts it into the module stop state.
- * Arguments    : none
- * Return Values: PDC_SUCCESS -
- *                    Processing finished successfully.
- *                PDC_ERR_NOT_OPEN -
- *                    R_PDC_Open has not been run.
- ***********************************************************************************************************************/
+ *****************************************************************************************************************/ /**
+ * @brief Ends operation by the PDC and puts it into the module stop state.
+ * @retval    PDC_SUCCESS      Processing finished successfully.
+ * @retval    PDC_ERR_NOT_OPEN R_PDC_Open has not been run.
+ * @details   This function is performed to shut down the PDC. See section 3.2 in application note for details.
+ * @note      Use this API function after running R_PDC_Open and confirming that the return value is PDC_SUCCESS.
+ */
 pdc_return_t R_PDC_Close (void)
 {
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+#endif
+
     /* Check that the R_PDC_Open has been executed. */
     if (false == is_opened)
     {
@@ -193,8 +204,14 @@ pdc_return_t R_PDC_Close (void)
         /* Do Nothing */
     }
     IR(PDC, PCDFI)= 0; /* Interrupt request is cleared. */
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
     ICU.GENBL0.BIT.EN30 = 0; /* Interrupt request(GRPBL0.IS30) is also cleared.  */
     ICU.GENBL0.BIT.EN31 = 0; /* Interrupt request(GRPBL0.IS31) is also cleared.  */
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
 
     /* Disables PDC operation.
      The PCCR0 register should only be set while the PCE bit in the PCCR1 register is 0. */
@@ -218,28 +235,36 @@ pdc_return_t R_PDC_Close (void)
     return PDC_SUCCESS;
 } /* End of function R_PDC_Close() */
 
-/***********************************************************************************************************************
+/**********************************************************************************************************************
  * Function Name: R_PDC_Control
- * Description  : This function performs processing according to control codes.
- * Arguments    : command -
- *                    Control code
- *                p_data_cfg -
- *                    Pointer to PDC settings data structure
- *                p_stat -
- *                    Pointer to PDC status structure
- * Return Values: PDC_SUCCESS -
- *                    Processing finished successfully.
- *                PDC_ERR_NOT_OPEN -
- *                    R_PDC_Open has not been run.
- *                PDC_ERR_INVALID_ARG -
- *                    Parameter values in PDC setting information are invalid.
- *                PDC_ERR_INVALID_COMMAND -
- *                    The argument command is invalid.
- *                PDC_ERR_NULL_PTR -
- *                    The argument p_data_cfg or p_stat is a NULL pointer.
- *                PDC_ERR_RST_TIMEOUT -
- *                    PDC is resetting after constant time is passed.
- ***********************************************************************************************************************/
+ *****************************************************************************************************************/ /**
+ * @brief This function performs processing according to control codes.
+ * @param[in] command
+ *             Control code. See section 3.3 in application note for the supported command values.
+ * @param[in] *p_data_cfg
+ *             Pointer to PDC settings data structure.\n 
+ *             The arguments that are referenced differ according to the specified command. See section 3.3 in
+ *             application note for details.
+ * @param[in,out] *p_stat
+ *             Pointer to PDC status structure.\n 
+ *             The arguments that are referenced differ according to the specified command. See section 3.3 in
+ *             application note for details.
+ * @retval    PDC_SUCCESS             Processing finished successfully.
+ * @retval    PDC_ERR_NOT_OPEN        R_PDC_Open has not been run.
+ * @retval    PDC_ERR_INVALID_ARG     Setting value applied to PDC register is invalid.
+ * @retval    PDC_ERR_INVALID_COMMAND The argument command is invalid.
+ * @retval    PDC_ERR_NULL_PTR        The argument p_data_cfg or p_stat is a NULL pointer.
+ * @retval    PDC_ERR_RST_TIMEOUT     PDC reset was not canceled even after the specified amount of time elapsed.
+ * @details   See section 3.3 in application note for details.
+ * @note      Running this API function when receive operation is in progress will overwrite the PDC registers,
+ *            thereby causing receive operation to stop. Since running this API function before the frame-end interrupt
+ *            is generated stops receive operation, capturing of image data is halted midway. To restart image capture,
+ *            reset in the DMAC or DTC the pointer to the transfer destination in memory, then use the R_PDC_Control
+ *            capture start command to restart capturing of image data.\n 
+ *            When running R_PDC_Control with the command PDC_CMD_STATUS_CLR as an argument, set the status information
+ *            to be cleared as "true" and the status information not to be cleared as "false". If these settings are not
+ *            made before running R_PDC_Control, status information may be cleared in an unintended manner.
+ */
 pdc_return_t R_PDC_Control (pdc_command_t command, pdc_data_cfg_t * p_data_cfg, pdc_stat_t * p_stat)
 {
     pdc_return_t ret = PDC_SUCCESS;
@@ -293,18 +318,18 @@ pdc_return_t R_PDC_Control (pdc_command_t command, pdc_data_cfg_t * p_data_cfg, 
     return ret;
 } /* End of function R_PDC_Control() */
 
-/***********************************************************************************************************************
+/**********************************************************************************************************************
  * Function Name: R_PDC_GetFifoAddr
- * Description  : This function gets the FIFO address of the PDC.
- * Arguments    : p_fifo_addr -
- *                    Pointer to PDC.PCDR resister address.
- * Return Values: PDC_SUCCESS -
- *                    Processing finished successfully.
- *                PDC_ERR_NOT_OPEN -
- *                    R_PDC_Open has not been run.
- *                PDC_ERR_NULL_PTR -
- *                    The argument p_data_cfg or p_stat is a NULL pointer.
- ***********************************************************************************************************************/
+ *****************************************************************************************************************/ /**
+ * @brief This function gets the FIFO address of the PDC.
+ * @param[out] *p_fifo_addr
+ *             Pointer to PDC FIFO address
+ * @retval    PDC_SUCCESS      Processing finished successfully.
+ * @retval    PDC_ERR_NOT_OPEN R_PDC_Open has not been run.
+ * @retval    PDC_ERR_NULL_PTR Argument p_fifo_addr is a NULL pointer.
+ * @details   Stores the address of the PDC receive data register (PCDR) in argument p_fifo_addr.
+ * @note      None.
+ */
 pdc_return_t R_PDC_GetFifoAddr (uint32_t *p_fifo_addr)
 {
     pdc_return_t ret = PDC_SUCCESS;
@@ -329,12 +354,16 @@ pdc_return_t R_PDC_GetFifoAddr (uint32_t *p_fifo_addr)
     return ret;
 } /* End of function R_PDC_GetFifoAddr() */
 
-/***********************************************************************************************************************
+/**********************************************************************************************************************
  * Function Name: R_PDC_GetVersion
- * Description  : This function returns the API version number.
- * Arguments    : none
- * Return Values: Version number
- ***********************************************************************************************************************/
+ *****************************************************************************************************************/ /**
+ * @brief This function returns the API version number.
+ * @return    Version number
+ * @details   This function returns the version number of the currently installed PDC FIT module. The version number
+ *            is encoded. The first two bytes contain the major version number and the last two bytes contain the minor
+ *            version number. For example, if the version number is 4.25, the return value would be 0x00040019.
+ * @note      None.
+ */
 uint32_t R_PDC_GetVersion (void)
 {
     return ((((uint32_t) PDC_RX_VERSION_MAJOR) << 16) | ((uint32_t) PDC_RX_VERSION_MINOR));
@@ -661,6 +690,10 @@ static pdc_return_t pdc_int_setting_sub (pdc_data_cfg_t *p_data_cfg)
     /* Initialize local variable */
     grpbl0.ipl = 0;
     
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+#endif
+
     /* Make sure that the argument is correct. */
     /* To cast in order to compare the address. There is no problem because the information is not lost even if the
      *  cast. */
@@ -695,14 +728,26 @@ static pdc_return_t pdc_int_setting_sub (pdc_data_cfg_t *p_data_cfg)
 
     if (PDC_PCFEI_IEN_UPDATE == (p_data_cfg->iupd_select & PDC_PCFEI_IEN_UPDATE))
     {
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
         ICU.GENBL0.BIT.EN30 = 0; /* Interrupt request(GRPBL0.IS30) is also cleared.  */
         ICU.GENBL0.BIT.EN30 = p_data_cfg->inticu_req.pcfei_ien;
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
     }
 
     if (PDC_PCERI_IEN_UPDATE == (p_data_cfg->iupd_select & PDC_PCERI_IEN_UPDATE))
     {
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
         ICU.GENBL0.BIT.EN31 = 0; /* Interrupt request(GRPBL0.IS31) is also cleared.  */
         ICU.GENBL0.BIT.EN31 = p_data_cfg->inticu_req.pceri_ien;
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
     }
 
     if (PDC_PCDFI_IEN_UPDATE == (p_data_cfg->iupd_select & PDC_PCDFI_IEN_UPDATE))
@@ -875,6 +920,9 @@ static pdc_return_t pdc_capture_start (void)
 {
     pdc_return_t ret;
     uint32_t value;
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+#endif
 
     /* The PCCR0 register should only be set while the PCE bit in the PCCR1 register is 0. */
     PDC.PCCR1.BIT.PCE = PDC_DISABLE_OPERATION;
@@ -892,13 +940,25 @@ static pdc_return_t pdc_capture_start (void)
     IR(PDC, PCDFI)= 0; /* Interrupt request is cleared. */
     if (1 == ICU.GENBL0.BIT.EN30)
     {
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
         ICU.GENBL0.BIT.EN30 = 0; /* Interrupt request(GRPBL0.IS30) is also cleared.  */
         ICU.GENBL0.BIT.EN30 = 1;
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
     }
     if (1 == ICU.GENBL0.BIT.EN31)
     {
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
         ICU.GENBL0.BIT.EN31 = 0; /* Interrupt request(GRPBL0.IS31) is also cleared.  */
         ICU.GENBL0.BIT.EN31 = 1;
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
     }
 
     /* Resets the PDC. */
@@ -1087,10 +1147,19 @@ static pdc_return_t pdc_get_status (pdc_stat_t *p_stat)
  ***********************************************************************************************************************/
 static void pdc_module_enable (void)
 {
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+#endif
     /* Enable writing to MSTP registers. And release from the module-stop state of PDC.
      After that disable writing to MSTP registers. */
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
     MSTP( PDC ) = 0;
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
     R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);
 
 } /* End of function pdc_module_enable() */
@@ -1103,10 +1172,19 @@ static void pdc_module_enable (void)
  ***********************************************************************************************************************/
 static void pdc_module_disable (void)
 {
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+#endif
     /* Enable writing to MSTP registers and stop module of PDC.
      After that disable writing to MSTP registers. */
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
     MSTP( PDC ) = 1;
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
     R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);
 
 } /* End of function pdc_module_disable() */

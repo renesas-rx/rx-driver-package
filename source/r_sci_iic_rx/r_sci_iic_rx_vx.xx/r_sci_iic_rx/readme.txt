@@ -60,6 +60,10 @@ r_sci_iic_rx
         |       r_sci_iic_rx130.c
         |       r_sci_iic_rx130_private.h
         |
+        +---rx13t
+        |       r_sci_iic_rx13t.c
+        |       r_sci_iic_rx13t_private.h
+        |
         +---rx230
         |       r_sci_iic_rx230.c
         |       r_sci_iic_rx230_private.h
@@ -96,6 +100,10 @@ r_sci_iic_rx
         |       r_sci_iic_rx66t.c
         |       r_sci_iic_rx66t_private.h
         |
+        +---rx66n
+        |       r_sci_iic_rx66n.c
+        |       r_sci_iic_rx66n_private.h
+        |
         +---rx71m
         |       r_sci_iic_rx71m.c
         |       r_sci_iic_rx71m_private.h
@@ -105,8 +113,12 @@ r_sci_iic_rx
         |       r_sci_iic_rx72t_private.h
         |
         +---rx72m 
-                r_sci_iic_rx72m.c
-                r_sci_iic_rx72m_private.h
+        |       r_sci_iic_rx72m.c
+        |       r_sci_iic_rx72m_private.h
+        |
+        +---rx72n 
+                r_sci_iic_rx72n.c
+                r_sci_iic_rx72n_private.h
 
 r_config
     r_sci_iic_rx_config.h

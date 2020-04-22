@@ -24,7 +24,7 @@
 /************************************************************************************************
 * System Name  : MEMDRV  software
 * File Name    : r_memdrv_rspi.c
-* Version      : 1.01
+* Version      : 1.02
 * Device       : -
 * Abstract     : IO I/F module
 * Tool-Chain   : -
@@ -38,6 +38,12 @@
 *              : 15.12.2018 1.00     Initial Release
 *              : 04.04.2019 1.01     Added support for GNUC and ICCRX.
 *                                    Fixed coding style.
+*              : 22.11.2019 1.02     The module is updated to fix the software issue.
+*                                    When r_memdrv_rspi_write_data function is called, 
+*                                    there are cases when transmit data/receive data are not processed successfully.
+*                                    The issue occurs when the number of transmit is set to a value of 1024 byte.
+*                                    Corrected parameter type of the r_memdrv_rspi_write_data function.
+*                                    Corrected parameter type of the r_memdrv_rspi_read_data function.
 *************************************************************************************************/
 
 /************************************************************************************************
@@ -47,8 +53,8 @@ Includes <System Includes> , "Project Includes"
 #include "r_memdrv_rx_config.h"                  /* MEMDRV driver Configuration definitions        */
 #include "./src/r_memdrv_rx_private.h"           /* MEMDRV driver Private module definitions       */
 /* Check driver interface. */
-#if (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI) | \
-    (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI)
+#if ((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR == MEMDRV_DRVR_RX_FIT_RSPI)) || \
+    ((MEMDRV_CFG_DEV1_INCLUDED == 1) && (MEMDRV_CFG_DEV1_MODE_DRVR == MEMDRV_DRVR_RX_FIT_RSPI))
 #include "r_pinset.h"
 /************************************************************************************************
 Macro definitions
@@ -59,6 +65,7 @@ Macro definitions
 #define RSPI_TIMER_MIN_TIME        (100)       /* 100ms             */
 #define RSPI_SECTOR_SIZE           (512)       /* 1 sector size     */
 #define RSPI_TRAN_SIZE             (4)
+#define RSPI_EXCHG_MAX_COUNT       (65532)
 /************************************************************************************************
 Typedef definitions
 *************************************************************************************************/
@@ -103,10 +110,11 @@ static memdrv_err_t r_memdrv_rspi_enable_tx_data_dtc(uint8_t devno,
                                                      st_memdrv_info_t * p_memdrv_info);
 static memdrv_err_t r_memdrv_rspi_enable_rx_data_dtc(uint8_t devno,
                                                      st_memdrv_info_t * p_memdrv_info);
-static memdrv_err_t r_memdrv_rspi_write_data(uint8_t channel, uint8_t count,
+static memdrv_err_t r_memdrv_rspi_write_data(uint8_t channel, uint16_t count,
                                              uint8_t * pdata, rspi_command_word_t cmd);
-static memdrv_err_t r_memdrv_rspi_read_data(uint8_t channel, uint8_t count,
+static memdrv_err_t r_memdrv_rspi_read_data(uint8_t channel, uint16_t count,
                                             uint8_t * pdata, rspi_command_word_t cmd);
+
 /************************************************************************************************
 * Function Name: r_memdrv_rspi_open
 * Description  : Initializes I/O driver.
@@ -127,7 +135,7 @@ memdrv_err_t r_memdrv_rspi_open(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
     rspi_command_word_t spcmd_cmd_word;
     
     uint8_t channel = r_memdrv_get_drv_ch(devno);
-    if(MEMDRV_DEV0 == devno)
+    if (MEMDRV_DEV0 == devno)
     {
         config.bps_target = (uint32_t)MEMDRV_CFG_DEV0_BR;
     }
@@ -149,7 +157,15 @@ memdrv_err_t r_memdrv_rspi_open(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 #if RSPI_LITTLE_ENDIAN == 1
     spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
 #else
+    #if defined (__ICCRX__)
+    uint16_t temp;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
+    temp = (spcmd_cmd_word.word[0] >> 8);
+    temp |= (spcmd_cmd_word.word[0] << 8);
+    spcmd_cmd_word.word[0] = temp;
+    #else
     spcmd_cmd_word.word[1] = MEMDRV_TRNS_CMD;
+#endif /* (__ICCRX__) */
 #endif
 
 #if (MEMDRV_CFG_DEV0_MODE_TRNS & MEMDRV_TRNS_DMAC)  | (MEMDRV_CFG_DEV1_MODE_TRNS & MEMDRV_TRNS_DMAC)
@@ -1598,7 +1614,15 @@ memdrv_err_t r_memdrv_rspi_tx(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 #if RSPI_LITTLE_ENDIAN == 1
     spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
 #else
+    #if defined (__ICCRX__)
+    uint16_t temp;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
+    temp = (spcmd_cmd_word.word[0] >> 8);
+    temp |= (spcmd_cmd_word.word[0] << 8);
+    spcmd_cmd_word.word[0] = temp;
+    #else
     spcmd_cmd_word.word[1] = MEMDRV_TRNS_CMD;
+#endif /* (__ICCRX__) */
 #endif
 
 #if ((MEMDRV_CFG_DEV0_MODE_TRNS & MEMDRV_TRNS_DMAC)  | \
@@ -1650,7 +1674,15 @@ memdrv_err_t r_memdrv_rspi_tx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_in
 #if RSPI_LITTLE_ENDIAN == 1
     spcmd_cmd_word.word[0] = MEMDRV_TRNS_DATA_CMD;
 #else
+    #if defined (__ICCRX__)
+    uint16_t temp;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_DATA_CMD;
+    temp = (spcmd_cmd_word.word[0] >> 8);
+    temp |= (spcmd_cmd_word.word[0] << 8);
+    spcmd_cmd_word.word[0] = temp;
+    #else
     spcmd_cmd_word.word[1] = MEMDRV_TRNS_DATA_CMD;
+#endif /* (__ICCRX__) */
 #endif
 
     /* Set transfer mode. */
@@ -1659,9 +1691,17 @@ memdrv_err_t r_memdrv_rspi_tx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_in
         /* If the buffer address is not 4 bytes alignment, force to perform the CPU transfer. */
         mode.transfer_mode = RSPI_TRANS_MODE_SW;
 #if RSPI_LITTLE_ENDIAN == 1
-        spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
 #else
-        spcmd_cmd_word.word[1] = MEMDRV_TRNS_CMD;
+    #if defined (__ICCRX__)
+    uint16_t temp;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
+    temp = (spcmd_cmd_word.word[0] >> 8);
+    temp |= (spcmd_cmd_word.word[0] << 8);
+    spcmd_cmd_word.word[0] = temp;
+    #else
+    spcmd_cmd_word.word[1] = MEMDRV_TRNS_CMD;
+#endif /* (__ICCRX__) */
 #endif
     }
     else if (MEMDRV_CHK_MULT_OF_4 & p_memdrv_info->cnt)
@@ -1669,9 +1709,17 @@ memdrv_err_t r_memdrv_rspi_tx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_in
         /* If the data counter is not multiple of 4, force to perform the CPU transfer. */
         mode.transfer_mode = RSPI_TRANS_MODE_SW;
 #if RSPI_LITTLE_ENDIAN == 1
-        spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
 #else
-        spcmd_cmd_word.word[1] = MEMDRV_TRNS_CMD;
+    #if defined (__ICCRX__)
+    uint16_t temp;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
+    temp = (spcmd_cmd_word.word[0] >> 8);
+    temp |= (spcmd_cmd_word.word[0] << 8);
+    spcmd_cmd_word.word[0] = temp;
+    #else
+    spcmd_cmd_word.word[1] = MEMDRV_TRNS_CMD;
+#endif /* (__ICCRX__) */
 #endif
     }
     else
@@ -1696,7 +1744,7 @@ memdrv_err_t r_memdrv_rspi_tx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_in
     r_rspi_exchg(p_memdrv_info->p_data, p_memdrv_info->cnt);
     return MEMDRV_SUCCESS;
 } /* End of function r_memdrv_rspi_tx_data() */
-#elif(MEMDRV_CFG_DEV0_TYPE == 0)  | (MEMDRV_CFG_DEV1_TYPE == 0)
+#elif (MEMDRV_CFG_DEV0_TYPE == 0)  | (MEMDRV_CFG_DEV1_TYPE == 0)
 memdrv_err_t r_memdrv_rspi_tx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 {
     uint8_t                 channel = r_memdrv_get_drv_ch(devno);
@@ -1707,7 +1755,10 @@ memdrv_err_t r_memdrv_rspi_tx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_in
 
     uint32_t                bound_cnt = 0;
     uint8_t *               pdsrc = p_memdrv_info->p_data;
-    uint16_t                txcnt = p_memdrv_info->cnt;
+    uint32_t                txcnt = p_memdrv_info->cnt;
+
+    uint32_t                rem_txcnt = txcnt / RSPI_EXCHG_MAX_COUNT;
+    uint32_t                mod_txcnt = txcnt % RSPI_EXCHG_MAX_COUNT;
 
 
     if (0 != ((uint32_t)(p_memdrv_info->p_data) & MEMDRV_ADDR_BOUNDARY))
@@ -1716,9 +1767,17 @@ memdrv_err_t r_memdrv_rspi_tx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_in
         txcnt = bound_cnt;
         mode.transfer_mode = RSPI_TRANS_MODE_SW;
 #if RSPI_LITTLE_ENDIAN == 1
-        spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
 #else
-        spcmd_cmd_word.word[1] = MEMDRV_TRNS_CMD;
+    #if defined (__ICCRX__)
+    uint16_t temp;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
+    temp = (spcmd_cmd_word.word[0] >> 8);
+    temp |= (spcmd_cmd_word.word[0] << 8);
+    spcmd_cmd_word.word[0] = temp;
+    #else
+    spcmd_cmd_word.word[1] = MEMDRV_TRNS_CMD;
+#endif /* (__ICCRX__) */
 #endif
         ret_drv = R_RSPI_Control(g_rspi_handle,
                                  RSPI_CMD_SET_TRANS_MODE,
@@ -1736,15 +1795,23 @@ memdrv_err_t r_memdrv_rspi_tx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_in
         pdsrc = (uint8_t *)(p_memdrv_info->p_data + bound_cnt);
         txcnt = p_memdrv_info->cnt - bound_cnt;
     }
-    if (0 != (txcnt & (uint16_t) 0xfffffffc))
+    if (0 != (txcnt & 0xfffffffc))
     {
-        txcnt = (txcnt & (uint16_t) 0xfffffffc);
+        txcnt = (txcnt & 0xfffffffc);
         mode.transfer_mode = r_memdrv_rspi_set_tran_mode(devno);
 
 #if RSPI_LITTLE_ENDIAN == 1
-        spcmd_cmd_word.word[0] = MEMDRV_TRNS_DATA_CMD;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_DATA_CMD;
 #else
-        spcmd_cmd_word.word[1] = MEMDRV_TRNS_DATA_CMD;
+    #if defined (__ICCRX__)
+    uint16_t temp;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_DATA_CMD;
+    temp = (spcmd_cmd_word.word[0] >> 8);
+    temp |= (spcmd_cmd_word.word[0] << 8);
+    spcmd_cmd_word.word[0] = temp;
+    #else
+    spcmd_cmd_word.word[1] = MEMDRV_TRNS_DATA_CMD;
+#endif /* (__ICCRX__) */
 #endif
         ret_drv = R_RSPI_Control(g_rspi_handle,
                                  RSPI_CMD_SET_TRANS_MODE,
@@ -1802,7 +1869,27 @@ memdrv_err_t r_memdrv_rspi_tx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_in
             }
         }
         r_rspi_exchg(pdsrc, txcnt);
-        ret_memdrv = r_memdrv_rspi_write_data(channel, txcnt, pdsrc, spcmd_cmd_word);
+        /* Turn 32 digits into 16 digits */
+        if (rem_txcnt >= 1)
+        {
+            /* WAIT_LOOP */
+            while(rem_txcnt)
+            {
+                ret_memdrv = r_memdrv_rspi_write_data(channel, RSPI_EXCHG_MAX_COUNT, pdsrc, spcmd_cmd_word);
+                if (MEMDRV_SUCCESS != ret_memdrv)
+                {
+                    return ret_memdrv;
+                }
+                pdsrc = (uint8_t *)(pdsrc + RSPI_EXCHG_MAX_COUNT);
+                rem_txcnt--;
+            }
+            ret_memdrv = r_memdrv_rspi_write_data(channel, mod_txcnt, pdsrc, spcmd_cmd_word);
+        }
+        else
+        {
+            ret_memdrv = r_memdrv_rspi_write_data(channel, txcnt, pdsrc, spcmd_cmd_word);
+        }
+
         if (MEMDRV_SUCCESS != ret_memdrv)
         {
             r_rspi_exchg(pdsrc, txcnt);
@@ -1865,9 +1952,17 @@ memdrv_err_t r_memdrv_rspi_tx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_in
         mode.transfer_mode = RSPI_TRANS_MODE_SW;
 
 #if RSPI_LITTLE_ENDIAN == 1
-        spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
 #else
-        spcmd_cmd_word.word[1] = MEMDRV_TRNS_CMD;
+    #if defined (__ICCRX__)
+    uint16_t temp;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
+    temp = (spcmd_cmd_word.word[0] >> 8);
+    temp |= (spcmd_cmd_word.word[0] << 8);
+    spcmd_cmd_word.word[0] = temp;
+    #else
+    spcmd_cmd_word.word[1] = MEMDRV_TRNS_CMD;
+#endif /* (__ICCRX__) */
 #endif
         ret_drv = R_RSPI_Control(g_rspi_handle,
                                  RSPI_CMD_SET_TRANS_MODE,
@@ -1920,7 +2015,15 @@ memdrv_err_t r_memdrv_rspi_rx(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 #if RSPI_LITTLE_ENDIAN == 1
     spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
 #else
+    #if defined (__ICCRX__)
+    uint16_t temp;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
+    temp = (spcmd_cmd_word.word[0] >> 8);
+    temp |= (spcmd_cmd_word.word[0] << 8);
+    spcmd_cmd_word.word[0] = temp;
+    #else
     spcmd_cmd_word.word[1] = MEMDRV_TRNS_CMD;
+#endif /* (__ICCRX__) */
 #endif
 
 #if ((MEMDRV_CFG_DEV0_MODE_TRNS & MEMDRV_TRNS_DMAC)  | \
@@ -1973,7 +2076,15 @@ memdrv_err_t r_memdrv_rspi_rx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_in
 #if RSPI_LITTLE_ENDIAN == 1
     spcmd_cmd_word.word[0] = MEMDRV_TRNS_DATA_CMD;
 #else
+    #if defined (__ICCRX__)
+    uint16_t temp;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_DATA_CMD;
+    temp = (spcmd_cmd_word.word[0] >> 8);
+    temp |= (spcmd_cmd_word.word[0] << 8);
+    spcmd_cmd_word.word[0] = temp;
+    #else
     spcmd_cmd_word.word[1] = MEMDRV_TRNS_DATA_CMD;
+#endif /* (__ICCRX__) */
 #endif
 
     /* Set transfer mode. */
@@ -1982,9 +2093,17 @@ memdrv_err_t r_memdrv_rspi_rx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_in
         /* If the buffer address is not 4 bytes alignment, force to perform the CPU transfer. */
         mode.transfer_mode = RSPI_TRANS_MODE_SW;
 #if RSPI_LITTLE_ENDIAN == 1
-        spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
 #else
-        spcmd_cmd_word.word[1] = MEMDRV_TRNS_CMD;
+    #if defined (__ICCRX__)
+    uint16_t temp;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
+    temp = (spcmd_cmd_word.word[0] >> 8);
+    temp |= (spcmd_cmd_word.word[0] << 8);
+    spcmd_cmd_word.word[0] = temp;
+    #else
+    spcmd_cmd_word.word[1] = MEMDRV_TRNS_CMD;
+#endif /* (__ICCRX__) */
 #endif
     }
     else if (MEMDRV_CHK_MULT_OF_4 & p_memdrv_info->cnt)
@@ -1992,9 +2111,17 @@ memdrv_err_t r_memdrv_rspi_rx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_in
         /* If the data counter is not multiple of 4, force to perform the CPU transfer. */
         mode.transfer_mode = RSPI_TRANS_MODE_SW;
 #if RSPI_LITTLE_ENDIAN == 1
-        spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
 #else
-        spcmd_cmd_word.word[1] = MEMDRV_TRNS_CMD;
+    #if defined (__ICCRX__)
+    uint16_t temp;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
+    temp = (spcmd_cmd_word.word[0] >> 8);
+    temp |= (spcmd_cmd_word.word[0] << 8);
+    spcmd_cmd_word.word[0] = temp;
+    #else
+    spcmd_cmd_word.word[1] = MEMDRV_TRNS_CMD;
+#endif /* (__ICCRX__) */
 #endif
     }
     else
@@ -2032,7 +2159,9 @@ memdrv_err_t r_memdrv_rspi_rx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_in
 
     uint32_t                bound_cnt = 0;
     uint8_t *               pdest = p_memdrv_info->p_data;
-    uint16_t                rxcnt = p_memdrv_info->cnt;
+    uint32_t                rxcnt = p_memdrv_info->cnt;
+    uint32_t                rem_rxcnt = rxcnt / RSPI_EXCHG_MAX_COUNT;
+    uint32_t                mod_rxcnt = rxcnt % RSPI_EXCHG_MAX_COUNT;
 
     if (0 != ((uint32_t)(p_memdrv_info->p_data) & MEMDRV_ADDR_BOUNDARY))
     {
@@ -2040,9 +2169,17 @@ memdrv_err_t r_memdrv_rspi_rx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_in
         rxcnt = bound_cnt;
         mode.transfer_mode = RSPI_TRANS_MODE_SW;
 #if RSPI_LITTLE_ENDIAN == 1
-        spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
 #else
-        spcmd_cmd_word.word[1] = MEMDRV_TRNS_CMD;
+    #if defined (__ICCRX__)
+    uint16_t temp;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
+    temp = (spcmd_cmd_word.word[0] >> 8);
+    temp |= (spcmd_cmd_word.word[0] << 8);
+    spcmd_cmd_word.word[0] = temp;
+    #else
+    spcmd_cmd_word.word[1] = MEMDRV_TRNS_CMD;
+#endif /* (__ICCRX__) */
 #endif
         ret_drv = R_RSPI_Control(g_rspi_handle,
                                  RSPI_CMD_SET_TRANS_MODE,
@@ -2061,15 +2198,23 @@ memdrv_err_t r_memdrv_rspi_rx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_in
         pdest = (uint8_t *)(p_memdrv_info->p_data + bound_cnt);
         rxcnt = p_memdrv_info->cnt - bound_cnt;
     }
-    if (0 != (rxcnt & (uint16_t) 0xfffffffc))
+    if (0 != (rxcnt & 0xfffffffc))
     {
-        rxcnt = (rxcnt & (uint16_t) 0xfffffffc);
+        rxcnt = (rxcnt & 0xfffffffc);
         mode.transfer_mode = r_memdrv_rspi_set_tran_mode(devno);
 
 #if RSPI_LITTLE_ENDIAN == 1
-        spcmd_cmd_word.word[0] = MEMDRV_TRNS_DATA_CMD;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_DATA_CMD;
 #else
-        spcmd_cmd_word.word[1] = MEMDRV_TRNS_DATA_CMD;
+    #if defined (__ICCRX__)
+    uint16_t temp;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_DATA_CMD;
+    temp = (spcmd_cmd_word.word[0] >> 8);
+    temp |= (spcmd_cmd_word.word[0] << 8);
+    spcmd_cmd_word.word[0] = temp;
+    #else
+    spcmd_cmd_word.word[1] = MEMDRV_TRNS_DATA_CMD;
+#endif /* (__ICCRX__) */
 #endif
         ret_drv = R_RSPI_Control(g_rspi_handle,
                                  RSPI_CMD_SET_TRANS_MODE,
@@ -2127,7 +2272,27 @@ memdrv_err_t r_memdrv_rspi_rx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_in
             }
         }
         r_rspi_exchg(pdest, rxcnt);
-        ret_memdrv = r_memdrv_rspi_read_data(channel, rxcnt, pdest, spcmd_cmd_word);
+        /* Turn 32 digits into 16 digits */
+        if (rem_rxcnt >= 1)
+        {
+            /* WAIT_LOOP */
+            while(rem_rxcnt)
+            {
+                ret_memdrv = r_memdrv_rspi_read_data(channel, RSPI_EXCHG_MAX_COUNT, pdest, spcmd_cmd_word);
+                if (MEMDRV_SUCCESS != ret_memdrv)
+                {
+                    return ret_memdrv;
+                }
+                pdest = (uint8_t *)(pdest + RSPI_EXCHG_MAX_COUNT);
+                rem_rxcnt--;
+            }
+            ret_memdrv = r_memdrv_rspi_read_data(channel, mod_rxcnt, pdest, spcmd_cmd_word);
+        }
+        else
+        {
+            ret_memdrv = r_memdrv_rspi_read_data(channel, rxcnt, pdest, spcmd_cmd_word);
+        }
+
         if (MEMDRV_SUCCESS != ret_memdrv)
         {
             r_rspi_exchg(pdest, rxcnt);
@@ -2191,9 +2356,17 @@ memdrv_err_t r_memdrv_rspi_rx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_in
         mode.transfer_mode = RSPI_TRANS_MODE_SW;
 
 #if RSPI_LITTLE_ENDIAN == 1
-        spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
 #else
-        spcmd_cmd_word.word[1] = MEMDRV_TRNS_CMD;
+    #if defined (__ICCRX__)
+    uint16_t temp;
+    spcmd_cmd_word.word[0] = MEMDRV_TRNS_CMD;
+    temp = (spcmd_cmd_word.word[0] >> 8);
+    temp |= (spcmd_cmd_word.word[0] << 8);
+    spcmd_cmd_word.word[0] = temp;
+    #else
+    spcmd_cmd_word.word[1] = MEMDRV_TRNS_CMD;
+#endif /* (__ICCRX__) */
 #endif
         ret_drv = R_RSPI_Control(g_rspi_handle,
                                  RSPI_CMD_SET_TRANS_MODE,
@@ -2411,29 +2584,35 @@ static void r_memdrv_rspi_callback(void *p_data)
     R_RSPI_IntSptiIerClear(g_rspi_handle);
     if (0 == g_rspi_handle->channel)
     {
+#if ((MEMDRV_CFG_DEV0_MODE_DRVR_CH & MEMDRV_DRVR_MASK_CH) == MEMDRV_DRVR_CH0) | \
+    ((MEMDRV_CFG_DEV1_MODE_DRVR_CH & MEMDRV_DRVR_MASK_CH) == MEMDRV_DRVR_CH0)
         RSPI0.SPCR.BIT.SPE   = 0;  // Disable RSPI.
 #if RSPI_CFG_REQUIRE_LOCK == 1
         R_BSP_HardwareUnlock((mcu_lock_t)(BSP_LOCK_RSPI0));
 #endif
+#endif
     }
-#if RSPI_MAX_CHANNELS >= 2
     else if (1 == g_rspi_handle->channel)
+    {
+#if ((MEMDRV_CFG_DEV0_MODE_DRVR_CH & MEMDRV_DRVR_MASK_CH) == MEMDRV_DRVR_CH1) | \
+    ((MEMDRV_CFG_DEV1_MODE_DRVR_CH & MEMDRV_DRVR_MASK_CH) == MEMDRV_DRVR_CH1)
     {
         RSPI1.SPCR.BIT.SPE   = 0;  // Disable RSPI.
 #if RSPI_CFG_REQUIRE_LOCK == 1
         R_BSP_HardwareUnlock((mcu_lock_t)(BSP_LOCK_RSPI1));
 #endif
-    }
 #endif
-#if RSPI_MAX_CHANNELS ==3
+    }
     else if (2 == g_rspi_handle->channel)
     {
+#if ((MEMDRV_CFG_DEV0_MODE_DRVR_CH & MEMDRV_DRVR_MASK_CH) == MEMDRV_DRVR_CH2) | \
+    ((MEMDRV_CFG_DEV1_MODE_DRVR_CH & MEMDRV_DRVR_MASK_CH) == MEMDRV_DRVR_CH2)
         RSPI2.SPCR.BIT.SPE   = 0;  // Disable RSPI.
 #if RSPI_CFG_REQUIRE_LOCK == 1
         R_BSP_HardwareUnlock((mcu_lock_t)(BSP_LOCK_RSPI2));
 #endif
-    }
 #endif
+    }
     else
     {
     }
@@ -2449,35 +2628,53 @@ static void r_memdrv_rspi_callback(void *p_data)
 ******************************************************************************/
 static void rspi_init_ports(void)
 {
-#if ((MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH0) || \
-    (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH0))
+#if (((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI) && \
+      (MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH0)) || ((MEMDRV_CFG_DEV1_INCLUDED == 1)   && \
+      (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI) && (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH0)))
     R_RSPI_PinSet_RSPI0();
-#elif ((MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH1) || \
-      (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH1))
+#endif
+#if (((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI) && \
+      (MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH1)) || ((MEMDRV_CFG_DEV1_INCLUDED == 1)   && \
+      (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI) && (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH1)))
     R_RSPI_PinSet_RSPI1();
-#elif ((MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH2) || \
-      (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH2))
+#endif
+#if (((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI) && \
+      (MEMDRV_CFG_DEV0_MODE_DRVR_CH == MEMDRV_DRVR_CH2)) || ((MEMDRV_CFG_DEV1_INCLUDED == 1)   && \
+      (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI) && (MEMDRV_CFG_DEV1_MODE_DRVR_CH == MEMDRV_DRVR_CH2)))
     R_RSPI_PinSet_RSPI2();
-#else
-#error "ERROR - RSPI do not have this channel."
 #endif
 } /* End of function rspi_init_ports() */
 
 /*****************************************************************************
 * Function Name: r_memdrv_rspi_write_data
-* Description  : This function initializes the port pins associated with
-*                RSPI channel 0 using the macros defined in iodefine.h.
-* Arguments    : None
-* Return Value : None
+* Description  : Transmits data to a SPI  device.
+* Arguments    : uint8_t         channel                ;   Device No. (MEMDRV_DEVn)
+*              : uint16_t        count                  ;   Indicates the number of data words to be transferred.
+*              : uint8_t         * pdata                ;   Buffer pointer
+*              : rspi_command_word_t  cmd               ;   Consisting of all the RSPI command register settings.
+* Return Value : MEMDRV_SUCCESS                         ;   Successful operation
+*              : MEMDRV_ERR_OTHER                       ;   Other error
 ******************************************************************************/
 static memdrv_err_t r_memdrv_rspi_write_data(uint8_t channel,
-                                             uint8_t count,
+                                             uint16_t count,
                                              uint8_t * pdata,
                                              rspi_command_word_t cmd)
 {
     rspi_err_t     ret_drv = RSPI_SUCCESS;
 
     g_transfer_busy = true;
+
+#if RSPI_LITTLE_ENDIAN == 1
+    if (MEMDRV_TRNS_DATA_CMD == cmd.word[0])
+    {
+        count = count >> 2;
+    }
+#else
+    if (MEMDRV_TRNS_DATA_CMD == cmd.word[1])
+    {
+        count = count >> 2;
+    }
+#endif
     ret_drv = R_RSPI_Write(g_rspi_handle,
                            cmd,
                            pdata,
@@ -2488,10 +2685,9 @@ static memdrv_err_t r_memdrv_rspi_write_data(uint8_t channel,
     }
 
     /* Wait for transmission completion. */
-    if(0 > r_memdrv_rspi_wait(channel, count))
+    if (0 > r_memdrv_rspi_wait(channel, count))
     {
         /* ---- Disable RSPI transmission. ---- */
-        R_RSPI_IntSptiDmacdtcFlagSet(g_rspi_handle, RSPI_SET_TRANS_STOP);
         R_RSPI_IntSptiIerClear(g_rspi_handle);
         R_RSPI_IntSpriIerClear(g_rspi_handle);
         g_rspi_handle->channel = channel;
@@ -2511,19 +2707,34 @@ static memdrv_err_t r_memdrv_rspi_write_data(uint8_t channel,
 
 /*****************************************************************************
 * Function Name: r_memdrv_rspi_read_data
-* Description  : This function initializes the port pins associated with
-*                RSPI channel 0 using the macros defined in iodefine.h.
-* Arguments    : None
-* Return Value : None
+* Description  : Receives data from a SPI device.
+* Arguments    : uint8_t         channel                ;   Device No. (MEMDRV_DEVn)
+*              : uint16_t        count                  ;   Indicates the number of data words to be transferred.
+*              : uint8_t         * pdata                ;   Buffer pointer
+*              : rspi_command_word_t  cmd               ;   Consisting of all the RSPI command register settings.
+* Return Value : MEMDRV_SUCCESS                         ;   Successful operation
+*              : MEMDRV_ERR_OTHER                       ;   Other error
 ******************************************************************************/
 static memdrv_err_t r_memdrv_rspi_read_data(uint8_t channel,
-                                            uint8_t count,
+                                            uint16_t count,
                                             uint8_t * pdata,
                                             rspi_command_word_t cmd)
 {
     rspi_err_t     ret_drv = RSPI_SUCCESS;
 
     g_transfer_busy = true;
+
+#if RSPI_LITTLE_ENDIAN == 1
+    if (MEMDRV_TRNS_DATA_CMD == cmd.word[0])
+    {
+        count = count >> 2;
+    }
+#else
+    if (MEMDRV_TRNS_DATA_CMD == cmd.word[1])
+    {
+        count = count >> 2;
+    }
+#endif
     ret_drv = R_RSPI_Read(g_rspi_handle,
                            cmd,
                            pdata,
@@ -2534,10 +2745,9 @@ static memdrv_err_t r_memdrv_rspi_read_data(uint8_t channel,
     }
 
     /* Wait for transmission completion. */
-    if(0 > r_memdrv_rspi_wait(channel, count))
+    if (0 > r_memdrv_rspi_wait(channel, count))
     {
         /* ---- Disable RSPI transmission. ---- */
-        R_RSPI_IntSptiDmacdtcFlagSet(g_rspi_handle, RSPI_SET_TRANS_STOP);
         R_RSPI_IntSptiIerClear(g_rspi_handle);
         R_RSPI_IntSpriIerClear(g_rspi_handle);
         g_rspi_handle->channel = channel;
@@ -2582,7 +2792,8 @@ static memdrv_err_t r_rspi_exchg(uint8_t * p_data, uint16_t size)
 #endif /* (RSPI_LITTLE_ENDIAN)  */
     return MEMDRV_SUCCESS;
 } /* End of function r_rspi_exchg() */
-#else /* MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI */
+
+#else
 memdrv_err_t r_memdrv_rspi_open(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 {
     R_MEMDRV_Log(MEMDRV_DEBUG_ERR_ID, (uint32_t)MEMDRV_ERR_SUB, __LINE__);
@@ -2651,7 +2862,7 @@ void r_memdrv_rspi_1ms_interval(void)
 {
     R_MEMDRV_Log(MEMDRV_DEBUG_ERR_ID, (uint32_t)MEMDRV_ERR_SUB, __LINE__);
 } /* End of function r_memdrv_rspi_1ms_interval() */
-#endif  /* (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI) |
-           (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_RSPI) */
+#endif  /* ((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR == MEMDRV_DRVR_RX_FIT_RSPI)) || \
+           ((MEMDRV_CFG_DEV1_INCLUDED == 1) && (MEMDRV_CFG_DEV1_MODE_DRVR == MEMDRV_DRVR_RX_FIT_RSPI))
 
 /* End of File */

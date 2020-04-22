@@ -24,7 +24,7 @@
 /************************************************************************************************
 * System Name  : MEMDRV software
 * File Name    : r_memdrv_dmac.c
-* Version      : 1.00
+* Version      : 1.02
 * Device       : -
 * Abstract     : IO I/F module
 * Tool-Chain   : -
@@ -36,6 +36,7 @@
 /************************************************************************************************
 * History      : DD.MM.YYYY Version  Description
 *              : 15.12.2018 1.00     Initial Release
+*              : 22.11.2019 1.02     Fixed coding style.
 *************************************************************************************************/
 
 /************************************************************************************************
@@ -94,7 +95,7 @@ memdrv_err_t r_memdrv_dmac_open(void)
     }
 
     if (R_DMACA_Int_Callback(MEMDRV_CFG_DEV0_DMAC_CH_NO_Tx,
-                             r_memdrv_dmac_callback_tx_dev0) != DMACA_SUCCESS)
+                             (void *)r_memdrv_dmac_callback_tx_dev0) != DMACA_SUCCESS)
     {
         R_MEMDRV_Log(MEMDRV_DEBUG_ERR_ID, (uint32_t)MEMDRV_ERR_SUB, __LINE__);
         return MEMDRV_ERR_OTHER;
@@ -115,7 +116,7 @@ memdrv_err_t r_memdrv_dmac_open(void)
     }
 
     if (R_DMACA_Int_Callback(MEMDRV_CFG_DEV0_DMAC_CH_NO_Rx,
-                             r_memdrv_dmac_callback_rx_dev0) != DMACA_SUCCESS)
+                             (void *)r_memdrv_dmac_callback_rx_dev0) != DMACA_SUCCESS)
     {
         R_MEMDRV_Log(MEMDRV_DEBUG_ERR_ID, (uint32_t)MEMDRV_ERR_SUB, __LINE__);
         return MEMDRV_ERR_OTHER;
@@ -138,7 +139,7 @@ memdrv_err_t r_memdrv_dmac_open(void)
     }
 
     if (R_DMACA_Int_Callback(MEMDRV_CFG_DEV1_DMAC_CH_NO_Tx,
-                             r_memdrv_dmac_callback_tx_dev1) != DMACA_SUCCESS)
+                             (void *)r_memdrv_dmac_callback_tx_dev1) != DMACA_SUCCESS)
     {
         R_MEMDRV_Log(MEMDRV_DEBUG_ERR_ID, (uint32_t)MEMDRV_ERR_SUB, __LINE__);
         return MEMDRV_ERR_OTHER;
@@ -159,7 +160,7 @@ memdrv_err_t r_memdrv_dmac_open(void)
     }
 
     if (R_DMACA_Int_Callback(MEMDRV_CFG_DEV1_DMAC_CH_NO_Rx,
-                             r_memdrv_dmac_callback_rx_dev1) != DMACA_SUCCESS)
+                             (void *)r_memdrv_dmac_callback_rx_dev1) != DMACA_SUCCESS)
     {
         R_MEMDRV_Log(MEMDRV_DEBUG_ERR_ID, (uint32_t)MEMDRV_ERR_SUB, __LINE__);
         return MEMDRV_ERR_OTHER;

@@ -18,7 +18,7 @@
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_ether_rx_if.h
- * Version      : 1.17
+ * Version      : 1.20
  * Description  : Ethernet module device driver
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
@@ -37,6 +37,11 @@
  *                               Fixed coding style.
  *         : 30.07.2019 1.17     Changed minor version to '17'.
  *         :                     Added changes for RX72M.
+ *         : 22.11.2019 1.20     Changed minor version to '20'.
+ *         :                     Added changes for RX72N.
+ *         :                     Added changes for RX66N.
+ *         :                     Deleted supoort for RX63N.
+ *         :                     Added support for NON_BLOCKING.
  ***********************************************************************************************************************/
 
 /* Guards against multiple inclusion */
@@ -56,9 +61,13 @@
 /***********************************************************************************************************************
  Macro definitions
  ***********************************************************************************************************************/
-/* Version Number of API. */
+#if R_BSP_VERSION_MAJOR < 5
+    #error "This module must use BSP module of Rev.5.00 or higher. Please use the BSP module of Rev.5.00 or higher."
+#endif
+
+ /* Version Number of API. */
     #define ETHER_RX_VERSION_MAJOR  (1)
-    #define ETHER_RX_VERSION_MINOR  (17)
+    #define ETHER_RX_VERSION_MINOR  (20)
 
 /* When using the Read functions, ETHER_NO_DATA is the return value that indicates that no received data. */
     #define ETHER_NO_DATA           (0)
@@ -73,10 +82,24 @@
     #define ETHER_CHANNEL_0         (0)
     #define ETHER_CHANNEL_1         (1)
 
-    #if (defined(BSP_MCU_RX63N) || defined(BSP_MCU_RX65N))
+/* Channel definition of PMGI */
+    #define PMGI_CHANNEL_0          (0)
+    #define PMGI_CHANNEL_1          (1)
+
+/* receive data padding */
+    #define INSERT_POSITION_MAX     (0x3f)
+    #define INSERT_SIZE_MAX         (0x3)
+
+    #if (defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX66N))
         #define ETHER_CHANNEL_MAX       (1)
-    #elif (defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX72M))
+    #elif (defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX72M) || defined(BSP_MCU_RX72N))
         #define ETHER_CHANNEL_MAX       (2)
+    #endif
+
+    #if (defined(BSP_MCU_RX66N))
+        #define PMGI_CHANNEL_MAX       (1)
+    #elif (defined(BSP_MCU_RX72M) || defined(BSP_MCU_RX72N))
+        #define PMGI_CHANNEL_MAX       (2)
     #endif
 
 /***********************************************************************************************************************
@@ -100,7 +123,8 @@ typedef enum
      by another application */
     ETHER_ERR_MC_FRAME = -9, /* Detect multicast frame when multicast frame filtering enable */
     ETHER_ERR_RECV_ENABLE = -10, /* Enable receive function in ETHERC */
-    ETHER_ERR_OTHER = -11 /* Other error */
+    ETHER_ERR_LOCKED = -11, /* PMGI locked */
+    ETHER_ERR_OTHER = -12 /* Other error */
 } ether_return_t;
 
 /* Event code of callback function */
@@ -115,7 +139,8 @@ typedef enum
 typedef struct
 {
     void (*pcb_func) (void *); /* Callback function pointer */
-    void (*pcb_int_hnd) (void*); /* Interrupt handler function pointer */
+    void (*pcb_int_hnd) (void *); /* Interrupt handler function pointer */
+    void (*pcb_pmgi_hnd) (void *); /* Interrupt handler function pointer */
 } ether_cb_t;
 
 /* Structure to be used when decoding the argument of the callback function */
@@ -136,7 +161,9 @@ typedef enum
     CONTROL_POWER_ON, /* Cancel ETHERC/EDMAC module stop */
     CONTROL_POWER_OFF, /* Transition to ETHERC/EDMAC module stop */
     CONTROL_MULTICASTFRAME_FILTER, /* Multicast frame filter setting*/
-    CONTROL_BROADCASTFRAME_FILTER /* Broadcast frame filter setting*/
+    CONTROL_BROADCASTFRAME_FILTER, /* Broadcast frame filter setting*/
+    CONTROL_RECEIVE_DATA_PADDING, /* Insert receive data padding */
+    CONTROL_SET_PMGI_CALLBACK   /* Set PMGI callback */
 } ether_cmd_t;
 
 typedef enum
@@ -169,16 +196,93 @@ typedef struct
     uint32_t counter; /* Continuous reception number of Broadcast frame */
 } ether_broadcast_t;
 
+
+typedef struct
+{
+    uint32_t    channel; /* ETHERC channel */
+    uint8_t     position; /* Padding insertion position */
+    uint8_t     size; /* Padding insertion size */
+}ether_recv_padding_t;
+
 /* Parameters of the control function (2nd argument) */
 typedef union
 {
-    ether_cb_t          ether_callback; /* Callback function pointer */
-    ether_promiscuous_t * p_ether_promiscuous; /* Promiscuous mode setting */
-    ether_cb_t          ether_int_hnd; /* Interrupt handler function pointer */
-    uint32_t            channel; /* ETHERC channel number */
-    ether_multicast_t   * p_ether_multicast; /* Multicast frame filter setting */
-    ether_broadcast_t   * p_ether_broadcast; /* Broadcast frame filter setting */
+    ether_cb_t              ether_callback; /* Callback function pointer */
+    ether_promiscuous_t     * p_ether_promiscuous; /* Promiscuous mode setting */
+    ether_cb_t              ether_int_hnd; /* Interrupt handler function pointer */
+    uint32_t                channel; /* ETHERC channel number */
+    ether_multicast_t       * p_ether_multicast; /* Multicast frame filter setting */
+    ether_broadcast_t       * p_ether_broadcast; /* Broadcast frame filter setting */
+    ether_cb_t              pmgi_callback; /* PMGI callback function pointer */
+    ether_recv_padding_t    * padding_param; /* Receive data insert parameter */
 } ether_param_t;
+
+/* struct for PMGI */
+/* PMGI mode */
+typedef enum
+{
+    OPEN_ZC2 = 0,
+    CHECKLINK_ZC,
+    LINKPROCESS,
+    WAKEONLAN,
+    LINKPROCESS_OPEN_ZC2,
+    LINKPROCESS_CHECKLINK_ZC0,
+    LINKPROCESS_CHECKLINK_ZC1,
+    LINKPROCESS_CHECKLINK_ZC2,
+    WAKEONLAN_CHECKLINK_ZC,
+    WRITEPHY,
+    READPHY,
+    PMGI_MODE_NUM
+}pmgi_mode_t;
+
+/* PMGI step */
+typedef enum
+{
+    STEP0 = 0,
+    STEP1,
+    STEP2,
+    STEP3,
+    STEP4,
+    STEP5,
+    STEP6,
+    PMGI_STEP_NUM
+}pmgi_step_t;
+
+/* PMGI event */
+typedef enum
+{
+    PMGI_IDLE = 0,
+    PMGI_RUNNING = 1,
+    PMGI_COMPLETE = 2,
+    PMGI_ERROR = -1
+}pmgi_event_t;
+
+/*  */
+typedef struct
+{
+    ether_return_t (* p_func)(uint32_t ether_channel);
+} st_pmgi_interrupt_func_t;
+
+/* PMGI parameter */
+typedef struct
+{
+    BSP_CFG_USER_LOCKING_TYPE       locked;
+    pmgi_event_t                    event;
+    pmgi_mode_t                     mode;
+    pmgi_step_t                     step;
+    uint16_t                        read_data;
+    uint32_t                        reset_counter;
+    uint32_t                        ether_channel;
+}pmgi_param_t;
+
+/* Structure to be used when decoding the argument of the callback function */
+typedef struct
+{
+    uint32_t         channel; /* ETHERC channel */
+    pmgi_event_t     event; /* Event code for callback function */
+    pmgi_mode_t      mode; /* PMGI current mode */
+    uint16_t         reg_data; /* PHY register data for interrupt handler */
+} pmgi_cb_arg_t;
 
 /***********************************************************************************************************************
  Exported global variables
@@ -201,6 +305,8 @@ void R_ETHER_LinkProcess (uint32_t channel);
 ether_return_t R_ETHER_WakeOnLAN (uint32_t channel);
 ether_return_t R_ETHER_CheckWrite (uint32_t channel);
 ether_return_t R_ETHER_Control (ether_cmd_t const cmd, ether_param_t const control);
+ether_return_t R_ETHER_WritePHY(uint32_t channel, uint16_t address, uint16_t data);
+ether_return_t R_ETHER_ReadPHY(uint32_t channel, uint16_t address, uint16_t *p_data);
 uint32_t R_ETHER_GetVersion (void);
 
 #endif  /* R_ETHER_RX_IF_H*/

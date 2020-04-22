@@ -19,7 +19,7 @@
 /**********************************************************************************************************************
 * System Name  : SDHI Driver
 * File Name    : r_sdhi_int.c
-* Version      : 2.04
+* Version      : 2.06
 * Device       : RX
 * Abstract     : API & Sub module
 * Tool-Chain   : For RX e2_studio
@@ -33,6 +33,7 @@
 *              : 31.07.2017 2.00    First Release
 *              : 20.05.2019 2.04    Added support for GNUC and ICCRX.
 *                                   Fixed coding style. 
+*              : 22.11.2019 2.06    Modified comment of API function to Doxygen style.
 **********************************************************************************************************************/
 
 /**********************************************************************************************************************
@@ -54,17 +55,31 @@ Private global variables and functions
 **********************************************************************************************************************/
 
 /**********************************************************************************************************************
-* Outline      : Set SDIMSK1 and SDIMSK2 Interrupt Mask
-* Function Name: R_SDHI_SetIntMask
-* Description  : Sets the sdimsk1 and sdimsk2 according to the specified mask1 and mask2.
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-*              : uint32_t           mask1                ;   SDHI_SDIMSK1 bits value
-*              : uint32_t           mask2                ;   SDHI_SDIMSK2 bits value
-* Return Value : SDHI_SUCCESS                            ;   Successful operation
-*              : SDHI_ERR                                ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_SetIntMask
+ *****************************************************************************************************************/ /**
+ * @brief This function controls the SD interrupt mask registers to enable SD interrupts.
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @param[in] mask1
+ *             SD interrupt mask register 1 (SDIMSK1) control\n 
+ *              To enable an interrupt, set the target bit to 1.\n 
+ *              To not change the interrupt setting, clear the target bit to 0.\n 
+ *              However, setting to the Read Only bit is invalid.\n 
+ *              For details of the SDIMSK1 register, refer to section 3.9 in application note.
+ * @param[in] mask2
+ *             SD interrupt mask register 2 (SDIMSK2) control\n 
+ *              To enable an interrupt, set the target bit to 1.\n 
+ *              To not change the interrupt setting, clear the target bit to 0.\n 
+ *              However, setting to the Read Only bit is invalid.\n 
+ *              For details of the SDIMSK2 register, refer to section 3.9 in application note.
+ * @retval    SDHI_SUCCESS Successful operation
+ * @retval    SDHI_ERR     General error
+ * @details   Controls SD interrupt mask register 1 (SDIMSK1) and SD interrupt mask register 2 (SDIMSK2) to enable 
+ *            SD interrupts.
+ * @note      Before running this function, initialization processing by the R_SDHI_Open() function is required.\n 
+ *            After calling this function, call the R_SDHI_EnableIcuInt() function to enable SDHI ICU controller 
+ *            interrupts. If not enabled, no SD interrupts will be generated.
+ */
 sdhi_status_t R_SDHI_SetIntMask(uint32_t channel, uint32_t mask1, uint32_t mask2)
 {
     sdhi_sdhndl_t * p_hndl = 0;
@@ -105,17 +120,31 @@ sdhi_status_t R_SDHI_SetIntMask(uint32_t channel, uint32_t mask1, uint32_t mask2
 } /* End of function R_SDHI_SetIntMask() */
 
 /**********************************************************************************************************************
-* Outline      : Clear SDIMSK1 and SDIMSK2 Interrupt Mask
-* Function Name: R_SDHI_ClearIntMask
-* Description  : Clears the sdimsk1 and sdimsk2 according to the specified mask1 and mask2.
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-*              : uint32_t           mask1                ;   SDHI_SDIMSK1 bits value
-*              : uint32_t           mask2                ;   SDHI_SDIMSK2 bits value
-* Return Value : SDHI_SUCCESS                            ;   Successful operation
-*              : SDHI_ERR                                ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_ClearIntMask
+ *****************************************************************************************************************/ /**
+ * @brief This function controls the SD interrupt mask registers to disable SD interrupts.
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @param[in] mask1
+ *             SD interrupt mask register 1 (SDIMSK1) control\n 
+ *              To disable an interrupt, set the target bit to 1.\n 
+ *              To not change the interrupt setting, clear the target bit to 0.\n 
+ *              However, setting to the Read Only bit is invalid.\n 
+ *              For details of the SDIMSK1 register, refer to section 3.9 in application note.
+ * @param[in] mask2
+ *             SD interrupt mask register 2 (SDIMSK2) control\n 
+ *              To disable an interrupt, set the target bit to 1.\n 
+ *              To not change the interrupt setting, clear the target bit to 0.\n 
+ *              However, setting to the Read Only bit is invalid.\n 
+ *              For details of the SDIMSK2 register, refer to section 3.9 in application note.
+ * @retval    SDHI_SUCCESS Successful operation
+ * @retval    SDHI_ERR     General error
+ * @details   Controls SD interrupt mask register 1 (SDIMSK1) and SD interrupt mask register 2 (SDIMSK2) to disable
+ *            SD interrupts.
+ * @note      Before running this function, initialization processing by the R_SDHI_Open() function is required.\n 
+ *            Before calling this function, call the R_SDHI_DisableIcuInt() function to disable SDHI ICU controller
+ *            interrupts. If not disabled, SD interrupts may be generated at unintended times.
+ */
 sdhi_status_t R_SDHI_ClearIntMask(uint32_t channel, uint32_t mask1, uint32_t mask2)
 {
     sdhi_sdhndl_t * p_hndl = 0;
@@ -156,17 +185,30 @@ sdhi_status_t R_SDHI_ClearIntMask(uint32_t channel, uint32_t mask1, uint32_t mas
 } /* End of function R_SDHI_ClearIntMask() */
 
 /**********************************************************************************************************************
-* Outline      : Clear SDSTS1 and SDSTS2
-* Function Name: R_SDHI_ClearSdstsReg
-* Description  : Clear the SDSTS1 and SDSTS2 registers according to the specified clear_sdsts1 and clear_sdsts2.
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-*              : uint32_t           clear_sdsts1         ;   sdsts1 clear bits value
-*              : uint32_t           clear_sdsts2         ;   sdsts2 clear bits value
-* Return Value : SDHI_SUCCESS                            ;   Successful operation
-*              : SDHI_ERR                                ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_ClearSdstsReg
+ *****************************************************************************************************************/ /**
+ * @brief This function controls the SD status registers to clear interrupt flags.
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @param[in] clear_sdsts1
+ *             SD status register 1 (SDSTS1) control\n 
+ *              To 0 clear an interrupt flag, set the target bit to 1.\n 
+ *              To not change the interrupt flag, clear the target bit to 0.\n 
+ *              However, setting to the Read Only bit is invalid.\n 
+ *              For details of the SDSTS1 register, refer to section 3.11 in application note.
+ * @param[in] clear_sdsts2
+ *             SD status register 2 (SDSTS2) control\n 
+ *              To 0 clear an interrupt flag, set the target bit to 1.\n 
+ *              To not change the interrupt flag, clear the target bit to 0.\n 
+ *              However, setting to the Read Only bit and b12 (Reserved bit) is invalid.\n 
+ *              For details of the SDSTS2 register, refer to section 3.11 in application note.
+ * @retval    SDHI_SUCCESS Successful operation
+ * @retval    SDHI_ERR     General error
+ * @details   Clears interrupt flags in SD status register 1 (SDSTS1) and SD status register 2 (SDSTS2).
+ * @note      Before running this function, initialization processing by the R_SDHI_Open() function is required.\n 
+ *            Before calling this function, call the R_SDHI_DisableIcuInt() function to disable SDHI ICU controller
+ *            interrupts. If not disabled, SD interrupts may be generated at unintended times.
+ */
 sdhi_status_t R_SDHI_ClearSdstsReg(uint32_t channel, uint32_t clear_sdsts1, uint32_t clear_sdsts2)
 {
     sdhi_sdhndl_t   * p_hndl = 0;
@@ -208,16 +250,24 @@ sdhi_status_t R_SDHI_ClearSdstsReg(uint32_t channel, uint32_t clear_sdsts1, uint
 } /* End of function R_SDHI_ClearSdstsReg() */
 
 /**********************************************************************************************************************
-* Outline      : Set SDHI_SDIOSTS Interrupt Mask
-* Function Name: R_SDHI_SetSdioIntMask
-* Description  : Sets the sdioimsk according to the specified mask and sets the SDIOIMSK register.
-* Arguments    : uint32_t       channel                  ; SDHI Channel No.
-*              : uint32_t       mask                     ; SDHI_SDIOIMSK bits value
-* Return Value : SDHI_SUCCESS                            ; Successful operation
-*              : SDHI_ERR                                ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_SetSdioIntMask
+ *****************************************************************************************************************/ /**
+ * @brief This function controls the SDIO interrupt mask registers to enable SDIO interrupts.
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @param[in] mask
+ *             SDIO interrupt mask register (SDIOIMSK) control\n 
+ *              To enable an interrupt, set the target bit to 1.\n 
+ *              To not change the interrupt setting, clear the target bit to 0.\n 
+ *              However, setting to the Read Only bit and b2-b1 (Reserved bit) is invalid.\n 
+ *              For details of the SDIOIMSK register, refer to section 3.12 in application note.
+ * @retval    SDHI_SUCCESS Successful operation
+ * @retval    SDHI_ERR     General error
+ * @details   Controls the SDIO interrupt mask register (SDIOIMSK) to enable interrupts.
+ * @note      Before running this function, initialization processing by the R_SDHI_Open() function is required.\n 
+ *            After calling this function, call the R_SDHI_EnableIcuInt() function to enable SDHI ICU controller
+ *            interrupts. If not enabled, no SDIO interrupts will be generated.
+ */
 sdhi_status_t R_SDHI_SetSdioIntMask(uint32_t channel, uint32_t mask)
 {
     sdhi_sdhndl_t       * p_hndl = 0;
@@ -256,16 +306,24 @@ sdhi_status_t R_SDHI_SetSdioIntMask(uint32_t channel, uint32_t mask)
 } /* End of function R_SDHI_SetSdioIntMask() */
 
 /**********************************************************************************************************************
-* Outline      : Clear SDHI_SDIOIMSK interrupt Mask
-* Function Name: R_SDHI_ClearSdioIntMask 
-* Description  : Clears the sdioimsk according to the specified mask and clears the SDIOIMSK register.
-* Arguments    : uint32_t       channel                  ; SDHI Channel No.
-*              : uint32_t       mask                     ; SDHI_SDIOIMSK bits value
-* Return Value : SDHI_SUCCESS                            ; Successful operation
-*              : SDHI_ERR                                ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_ClearSdioIntMask
+ *****************************************************************************************************************/ /**
+ * @brief This function controls the SDIO interrupt mask registers to disable SDIO interrupts.
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @param[in] mask
+ *             SDIO interrupt mask register (SDIOIMSK) control\n 
+ *              To disable an interrupt, set the target bit to 1.\n 
+ *              To not change the interrupt setting, clear the target bit to 0.\n 
+ *              However, setting to the Read Only bit and b2-b1 (Reserved bit) is invalid.\n 
+ *              For details of the SDIOIMSK register, refer to section 3.12 in application note.
+ * @retval    SDHI_SUCCESS Successful operation
+ * @retval    SDHI_ERR     General error
+ * @details   Controls the SDIO interrupt mask register (SDIOIMSK) to disable interrupts.
+ * @note      Before running this function, initialization processing by the R_SDHI_Open() function is required.\n 
+ *            Before calling this function, call the R_SDHI_DisableIcuInt() function to disable SDHI ICU controller
+ *            interrupts. If not disabled, SD interrupts may be generated at unintended times.
+ */
 sdhi_status_t R_SDHI_ClearSdioIntMask(uint32_t channel, uint32_t mask)
 {
     sdhi_sdhndl_t       * p_hndl = 0;
@@ -304,16 +362,24 @@ sdhi_status_t R_SDHI_ClearSdioIntMask(uint32_t channel, uint32_t mask)
 } /* End of function R_SDHI_ClearSdioIntMask() */
 
 /**********************************************************************************************************************
-* Outline      : Clear SDIOSTS
-* Function Name: R_SDHI_ClearSdiostsReg
-* Description  : Clear the SDIOSTS register according to the specified clear value.
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-*              : uint32_t           clear                ;   Clear bits value
-* Return Value : SDHI_SUCCESS                            ;   Successful operation
-*              : SDHI_ERR                                ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_ClearSdiostsReg
+ *****************************************************************************************************************/ /**
+ * @brief This function controls the SDIO status registers to clear interrupt flags.
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @param[in] clear
+ *             SDIO status register (SDIOSTS) control\n 
+ *              To clear an interrupt flag, set the target bit to 1.\n 
+ *              To not change the interrupt flag, clear the target bit to 0.\n 
+ *              However, setting to the Read Only bit and b2-b1 (Reserved bit) is invalid.\n 
+ *              For details of the SDIOSTS register, refer to section 3.14 in application note.
+ * @retval    SDHI_SUCCESS Successful operation
+ * @retval    SDHI_ERR     General error
+ * @details   Clears interrupt flags in the SDIO status register (SDIOSTS).
+ * @note      Before running this function, initialization processing by the R_SDHI_Open() function is required.\n 
+ *            Before calling this function, call the R_SDHI_DisableIcuInt() function to disable SDHI ICU controller
+ *            interrupts. If not disabled, SD interrupts may be generated at unintended times.
+ */
 sdhi_status_t R_SDHI_ClearSdiostsReg(uint32_t channel, uint32_t clear)
 {
     sdhi_sdhndl_t   * p_hndl = 0;
@@ -351,17 +417,27 @@ sdhi_status_t R_SDHI_ClearSdiostsReg(uint32_t channel, uint32_t clear)
 } /* End of function R_SDHI_ClearSdiostsReg() */
 
 /**********************************************************************************************************************
-* Outline      : Register SDSTS1 or SDSTS2 Interrupt Callback Function
-* Function Name: R_SDHI_IntCallback
-* Description  : Registers the callback function of SDSTS1 or SDSTS2 interrupt.
-*              : If the SDSTS1 or SDSTS2 interrupt are occurred, calls callback function.
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-*              : sdhi_status_t      (* callback)(uint32_t, uint32_t)    ;   Callback function
-* Return Value : SDHI_SUCCESS                            ;   Generate interrupt
-*              : SDHI_ERR                                ;   Not generated interrupt
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_IntCallback
+ *****************************************************************************************************************/ /**
+ * @brief This function registers the callback function for the card access interrupt (CACI) 
+ *        and card detect interrupt (CDETI).
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @param[in] (*callback)(uint32_t,uint32_t)
+ *             Callback function to be registered.\n 
+ *             If set to a null pointer, no callback function is registered.\n 
+ *             The first argument (uint32_t) contains the value of SD status register 1 (SDSTS1).\n 
+ *             The second argument (uint32_t) contains the value of SD status register 2 (SDSTS2).
+ * @retval    SDHI_SUCCESS Successful operation
+ * @retval    SDHI_ERR     General error
+ * @details   Registers the callback function for the card access interrupt (CACI) and card detect interrupt (CDETI).
+ *            The callback function registered by this function is called as a subroutine of the interrupt handler 
+ *            when an interrupt is generated by a change in the SD protocol status.
+ * @note      Before running this function, initialization processing by the R_SDHI_Open() function is required. \n 
+ *            The callback function registered by this function is different from the callback functions of the SD 
+ *            buffer access interrupt (SBFAI) and SDIO access interrupt (SDACI). Therefore, this callback function 
+ *            is not called when the above-mentioned interrupts occur.
+ */
 sdhi_status_t R_SDHI_IntCallback(uint32_t channel, sdhi_status_t (* callback)(uint32_t, uint32_t))
 {
     sdhi_sdhndl_t * p_hndl = 0;
@@ -390,17 +466,26 @@ sdhi_status_t R_SDHI_IntCallback(uint32_t channel, sdhi_status_t (* callback)(ui
 } /* End of function R_SDHI_IntCallback() */
 
 /**********************************************************************************************************************
-* Outline      : SD Buffer Access Interrupt Callback Function
-* Function Name: R_SDHI_IntSDBuffCallback
-* Description  : Registers the callback function of SD Buffer Access interrupt.
-*              : If the SD Buffer Access interrupt are occurred, calls callback function.
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-*              : sdhi_status_t  (* callback)(void *)     ;   Callback function
-* Return Value : SDHI_SUCCESS                            ;   Generate interrupt
-*              : SDHI_ERR                                ;   Not generated interrupt
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_IntSDBuffCallback
+ *****************************************************************************************************************/ /**
+ * @brief This function registers the callback function for the SD buffer access interrupt (SBFAI).
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @param[in] (\*callback)(void\*)
+ *             Callback function to be registered.\n 
+ *             If set to a null pointer, no callback function is registered.\n 
+ *             The value of (void *) is always 0.
+ * @retval    SDHI_SUCCESS Successful operation
+ * @retval    SDHI_ERR     General error
+ * @details   Registers the callback function for the SD buffer access interrupt (SBFAI). 
+ *            The callback function registered by this function is called as a subroutine of the DTC's data transfer
+ *            end interrupt handler when an interrupt is generated at DTC transfer end.
+ * @note      Before running this function, initialization processing by the R_SDHI_Open() function is required.\n 
+ *            The callback function registered by this function is different from the callback function of the card
+ *            access interrupt (CACI) and card detect interrupt (CDETI), and from the callback function of the SDIO
+ *            access interrupt (SDACI). Therefore, this callback function is not called when the above-mentioned
+ *            interrupts occur.
+ */
 sdhi_status_t R_SDHI_IntSDBuffCallback(uint32_t channel, sdhi_status_t (* callback)(void *))
 {
     sdhi_sdhndl_t * p_hndl = 0;
@@ -429,17 +514,26 @@ sdhi_status_t R_SDHI_IntSDBuffCallback(uint32_t channel, sdhi_status_t (* callba
 } /* End of function R_SDHI_IntSDBuffCallback() */
 
 /**********************************************************************************************************************
-* Outline      : Register SDHI_SDIOSTS Interrupt Callback Function
-* Function Name: R_SDHI_IntSdioCallback
-* Description  : Registers the callback function of SDIOSTS interrupt.
-*              : If the SDIOSTS interrupt is occurred, call callback function.
-* Arguments    : uint32_t       channel                 ; SDHI Channel No.
-*              : int32_t        (* callback)(uint32_t)  ; callback function
-* Return Value : SDHI_SUCCESS                           ; Successful operation
-*              : SDHI_ERR                               ; Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_IntSdioCallback
+ *****************************************************************************************************************/ /**
+ * @brief This function registers the callback function for the SDIO access interrupt (SDACI).
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @param[in] (*callback)(uint32_t)
+ *             Callback function to be registered.\n 
+ *             If set to a null pointer, no callback function is registered.\n 
+ *             The first argument (uint32_t) contains the value of the SDIO status register (SDIOSTS).
+ * @retval    SDHI_SUCCESS Successful operation
+ * @retval    SDHI_ERR     General error
+ * @details   Registers the callback function for the SDIO access interrupt (SDACI).\n 
+ *            The callback function registered by this function is called as a subroutine of the interrupt handler
+ *            when an SDHI SDIO interrupt is generated.
+ * @note      Before running this function, initialization processing by the R_SDHI_Open() function is required.\n 
+ *            The callback function registered by this function is different from the callback function of
+ *            the card access interrupt (CACI) and card detect interrupt (CDETI), and from the callback function of
+ *            the SD buffer access interrupt (SBFAI). Therefore, this callback function is not called when 
+ *            the above-mentioned interrupts occur.
+ */
 sdhi_status_t R_SDHI_IntSdioCallback(uint32_t channel, sdhi_status_t (* callback)(uint32_t))
 {
     sdhi_sdhndl_t       * p_hndl = 0;

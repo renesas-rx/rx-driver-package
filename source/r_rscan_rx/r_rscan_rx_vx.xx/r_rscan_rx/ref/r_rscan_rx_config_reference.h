@@ -18,7 +18,7 @@
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_rscan_rx_config_reference.h
- * Description  : Configures the RSCAN driver module for the RX231/RX23W MCU
+ * Description  : Configures the RSCAN driver module for the RX231/RX23W/RSKRX23E-A MCU
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * History : DD.MM.YYYY Version Description
@@ -36,7 +36,7 @@
  * Setting to BSP_CFG_PARAM_CHECKING_ENABLE utilizes the system default setting
  * Setting to 1 includes parameter checking; 0 compiles out parameter checking
  */
-#define CAN_CFG_PARAM_CHECKING_ENABLE   BSP_CFG_PARAM_CHECKING_ENABLE
+#define CAN_CFG_PARAM_CHECKING_ENABLE   (BSP_CFG_PARAM_CHECKING_ENABLE)
 
 /*
  * Setting for CAN clock source.
@@ -48,36 +48,36 @@
 /*
  * CAN Interrupt Priority
  */
-#define CAN_CFG_INT_PRIORITY            (5)         // 0-31
+#define CAN_CFG_INT_PRIORITY            (5)         /* 0-31 */
 
 /*
  * Main Callback Interrupt Sources
  * 0 = disabled                                                                 GetStatusMask() Type
  * 1 = enabled                                      Callback Event              to identify interrupt source
  */
-#define CAN_CFG_INT_RXFIFO_THRESHOLD        (1)     // CAN_EVT_RXFIFO_THRESHOLD CAN_STAT_FIFO_THRESHOLD
-#define CAN_CFG_INT_DLC_ERR                 (0)     // CAN_EVT_GLOBAL_ERR       CAN_STAT_GLOBAL_ERR
-#define CAN_CFG_INT_HIST_FIFO_OVFL          (1)     // CAN_EVT_GLOBAL_ERR       CAN_STAT_GLOBAL_ERR, CAN_STAT_FIFO_OVFL
+#define CAN_CFG_INT_RXFIFO_THRESHOLD        (1)     /* CAN_EVT_RXFIFO_THRESHOLD CAN_STAT_FIFO_THRESHOLD */
+#define CAN_CFG_INT_DLC_ERR                 (0)     /* CAN_EVT_GLOBAL_ERR       CAN_STAT_GLOBAL_ERR */
+#define CAN_CFG_INT_HIST_FIFO_OVFL          (1)     /* CAN_EVT_GLOBAL_ERR       CAN_STAT_GLOBAL_ERR, CAN_STAT_FIFO_OVFL */
 /* for TX and RX FIFOs */
-#define CAN_CFG_INT_FIFO_OVFL               (1)     // CAN_EVT_GLOBAL_ERR       CAN_STAT_GLOBAL_ERR, CAN_STAT_FIFO_OVFL
+#define CAN_CFG_INT_FIFO_OVFL               (1)     /* CAN_EVT_GLOBAL_ERR       CAN_STAT_GLOBAL_ERR, CAN_STAT_FIFO_OVFL */
 
 /*
  * Channel Callback Interrupt Sources
  * 0 = disabled                                                                 GetStatusMask() Type
  * 1 = enabled                                      Callback Event              to identify interrupt source
  */
-#define CAN_CFG_INT_TXFIFO_THRESHOLD        (1)     // CAN_EVT_TRANSMIT         CAN_STAT_FIFO_THRESHOLD
-#define CAN_CFG_INT_HIST_FIFO_THRESHOLD     (1)     // CAN_EVT_TRANSMIT         CAN_STAT_FIFO_THRESHOLD
-#define CAN_CFG_INT_MBX_TX_COMPLETE         (0)     // CAN_EVT_TRANSMIT         CAN_STAT_CH_TXMBX_SENT
-#define CAN_CFG_INT_MBX_TX_ABORTED          (0)     // CAN_EVT_TRANSMIT         CAN_STAT_CH_TXMBX_ABORTED
-#define CAN_CFG_INT_BUS_ERROR               (0)     // CAN_EVT_CHANNEL_ERR      CAN_STAT_CH_ERROR
-#define CAN_CFG_INT_ERR_WARNING             (0)     // CAN_EVT_CHANNEL_ERR      CAN_STAT_CH_ERROR
-#define CAN_CFG_INT_ERR_PASSIVE             (1)     // CAN_EVT_CHANNEL_ERR      CAN_STAT_CH_ERROR
-#define CAN_CFG_INT_BUS_OFF_ENTRY           (1)     // CAN_EVT_CHANNEL_ERR      CAN_STAT_CH_ERROR
-#define CAN_CFG_INT_BUS_OFF_RECOVERY        (1)     // CAN_EVT_CHANNEL_ERR      CAN_STAT_CH_ERROR
-#define CAN_CFG_INT_OVERLOAD_FRAME_TX       (0)     // CAN_EVT_CHANNEL_ERR      CAN_STAT_CH_ERROR
-#define CAN_CFG_INT_BUS_LOCK                (0)     // CAN_EVT_CHANNEL_ERR      CAN_STAT_CH_ERROR
-#define CAN_CFG_INT_ARB_LOST                (0)     // CAN_EVT_CHANNEL_ERR      CAN_STAT_CH_ERROR
+#define CAN_CFG_INT_TXFIFO_THRESHOLD        (1)     /* CAN_EVT_TRANSMIT         CAN_STAT_FIFO_THRESHOLD */
+#define CAN_CFG_INT_HIST_FIFO_THRESHOLD     (1)     /* CAN_EVT_TRANSMIT         CAN_STAT_FIFO_THRESHOLD */
+#define CAN_CFG_INT_MBX_TX_COMPLETE         (0)     /* CAN_EVT_TRANSMIT         CAN_STAT_CH_TXMBX_SENT */
+#define CAN_CFG_INT_MBX_TX_ABORTED          (0)     /* CAN_EVT_TRANSMIT         CAN_STAT_CH_TXMBX_ABORTED */
+#define CAN_CFG_INT_BUS_ERROR               (0)     /* CAN_EVT_CHANNEL_ERR      CAN_STAT_CH_ERROR */
+#define CAN_CFG_INT_ERR_WARNING             (0)     /* CAN_EVT_CHANNEL_ERR      CAN_STAT_CH_ERROR */
+#define CAN_CFG_INT_ERR_PASSIVE             (1)     /* CAN_EVT_CHANNEL_ERR      CAN_STAT_CH_ERROR */
+#define CAN_CFG_INT_BUS_OFF_ENTRY           (1)     /* CAN_EVT_CHANNEL_ERR      CAN_STAT_CH_ERROR */
+#define CAN_CFG_INT_BUS_OFF_RECOVERY        (1)     /* CAN_EVT_CHANNEL_ERR      CAN_STAT_CH_ERROR */
+#define CAN_CFG_INT_OVERLOAD_FRAME_TX       (0)     /* CAN_EVT_CHANNEL_ERR      CAN_STAT_CH_ERROR */
+#define CAN_CFG_INT_BUS_LOCK                (0)     /* CAN_EVT_CHANNEL_ERR      CAN_STAT_CH_ERROR */
+#define CAN_CFG_INT_ARB_LOST                (0)     /* CAN_EVT_CHANNEL_ERR      CAN_STAT_CH_ERROR */
 
 
-#endif // RSCAN_CONFIG_HEADER_FILE
+#endif /* RSCAN_CONFIG_HEADER_FILE */

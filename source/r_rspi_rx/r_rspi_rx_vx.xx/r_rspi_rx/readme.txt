@@ -5,12 +5,12 @@ r_rspi_rx
 
 Document Number 
 ---------------
-R01AN1827EJ0203
-R01AN1827JJ0203
+R01AN1827EJ0204
+R01AN1827JJ0204
 
 Version
 -------
-v2.03
+v2.04
 
 Overview
 --------
@@ -81,6 +81,8 @@ Supported/Tested MCUs
 * RX110
 * RX72T
 * RX72M
+* RX72N
+* RX66N
 
 Boards Tested On
 ----------------
@@ -102,6 +104,7 @@ Boards Tested On
 * RSKRX130_512KB
 * RSKRX72T
 * RSKRX72M
+* RSKRX72N
 
 Limitations
 -----------
@@ -113,7 +116,7 @@ Peripherals Used Directly
 
 Required Packages
 -----------------
-* r_bsp     v5.20
+* r_bsp     v5.50
 
 How to add to your project
 --------------------------
@@ -154,9 +157,9 @@ r_rspi_rx
 +---doc
 |   |
 |   +---en
-|   |       r01an1827ej0203-rx-serial.pdf
+|   |       r01an1827ej0204-rx-serial.pdf
 |   +---ja
-|           r01an1827jj0203-rx-serial.pdf
+|           r01an1827jj0204-rx-serial.pdf
 |
 +---ref
 |       r_rspi_rx_config_reference.h

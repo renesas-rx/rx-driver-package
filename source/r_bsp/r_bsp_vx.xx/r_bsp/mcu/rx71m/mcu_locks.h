@@ -30,6 +30,9 @@
 *                               - BSP_LOCK_EPTPC1
 *                               - BSP_LOCK_PTPEDMAC
 *                               Fixed coding style.
+*         : 08.10.2019 1.03     Added the following enumeration constant.
+*                               - BSP_LOCK_SWINT
+*                               - BSP_LOCK_SWINT2
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -171,6 +174,8 @@ typedef enum
     BSP_LOCK_USB0,
     BSP_LOCK_USBA,
     BSP_LOCK_WDT,
+    BSP_LOCK_SWINT,
+    BSP_LOCK_SWINT2,
     BSP_NUM_LOCKS //This entry is not a valid lock. It is used for sizing g_bsp_Locks[] array below. Do not touch!
 } mcu_lock_t;
 

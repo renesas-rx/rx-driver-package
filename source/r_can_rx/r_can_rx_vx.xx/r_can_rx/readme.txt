@@ -5,12 +5,12 @@ r_can_rx
 
 Document Number 
 ---------------
-R01AN2472EU0310
-R01AN2472JU0310
+R01AN2472EU0320
+R01AN2472JU0320
 
 Version
 -------
-v3.10.
+v3.20.
 
 Overview
 --------
@@ -31,19 +31,25 @@ Supported MCUs
 * RX64M Group
 * RX65N/RX651 Groups
 * RX66T Group
+* RX66N Group
 * RX71M Group
 * RX72M Group
+* RX72N Group
 * RX72T Group
+
 
 Boards Tested On
 ----------------
 * RSKRX64M+
 * RSKRX65N+
 * RSKRX65N+ 2MB
+* RSKRX66N
 * RSKRX66T
 * RSKRX71M+
 * RSKRX72M
+* RSKRX72N
 * RSKRX72T
+
 
 Limitations
 -----------
@@ -71,7 +77,7 @@ Toolchain(s) Used
 -----------------
 * Renesas RX v3.01
 * GNURX 4.08.04
-* ICCRX 4.10.01
+* ICCRX 4.12.01
 
 File Structure
 --------------
@@ -81,9 +87,9 @@ r_can_rx
 |
 +---doc
 |   +-- en
-|       r01an2472eu0310-rx-can.pdf
+|       r01an2472eu0320-rx-can.pdf
 |   +-- ja
-|       r01an2472ju0310-rx-can.pdf
+|       r01an2472ju0320-rx-can.pdf
 |
 +---ref
 |       r_can_rx_config_reference.h (copy to ../r_config)

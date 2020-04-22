@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_riic_rx
-VERSION = 		v2.43
+VERSION = 		v2.45
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules

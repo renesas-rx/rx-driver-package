@@ -49,6 +49,8 @@ Includes   <System Includes> , "Project Includes"
 ******************************************************************************/
 /* Get r_bsp info. */
 #include "platform.h"
+
+#if (defined(SSI0) || defined(SSI1))
 #include "r_ssi_api_rx_config.h"
 
 /******************************************************************************
@@ -871,3 +873,5 @@ Typedef definitions
 
 #endif /* SSI_API_RX_PRIVATE_H_ */
 
+#endif
+/* End of file */

@@ -44,8 +44,8 @@ void R_SDHI_PinSetInit()
             <#if pin.portNum == "C" || pin.portNum == "D" >
     PORT${pin.portNum}.DSCR.BIT.B${pin.pinBitNum} = 1U;
             </#if>
-        <#elseif headerInfo.device?contains("R5F572M")>
-            <#if pin.portNum == "C" || pin.portNum == "D" || pin.portNum == "M" >
+        <#elseif headerInfo.device?contains("R5F572M") || headerInfo.device?contains("R5F566N") || headerInfo.device?contains("R5F572N")>
+            <#if pin.portNum == "7" || pin.portNum == "C" || pin.portNum == "D" || pin.portNum == "M" >
     PORT${pin.portNum}.DSCR.BIT.B${pin.pinBitNum} = 1U;
             </#if>
         <#elseif headerInfo.device?contains("R5F5230") || headerInfo.device?contains("R5F5231") || headerInfo.device?contains("R5F523W")>

@@ -57,6 +57,8 @@
  *                               Fixed coding style.
  *         : 20.06.2019 2.42     Changed minor version to '42' for RX23W support. 
  *         : 30.07.2019 2.43     Changed minor version to '43' for RX72M support.
+ *         : 10.10.2019 2.44     Changed minor version to '44' for RX13T support.
+ *         : 22.11.2019 2.45     Changed minor version to '45' for RX66N and RX72N support.
  **********************************************************************************************************************/
 /* Guards against multiple inclusion */
 #ifndef RIIC_IF_H
@@ -73,9 +75,13 @@ R_BSP_PRAGMA_UNPACK
 /***********************************************************************************************************************
  Macro definitions
  **********************************************************************************************************************/
+#if R_BSP_VERSION_MAJOR < 5
+    #error "This module must use BSP module of Rev.5.00 or higher. Please use the BSP module of Rev.5.00 or higher."
+#endif
+
 /* Version Number of API. */
     #define RIIC_VERSION_MAJOR      (2)
-    #define RIIC_VERSION_MINOR      (43)
+    #define RIIC_VERSION_MINOR      (45)
 
 /*----------------------------------------------------------------------------*/
 /*   Defines the argument of the R_RIIC_Control function.                     */

@@ -26,6 +26,8 @@
  * History : DD.MM.YYYY Version Description           
  *         : 01.10.2016 1.00    First Release
  *         : 01.04.2019 1.41    Changed Minor version to 1.41.
+ *         : 01.07.2019 1.42    Changed Minor version to 1.42.
+ *         : 14.11.2019 2.00    Changed version to 2.00.
  ***********************************************************************************************************************/
 
 #ifndef R_LPC_RX_IF_H
@@ -44,9 +46,13 @@
 /***********************************************************************************************************************
  Macro definitions
  ***********************************************************************************************************************/
+#if R_BSP_VERSION_MAJOR < 5
+    #error "This module must use BSP module of Rev.5.00 or higher. Please use the BSP module of Rev.5.00 or higher."
+#endif
+
 /* Version Number of API. */
-    #define LPC_RX_VERSION_MAJOR           (1)
-    #define LPC_RX_VERSION_MINOR           (41)
+    #define LPC_RX_VERSION_MAJOR           (2)
+    #define LPC_RX_VERSION_MINOR           (0)
 
 /***********************************************************************************************************************
  Typedef definitions

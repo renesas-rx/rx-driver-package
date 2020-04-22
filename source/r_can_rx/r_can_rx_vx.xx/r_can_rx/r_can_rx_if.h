@@ -34,9 +34,12 @@
 *         : 08.01.2019 2.15    - Added RX72T
 *         : 05.04.2019 3.00    - Added support for GCC and IAR compilers
 *         : 30.04.2019 3.10    - Added RX72M
+*         : 16.09.2019 3.11    - Added message to warn issue of CAN0, CAN1 and CAN2 interrupt sources are not assigned any
+*                                interrupt vector number
+*         : 30.12.2019 3.20    - Added support RX66N, RX72N.
 ***********************************************************************************************************************/
 #ifndef CAN_INTERFACE_HEADER_FILE
-#define CAN_INTERFACE_HEADER_FILE
+#define CAN_INTERFACE_HEADER_FILE 
 
 /***********************************************************************************************************************
 Includes   <System Includes>, "Project Includes"
@@ -47,9 +50,14 @@ Includes   <System Includes>, "Project Includes"
 /***********************************************************************************************************************
 Macro definitions
 ***********************************************************************************************************************/
+
+#if R_BSP_VERSION_MAJOR < 5
+    #error "This module must use BSP module of Rev.5.00 or higher. Please use the BSP module of Rev.5.00 or higher."
+#endif
+
 /* Version Number of API. */
 #define RCAN_RX_VERSION_MAJOR           (3)
-#define RCAN_RX_VERSION_MINOR           (10)
+#define RCAN_RX_VERSION_MINOR           (20)
 /* The process of getting the version number is done through the macro below. The version number is encoded where the
    top 2 bytes are the major version number and the bottom 2 bytes are the minor version number. For example,
    Version 4.25 would be returned as 0x00040019. */
@@ -69,6 +77,21 @@ Macro definitions
     #endif
 #endif
 
+#if ((CAN_USE_CAN0 == 1)&&((VECT(CAN0,TXM0) == 0)||(VECT(CAN0,RXM0) == 0)))
+        #error "Interrupt vector number of CAN0 should be defined in file r_bsp_interrupt_config.h."
+#endif
+
+#ifdef CAN1
+    #if ((CAN_USE_CAN1 == 1)&&((VECT(CAN1,TXM1) == 0)||(VECT(CAN1,RXM1) == 0)))
+        #error "Interrupt vector number of CAN1 should be defined in file r_bsp_interrupt_config.h."
+    #endif
+#endif
+
+#ifdef CAN2
+    #if ((CAN_USE_CAN2 == 1)&&((VECT(CAN2,TXM2) == 0)||(VECT(CAN2,RXM2) == 0)))
+        #error "Interrupt vector number of CAN2 should be defined in file r_bsp_interrupt_config.h."
+    #endif
+#endif
 
 /******************************************************************************
 Definitions to make the port pin selection logic below work (needs be numericals).
@@ -100,7 +123,7 @@ Definitions to make the port pin selection logic below work (needs be numericals
  * of port/pin numbers in r_can_rx_config.h */
 
 /* CAN0 RX port configuration */
-#if ((BSP_MCU_RX64M == 1) || (BSP_MCU_RX65N == 1) || (BSP_MCU_RX71M == 1) || (BSP_MCU_RX72M == 1))
+#if ((BSP_MCU_RX64M == 1) || (BSP_MCU_RX65N == 1) || (BSP_MCU_RX71M == 1) || (BSP_MCU_RX72M == 1)|| (BSP_MCU_RX72N == 1) || (BSP_MCU_RX66N == 1))
     #if (CAN0_RX_PORT == P33)
         #define p_CAN0_RX_PIN_MPC       (&MPC.P33PFS.BYTE)
         #define p_CAN0_RX_PIN_PMR       (&PORT3.PMR.BYTE)
@@ -165,7 +188,7 @@ Definitions to make the port pin selection logic below work (needs be numericals
 #endif
 
 /* CAN0 TX port configuration */
-#if ((BSP_MCU_RX64M == 1) || (BSP_MCU_RX65N == 1) || (BSP_MCU_RX71M == 1) || (BSP_MCU_RX72M == 1))
+#if ((BSP_MCU_RX64M == 1) || (BSP_MCU_RX65N == 1) || (BSP_MCU_RX71M == 1) || (BSP_MCU_RX72M == 1) || (BSP_MCU_RX72N == 1)|| (BSP_MCU_RX66N == 1))
     #if (CAN0_TX_PORT == P32)
         #define p_CAN0_TX_PIN_MPC       (&MPC.P32PFS.BYTE)
         #define p_CAN0_TX_PIN_PMR       (&PORT3.PMR.BYTE)
@@ -231,26 +254,26 @@ Definitions to make the port pin selection logic below work (needs be numericals
 
 
 /* CAN1 RX port configuration */
-#if ((BSP_MCU_RX64M == 1) || (BSP_MCU_RX65N == 1) || (BSP_MCU_RX71M == 1) || (BSP_MCU_RX72M == 1))
+#if ((BSP_MCU_RX64M == 1) || (BSP_MCU_RX65N == 1) || (BSP_MCU_RX71M == 1) || (BSP_MCU_RX72M == 1) || (BSP_MCU_RX72N == 1)|| (BSP_MCU_RX66N == 1))
     #if (CAN1_RX_PORT == P15)
         #define p_CAN1_RX_PIN_MPC       (&MPC.P15PFS.BYTE)
         #define p_CAN1_RX_PIN_PMR       (&PORT1.PMR.BYTE)
         #define p_CAN1_RX_PIN_PDR       (&PORT1.PDR.BYTE)
         #define p_CAN1_RX_PIN_PIDR      (&PORT1.PIDR.BYTE)
-        #define   CAN1_RX_PIN_MASK      (0x20) /* bit 5 */
+        #define CAN1_RX_PIN_MASK        (0x20) /* bit 5 */
     #elif (CAN1_RX_PORT == P55)
         #define p_CAN1_RX_PIN_MPC       (&MPC.P55PFS.BYTE)
         #define p_CAN1_RX_PIN_PMR       (&PORT5.PMR.BYTE)
         #define p_CAN1_RX_PIN_PDR       (&PORT5.PDR.BYTE)
         #define p_CAN1_RX_PIN_PIDR      (&PORT5.PIDR.BYTE)
-        #define   CAN1_RX_PIN_MASK      (0x20) /* bit 5 */
+        #define CAN1_RX_PIN_MASK        (0x20) /* bit 5 */
     #else
         #error " - Assigned CAN1 RX port not supported by device! -"
     #endif
 #endif
 
 /* CAN1 TX port configuration */
-#if ((BSP_MCU_RX64M == 1) || (BSP_MCU_RX65N == 1) || (BSP_MCU_RX71M == 1) || (BSP_MCU_RX72M == 1))
+#if ((BSP_MCU_RX64M == 1) || (BSP_MCU_RX65N == 1) || (BSP_MCU_RX71M == 1) || (BSP_MCU_RX72M == 1) || (BSP_MCU_RX72N == 1)|| (BSP_MCU_RX66N == 1))
     #if (CAN1_TX_PORT == P14)
         #define p_CAN1_TX_PIN_MPC       (&MPC.P14PFS.BYTE)
         #define p_CAN1_TX_PIN_PMR       (&PORT1.PMR.BYTE)

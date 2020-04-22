@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer
  *
- * Copyright (C) 2014(2019) Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2014(2020) Renesas Electronics Corporation. All rights reserved.
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_usb_hcdc_driver.c
@@ -32,6 +32,7 @@
  *         : 31.03.2018 1.23 Supporting Smart Configurator
  *         : 16.11.2018 1.24 Supporting BSP_CFG_RTOS_USED
  *         : 31.05.2019 1.26 Added support for GNUC and ICCRX.
+ *         : 01.03.2020 1.30 RX72N/RX66N is added and uITRON is supported.
  ***********************************************************************************************************************/
 
 /******************************************************************************
@@ -86,7 +87,7 @@ uint16_t g_usb_hcdc_devaddr[USB_NUM_USBIP];
  Argument        : usb_utr_t *mess           : Pointer to usb_utr_t structure.
  Return          : none
  ******************************************************************************/
-#if (BSP_CFG_RTOS_USED == 0) /* (BSP_CFG_RTOS_USED) */
+#if (BSP_CFG_RTOS_USED == 0)        /* Non-OS */
 void usb_hcdc_enumeration (usb_clsinfo_t *mess)
 {
     /* Condition compilation by the difference of useful function */
@@ -451,8 +452,8 @@ void usb_hcdc_read_complete (usb_utr_t *mess, uint16_t data1, uint16_t data2)
             ctrl.status = USB_ERR_NG;
         break;
     }
-#if (BSP_CFG_RTOS_USED == 1)
-    ctrl.p_data = (void *)mess->cur_task_hdl;
+#if (BSP_CFG_RTOS_USED == 1)    /* FreeRTOS */
+    ctrl.p_data = (void *)mess->task_id;
 #endif /* (BSP_CFG_RTOS_USED == 1) */
 
     usb_set_event(USB_STS_READ_COMPLETE, &ctrl); /* Set Event()  */
@@ -486,8 +487,8 @@ void usb_hcdc_write_complete (usb_utr_t *mess, uint16_t data1, uint16_t data2)
         ctrl.status = USB_ERR_NG;
     }
     ctrl.address = usb_hstd_get_devsel(mess, ctrl.pipe) >> 12;
-#if (BSP_CFG_RTOS_USED == 1)
-    ctrl.p_data = (void *)mess->cur_task_hdl;
+#if (BSP_CFG_RTOS_USED == 1)     /* FreeRTOS */
+    ctrl.p_data = (void *)mess->task_id;
 #endif /* (BSP_CFG_RTOS_USED == 1) */
 
     usb_set_event(USB_STS_WRITE_COMPLETE, &ctrl); /* Set Event()  */
@@ -532,7 +533,7 @@ void usb_hcdc_registration (usb_utr_t *ptr)
     {
         usb_hstd_driver_registration(ptr, &driver); /* Host CDC class driver registration. */
     }
-#if (BSP_CFG_RTOS_USED == 0)
+#if (BSP_CFG_RTOS_USED == 0)              /* Non-OS */
     usb_cstd_set_task_pri(USB_HUB_TSK, USB_PRI_3); /* Hub Task Priority set */
 #endif  /* (BSP_CFG_RTOS_USED == 0) */
     usb_hhub_registration(ptr, USB_NULL); /* Hub registration. */
@@ -706,7 +707,7 @@ void usb_hcdc_driver_start (usb_utr_t *ptr)
     if (USB_NO == is_init)
     {
         /* Set host CDC Task priority */
-#if (BSP_CFG_RTOS_USED == 0)
+#if (BSP_CFG_RTOS_USED == 0)        /* Non-OS */
         usb_cstd_set_task_pri(USB_HCDC_TSK, USB_PRI_4);
 #endif  /* (BSP_CFG_RTOS_USED == 0) */
         is_init = USB_YES;

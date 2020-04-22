@@ -68,6 +68,9 @@
  *                                    Fixed coding style.
  *              : 20.06.2019 2.42     Added RX23W support.
  *              : 30.07.2019 2.43     Added RX72M support.
+ *              : 10.10.2019 2.44     Added RX13T support.
+ *              : 22.11.2019 2.45     Added RX66N, RX72N support.
+ *                                    Modified comment of API function to Doxygen style.
  **********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -314,16 +317,30 @@ static const riic_mtx_t gc_riic_mtx_tbl[RIIC_STS_MAX][RIIC_EV_MAX] =
     },
 };
 
-/***********************************************************************************************************************
+/**********************************************************************************************************************
  * Function Name: R_RIIC_Open
- * Description  : Initializes the RIIC driver. Initializes the I/O register for RIIC control.
- * Arguments    : riic_info_t * p_riic_info      ; IIC Information
- * Return Value : RIIC_SUCCESS                   ; Successful operation
- *              : RIIC_ERR_LOCK_FUNC             ; Another task is handling API function
- *              : RIIC_ERR_INVALID_CHAN          ; channel number invalid for part
- *              : RIIC_ERR_INVALID_ARG           ; Parameter error
- *              : RIIC_ERR_OTHER                 ; Other error
- **********************************************************************************************************************/
+ *****************************************************************************************************************/ /**
+ * @brief This function initializes the RIIC FIT module. This function must be called before calling any other API 
+ *        functions.
+ * @param[in,out] *p_riic_info
+ *             This is the pointer to the I2C communication information structure.
+ * @retval    RIIC_SUCCESS             Processing completed successfully
+ * @retval    RIIC_ERR_LOCK_FUNC       The API is locked by the other task
+ * @retval    RIIC_ERR_INVALID_CHAN    Nonexistent channel
+ * @retval    RIIC_ERR_INVALID_ARG     Invalid parameter
+ * @retval    RIIC_ERR_OTHER           The event occurred is invalid in the current state
+ * @details   Performs the initialization to start the RIIC communication. Sets the RIIC channel specified by the 
+ *            parameter. If the state of the channel is 'uninitialized (RIIC_NO_INIT)', the following processes are 
+ *            performed. \n
+ *            \li Setting the state flag.
+ *            \li Setting I/O ports.
+ *            \li Allocating I2C output ports.
+ *            \li Cancelling RIIC module-stop state.
+ *            \li Initializing variables used by the API.
+ *            \li Initializing the RIIC registers used for the RIIC communication.
+ *            \li Disabling the RIIC interrupts.
+ * @note      None
+ */
 riic_return_t R_RIIC_Open (riic_info_t * p_riic_info)
 {
     bool chk = RIIC_FALSE;
@@ -417,21 +434,50 @@ static riic_return_t riic_open (riic_info_t * p_riic_info)
     return ret;
 } /* End of function riic_open() */
 
-/***********************************************************************************************************************
- * Outline      : 
+/**********************************************************************************************************************
  * Function Name: R_RIIC_MasterSend
- * Description  : Master transmission start processing.
- *                Generates the start condition. Starts the master transmission.
- * Arguments    : riic_info_t * p_riic_info  ; IIC Information
- * Return Value : RIIC_SUCCESS                   ; Successful operation
- *              : RIIC_ERR_INVALID_CHAN          ; None existent channel number
- *              : RIIC_ERR_INVALID_ARG           ; Parameter error
- *              : RIIC_ERR_NO_INIT               ; Uninitialized state
- *              : RIIC_ERR_BUS_BUSY              ; Bus busy
- *              : RIIC_ERR_AL                    ; Arbitration lost error
- *              : RIIC_ERR_TMO                   ; Time out error
- *              : RIIC_ERR_OTHER                 ; Other error
- **********************************************************************************************************************/
+ *****************************************************************************************************************/ /**
+ * @brief Starts master transmission. Changes the transmit pattern according to the parameters. Operates batched 
+ *        processing until stop condition generation.
+ * @param[in] *p_riic_info
+ *             This is the pointer to the I2C communication information structure. The transmit patterns can be 
+ *             selected from four patterns by the parameter setting.
+ * @retval    RIIC_SUCCESS             Processing completed successfully
+ * @retval    RIIC_ERR_INVALID_CHAN    The channel is nonexistent
+ * @retval    RIIC_ERR_INVALID_ARG     The parameter is invalid
+ * @retval    RIIC_ERR_NO_INIT         Uninitialized state
+ * @retval    RIIC_ERR_BUS_BUSY        The bus state is busy
+ * @retval    RIIC_ERR_AL              Arbitration-lost error occurred
+ * @retval    RIIC_ERR_TMO             Timeout is detected
+ * @retval    RIIC_ERR_OTHER           The event occurred is invalid in the current state
+ * @details   Starts the RIIC master transmission. The transmission is performed with the RIIC channel and transmit 
+ *            pattern specified by parameters. If the state of the channel is 'idle (RIIC_IDLE, RIIC_FINISH,  or 
+ *            RIIC_NACK)', the following processes are performed. \n
+ *            \li Setting the state flag.
+ *            \li Initializing variables used by the API.
+ *            \li Enabling the RIIC interrupts.
+ *            \li Generating a start condition.
+ * 
+ *            This function returns RIIC_SUCCESS as a return value when the processing up to the start condition 
+ *            generation ends normally. This function returns RIIC_ERR_BUS_BUSY as a return value when the following 
+ *            conditions are met to the start condition generation ends normally. (Note.1) \n
+ *            \li The internal status bit is in busy state.
+ *            \li Either SCL or SDA line is in low state. 
+ * 
+ *            The transmission processing is performed sequentially in subsequent interrupt processing after this 
+ *            function return RIIC_SUCCESS. Section "2.4 Usage of Interrupt Vector" in the application note should be 
+ *            refered for the interrupt to be used. For master transmission, the interrupt generation timing should be 
+ *            refered from "6.2.1 Master transmission" in the application note. \n
+ *            After issuing a stop condition at the end of transmission, the callback function specified by the 
+ *            argument is called. \n
+ *            The transmission completion is performed normally or not, can be confirmed by checking the device status 
+ *            flag specified by the argument or the channel status flag g_riic_ChStatus [], that is to be 
+ *            "RIIC_FINISH" for normal completion.\n
+ *            Notes:\n
+ *            1. When SCL and SDA pin is not external pull-up, this function may return RIIC_ERR_BUS_BUSY by
+ *               detecting either SCL or SDA line is as in low state.
+ * @note      Available settings for each pattern see Section 3.2 in the application note for details.
+ */
 riic_return_t R_RIIC_MasterSend (riic_info_t * p_riic_info)
 {
     riic_return_t ret;
@@ -517,21 +563,50 @@ static riic_return_t riic_master_send (riic_info_t * p_riic_info)
     return ret;
 } /* End of function riic_master_send() */
 
-/***********************************************************************************************************************
- * Outline      : 
+/**********************************************************************************************************************
  * Function Name: R_RIIC_MasterReceive
- * Description  : Master reception start processing.
- *              : Generates the start condition. Starts the master reception.
- * Arguments    : riic_info_t * p_riic_info      ; IIC Information
- * Return Value : RIIC_SUCCESS                   ; Successful operation
- *              : RIIC_ERR_INVALID_CHAN          ; None existent channel number
- *              : RIIC_ERR_INVALID_ARG           ; Parameter error
- *              : RIIC_ERR_NO_INIT               ; Uninitialized state
- *              : RIIC_ERR_BUS_BUSY              ; Bus busy
- *              : RIIC_ERR_AL                    ; Arbitration lost error
- *              : RIIC_ERR_TMO                   ; Time out error
- *              : RIIC_ERR_OTHER                 ; Other error
- **********************************************************************************************************************/
+ *****************************************************************************************************************/ /**
+ * @brief Starts master reception. Changes the receive pattern according to the parameters. Operates batched processing 
+ *        until stop condition generation.
+ * @param[in] *p_riic_info
+ *             This is the pointer to the I2C communication information structure. The receive pattern can be selected 
+ *             from master reception and master transmit/receive by the parameter setting. 
+ * @retval    RIIC_SUCCESS             Processing completed successfully
+ * @retval    RIIC_ERR_INVALID_CHAN    The channel is nonexistent
+ * @retval    RIIC_ERR_INVALID_ARG     The parameter is invalid
+ * @retval    RIIC_ERR_NO_INIT         Uninitialized state
+ * @retval    RIIC_ERR_BUS_BUSY        The bus state is busy
+ * @retval    RIIC_ERR_AL              Arbitration-lost error occurred
+ * @retval    RIIC_ERR_TMO             Timeout is detected
+ * @retval    RIIC_ERR_OTHER           The event occurred is invalid in the current state
+ * @details   Starts the RIIC master reception. The reception is performed with the RIIC channel and receive pattern 
+ *            specified by parameters. If the state of the channel is 'idle (RIIC_IDLE, RIIC_FINISH, or RIIC_NACK)', 
+ *            the following processes are performed. \n
+ *            \li Setting the state flag.
+ *            \li Initializing variables used by the API.
+ *            \li Enabling the RIIC interrupts.
+ *            \li Generating a start condition.
+ * 
+ *            This function returns RIIC_SUCCESS as a return value when the processing up to the start condition 
+ *            generation ends normally. This function returns RIIC_ERR_BUS_BUSY as a return value when the following 
+ *            conditions are met to the start condition generation ends normally. (Note.1) \n
+ *            \li The internal status bit is in busy state.
+ *            \li Either SCL or SDA line is in low state.
+ * 
+ *            The reception processing is performed sequentially in subsequent interrupt processing after this 
+ *            function return RIIC_SUCCESS. Section "2.4 Usage of Interrupt Vector" in the application note should be 
+ *            refered for the interrupt to be used. For master transmission, the interrupt generation timing should be 
+ *            refered from "6.2.2 Master Reception" in the application note . \n
+ *            After issuing a stop condition at the end of reception, the callback function specified by the argument 
+ *            is called. \n
+ *            The reception completion is performed normally or not, can be confirmed by checking the device status 
+ *            flag specified by the argument or the channel status flag g_riic_ChStatus [], that is to be 
+ *            "RIIC_FINISH" for normal completion.\n
+ *            Notes:\n
+ *            1. When SCL and SDA pin is not external pull-up, this function may return RIIC_ERR_BUS_BUSY by
+ *               detecting either SCL or SDA line is as in low state.
+ * @note      Available settings for each receive pattern see Section 3.3 in the application note for details.
+ */
 riic_return_t R_RIIC_MasterReceive (riic_info_t * p_riic_info)
 {
     riic_return_t ret;
@@ -688,20 +763,50 @@ static riic_return_t riic_master_send_receive (riic_info_t * p_riic_info)
     return ret;
 } /* End of function riic_master_send_receive() */
 
-/***********************************************************************************************************************
+/**********************************************************************************************************************
  * Function Name: R_RIIC_SlaveTransfer
- * Description  : Slave transfer start processing.
- *              : Generates the start condition. Starts the slave reception and the slave transmission.
- * Arguments    : riic_info_t * p_riic_info      ; IIC Information
- * Return Value : RIIC_SUCCESS                   ; Successful operation
- *              : RIIC_ERR_INVALID_CHAN          ; None existent channel number
- *              : RIIC_ERR_INVALID_ARG           ; Parameter error
- *              : RIIC_ERR_NO_INIT               ; Uninitialized state
- *              : RIIC_ERR_BUS_BUSY              ; Bus busy
- *              : RIIC_ERR_AL                    ; Arbitration lost error
- *              : RIIC_ERR_TMO                   ; Time out error
- *              : RIIC_ERR_OTHER                 ; Other error
- **********************************************************************************************************************/
+ *****************************************************************************************************************/ /**
+ * @brief This function performs slave transmission and reception. Changes the transmit and receive pattern according 
+ *        to the parameters.
+ * @param[in] *p_riic_info
+ *             This is the pointer to the I2C communication information structure. The operation can be selected from 
+ *             preparation for slave reception, slave transmission, or both of them by the parameter setting.
+ * @retval    RIIC_SUCCESS             Processing completed successfully
+ * @retval    RIIC_ERR_INVALID_CHAN    The channel is nonexistent
+ * @retval    RIIC_ERR_INVALID_ARG     The parameter is invalid
+ * @retval    RIIC_ERR_NO_INIT         Uninitialized state
+ * @retval    RIIC_ERR_BUS_BUSY        The bus state is busy
+ * @retval    RIIC_ERR_AL              Arbitration-lost error occurred
+ * @retval    RIIC_ERR_TMO             Timeout is detected
+ * @retval    RIIC_ERR_OTHER           The event occurred is invalid in the current state
+ * @details   Prepares for the RIIC slave transmission or slave reception. If this function is called while the master 
+ *            is communicating, an error occurs. Sets the RIIC channel specified by the parameter. If the state of the 
+ *            channel is 'idle (RIIC_IDLE, RIIC_FINISH, or RIIC_NACK)', the following processes are performed. \n
+ *            \li Setting the state flag.
+ *            \li Initializing variables used by the API.
+ *            \li Initializing the RIIC registers used for the RIIC communication.
+ *            \li Enabling the RIIC interrupts.
+ *            \li Setting the slave address and enabling the slave address match interrupt.
+ *
+ *            This function returns RIIC_SUCCESS as a return value when the setting of slave address and permission of 
+ *            slave address match interrupt are completed normally. \n
+ *            The processing of slave transmission or slave reception is performed sequentially in the subsequent 
+ *            interrupt processing. \n
+ *            Section "2.4 Usage of Interrupt Vector" in the application note should be refered for the interrupt to 
+ *            be used. \n
+ *            The interrupt generation timing of slave transmission should be refered from "6.2.4 Slave Transmission" 
+ *            in the application note. The interrupt generation timing for slave reception should be refered from 
+ *            "6.2.5 Slave reception" in the application note. \n
+ *            After detecting the stop condition of slave transmission or slave reception termination, the callback 
+ *            function specified by the argument is called. \n
+ *            The successful completion of slave reception can be checked by confirming the device status flag or 
+ *            channel status flag specified in the argument  g_riic_ChStatus [], that is to be "RIIC_FINISH". The 
+ *            successful completion of slave transmission can be checked by confirming the device status flag or 
+ *            channel status flag specified in the argument g_riic_ChStatus [], that is to be "RIIC_FINISH" or 
+ *            "RIIC_NACK". "RIIC_NACK" is set when master device transmitted NACK for notify to the slave that last 
+ *            data receive completed.
+ * @note      Available settings for each receive pattern see Section 3.4 in the application note for details.
+ */
 riic_return_t R_RIIC_SlaveTransfer (riic_info_t * p_riic_info)
 {
     riic_return_t ret;
@@ -799,18 +904,24 @@ static riic_return_t riic_slave_transfer (riic_info_t * p_riic_info)
     return ret;
 } /* End of function riic_slave_transfer() */
 
-/***********************************************************************************************************************
+/**********************************************************************************************************************
  * Function Name: R_RIIC_GetStatus
- * Description  : get status of this RIIC module. 
- *                Returns the state of this module.
- *                Obtains the state of the RIIC channel, which specified by the parameter, by reading the register,
- *                variable, or others, and returns the obtained state as 32-bit structure.
- * Arguments    : riic_info_t * p_riic_info      ; IIC Information
- *                riic_mcu_status_t * p_riic_status ; The address to store the I2C state flag.
- * Return Value : RIIC_SUCCESS                   ; Successful operation
- *              : RIIC_ERR_INVALID_ARG           ; Parameter error
- *              : RIIC_ERR_INVALID_CHAN          ; channel number invalid for part
- **********************************************************************************************************************/
+ *****************************************************************************************************************/ /**
+ * @brief Returns the state of this module.
+ * @param[in] *p_riic_info
+ *             This is the pointer to the I2C communication information structure.
+ * @param[in] *p_riic_status
+ *             This contains the variable to store the RIIC state.
+ * @retval    RIIC_SUCCESS             Processing completed successfully
+ * @retval    RIIC_ERR_INVALID_CHAN    The channel is nonexistent
+ * @retval    RIIC_ERR_INVALID_ARG     The parameter is invalid
+ * @details   Returns the state of this module. \n
+ *            By reading the register, pin level, variable, or others, obtains the state of the RIIC channel which 
+ *            specified by the parameter, and returns the obtained state as 32-bit structure. \n
+ *            When this function is called, the RIIC arbitration-lost flag and NACK flag are cleared to 0. If the 
+ *            device state is "RIIC_ AL", the value is updated to "RIIC_FINISH". \n
+ * @note      The state flag allocation see Section 3.5 in the application note for details.
+ */
 riic_return_t R_RIIC_GetStatus (riic_info_t *p_riic_info, riic_mcu_status_t *p_riic_status)
 {
     /* ---- CHECK ARGUMENTS ---- */
@@ -1109,29 +1220,30 @@ static void riic_getstatus (riic_info_t *p_riic_info, riic_mcu_status_t *p_riic_
     }
 } /* End of function riic_getstatus() */
 
-/***********************************************************************************************************************
+/**********************************************************************************************************************
  * Function Name: R_RIIC_Control
- * Description  : RIIC scl sda control processing.
- *                This function is mainly used when a communication error occurs.
- *                Outputs control signals of the simple I2C mode.
- *                Outputs conditions specified by the argument, NACK,
- *                and one-shot of the SSCL clock. Also resets the simple I2C mode settings.
- * Arguments    : r_iic_info_t * p_r_iic_info    ; IIC Information
- *                uint8_t cntl_ptn               ; Output Pattern
- *                 [Options]
- *                  RIIC_GEN_START_CON
- *                  RIIC_GEN_STOP_CON
- *                  RIIC_GEN_RESTART_CON 
- *                  RIIC_GEN_SDA_HI_Z
- *                  RIIC_GEN_SCL_ONESHOT
- *                  RIIC_GEN_RESET
- * Return Value : RIIC_SUCCESS                   ; Successful operation
- *              : RIIC_ERR_INVALID_CHAN          ; None existent channel number
- *              : RIIC_ERR_INVALID_ARG           ; Parameter error
- *              : RIIC_ERR_BUS_BUSY              ; Bus busy
- *              : RIIC_ERR_AL                    ; Arbitration lost error
- *              : RIIC_ERR_OTHER                 ; Other error
- **********************************************************************************************************************/
+ *****************************************************************************************************************/ /**
+ * @brief This function outputs conditions, Hi-Z from the SDA, and one-shot of the SCL clock. Also it resets the 
+ *        settings of this module. This function is mainly used when a communication error occurs.
+ * @param[in] *p_riic_info
+ *             This is the pointer to the I2C communication information structure.
+ * @param[in] ctrl_ptn
+ *             Specifies the output pattern. See Section 3.6 in the application note for details.
+ * @retval    RIIC_SUCCESS             Processing completed successfully
+ * @retval    RIIC_ERR_INVALID_CHAN    Nonexistent channel
+ * @retval    RIIC_ERR_INVALID_ARG     Invalid parameter
+ * @retval    RIIC_ERR_BUS_BUSY        Bus is busy
+ * @retval    RIIC_ERR_AL              Arbitration-lost error occurred
+ * @retval    RIIC_ERR_OTHER           The event occurred is invalid in the current state
+ * @details   Outputs control signals of the RIIC. Outputs conditions specified by the argument, Hi-Z from the SDA pin, 
+ *            and one-shot of the SCL clock. Also resets the RIIC module settings.
+ * @note      One-shot output of the SCL clock. \n
+ *            In master mode, if the clock signals from the master and slave devices go out of synchronization due to 
+ *            noise or other factors, the slave device may hold the SDA line low (bus hang up). Then the SDA line can 
+ *            be released from being held low by outputting one clock of the SCL at a time. \n
+ *            In this module, one clock of the SCL can be output by setting the output pattern "RIIC_GEN_SCL_ONESHOT" 
+ *            (one-shot output of the SCL clock) and calling R_RIIC_Control().
+ */
 riic_return_t R_RIIC_Control (riic_info_t * p_riic_info, uint8_t ctrl_ptn)
 {
     riic_return_t ret;
@@ -1408,18 +1520,25 @@ static riic_return_t riic_control (riic_info_t * p_riic_info, uint8_t ctrl_ptn)
     return ret;
 } /* End of function riic_control() */
 
-/***********************************************************************************************************************
+/**********************************************************************************************************************
  * Function Name: R_RIIC_Close
- * Description  : Resets the RIIC driver.
- *              : The processing performs internal reset by setting to ICCR1.IICRST bit.
- *              : Forcibly, stops the IIC communication.
- *              : After called the processing, channel status becomes "RIIC_NO_INIT".
- *              : When starts the communication again, please call an initialization processing.
- * Arguments    : riic_info_t * p_riic_info      ;   IIC Information
- * Return Value : RIIC_SUCCESS                   ; Successful operation
- *              : RIIC_ERR_INVALID_ARG           ; Parameter error
- *              : RIIC_ERR_INVALID_CHAN          ; channel number invalid for part
- **********************************************************************************************************************/
+ *****************************************************************************************************************/ /**
+ * @brief This function completes the RIIC communication and releases the RIIC used.
+ * @param[in] *p_riic_info
+ *             This is the pointer to the I2C communication information structure.
+ * @retval    RIIC_SUCCESS           Processing completed successfully
+ * @retval    RIIC_ERR_INVALID_CHAN  The channel is nonexistent
+ * @retval    RIIC_ERR_INVALID_ARG   Invalid parameter
+ * @details   Configures the settings to complete the RIIC communication. Disables the RIIC channel specified by the 
+ *            parameter. The following processes are performed in this function. \n
+ *            \li Entering the RIIC module-stop state.
+ *            \li Releasing I2C output ports.
+ *            \li Disabling the RIIC interrupt.
+ * 
+ *            To restart the communication, call the R_RIIC_Open() function (initialization function). If the 
+ *            communication is forcibly terminated, that communication is not guaranteed. \n
+ * @note      None
+ */
 riic_return_t R_RIIC_Close (riic_info_t * p_riic_info)
 {
     /* ---- CHECK ARGUMENTS ---- */
@@ -1474,14 +1593,16 @@ static void riic_close (riic_info_t * p_riic_info)
     riic_mcu_power_off(p_riic_info->ch_no);
 } /* End of function riic_close() */
 
-/***********************************************************************************************************************
+/**********************************************************************************************************************
  * Function Name: R_RIIC_GetVersion
- * Description  : Returns the version of this module. The version number is 
- *                encoded such that the top two bytes are the major version
- *                number and the bottom two bytes are the minor version number.
- * Arguments    : none
- * Return Value : version number
- **********************************************************************************************************************/
+ *****************************************************************************************************************/ /**
+ * @brief Returns the current version of this module.
+ * @return    Version number
+ * @details   This function will return the version of the currently installed RIIC FIT module. The version number is 
+ *            encoded where the top 2 bytes are the major version number and the bottom 2 bytes are the minor version 
+ *            number. For example, Version 4.25 would be returned as 0x00040019.
+ * @note      None
+ */
 uint32_t R_RIIC_GetVersion (void)
 {
     uint32_t const version = (RIIC_VERSION_MAJOR << 16) | RIIC_VERSION_MINOR;

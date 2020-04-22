@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_can_rx
-VERSION = 		v3.10
+VERSION = 		v3.20
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules
@@ -8,7 +8,6 @@ $(TARGET_FOLDER)/$(MODULE_NAME)_$(VERSION).zip: $(TARGET_FOLDER)/$(MODULE_NAME)_
 	cd ./$(MODULE_NAME)_vx.xx; \
 	mkdir $(CONFIG_FOLDER); \
 	cp $(MODULE_NAME)/ref/$(MODULE_NAME)_config_reference.h $(CONFIG_FOLDER)/$(MODULE_NAME)_config.h; \
-	cp $(MODULE_NAME)/ref/$(MODULE_NAME)_pin_config_reference.h $(CONFIG_FOLDER)/$(MODULE_NAME)_pin_config.h; \
 	zip ../$(TARGET_FOLDER)/$(MODULE_NAME)_$(VERSION).zip -r ./$(MODULE_NAME) -r ./$(CONFIG_FOLDER); \
 	rm -rf $(CONFIG_FOLDER); \
 	cd ../;	\

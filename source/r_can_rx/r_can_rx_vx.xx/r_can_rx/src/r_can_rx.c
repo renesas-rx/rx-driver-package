@@ -44,6 +44,14 @@
 *                                when CAN2 enabled.
 *         : 08.01.2019 2.15    - Fixed default callback assignments for can_rx_callback and can_err_callback.
 *         : 05.04.2019 3.00    - Added support for GCC and IAR compilers
+*         : 16.09.2019 3.11    - Added macro CAN_USE_CAN0, CAN_USE_CAN1, CAN_USE_CAN2 in config_can_interrupts() function, 
+*                                above CAN0_TXM0_ISR(), CAN0_RXM0_ISR(), CAN1_TXM1_ISR(), CAN1_RXM1_ISR(), CAN2_TXM2_ISR() and
+*                                CAN2_RXM2_ISR() function to prevent interrupt vector number are undefined when does not
+*                                use CAN0 , CAN1 or CAN2.
+*         : 30.12.2019 3.20    - Modified comment of API function to Doxygen style.
+*                              - Added support for atomic control.
+*                              - Removed support for Generation 1 devices.
+*                              - Fixed to comply with GSCE Coding Standards Rev.6.00.
 ***********************************************************************************************************************/
 /******************************************************************************
 Includes   <System Includes> , "Project Includes"
@@ -190,17 +198,39 @@ static void     can_module_stop_state_cancel(const uint32_t ch_nr);
 
 
 ******************************************************************************/
-/*******************************************************************************
-Function name:  R_CAN_Create
-Description:    Configure the CAN peripheral.
-Arguments:      Channel nr.
-Return value:   R_CAN_OK                Action completed successfully.
-                R_CAN_SW_BAD_MBX        Bad mailbox number.
-                R_CAN_BAD_CH_NR         The channel number does not exist.
-                R_CAN_SW_RST_ERR        The CAN peripheral did not enter Reset mode.
-                R_CAN_MODULE_STOP_ERR   Module in stop state. PRCR register perhaps 
-                                        not used to unlock the module stop register.
-*******************************************************************************/
+/***********************************************************************************************************************
+* Function Name: R_CAN_Create
+********************************************************************************************************************//**
+* @brief Initializes CAN peripheral - Sets user communication callback functions, configures CAN interrupts, sets
+* bitrate, mailbox defaults, and enters CAN Operation Mode.\n
+* This function sets the CAN interrupt levels and user callbacks. This function will also call R_CAN_SetBitrate()
+* and sets the mask to default: not mask any frames.
+* @param[in] ch_nr - CAN channel to use (0-2 MCU dependent).
+* @param[in] tx_cb_func - The name of a function in your application which will be called by the CAN driver when
+* a mailbox has finished transmitting. If you are using polled mode, or do not want a callback for interrupt mode
+* for some reason, specify NULL.
+* @param[in] rx_cb_func - The name of a function in your application which will be called by the CAN driver when a
+* mailbox has finished receiving. If you are using polled mode, or do not want a callback for interrupt mode for
+* some reason, specify NULL.t
+* @param[in] err_cb_func - The name of a function in your application which will be called by the CAN driver when
+* there is a CAN error. If you are using polled mode, or do not want a callback for interrupt mode for some reason,
+* specify NULL.
+* @retval R_CAN_OK                Action completed successfully.
+* @retval R_CAN_SW_BAD_MBX        Bad mailbox number.
+* @retval R_CAN_BAD_CH_NR         The channel number does not exist.
+* @retval R_CAN_SW_RST_ERR        The CAN peripheral did not enter Reset mode
+* @retval R_CAN_MODULE_STOP_ERR   Whole CAN peripheral is in stop state (low power). Perhaps the PRCR register was
+* not used to unlock the module stop register.\n
+* See also R_CAN_Control() return values.
+* @details This function wakes the peripheral from CAN Sleep mode and puts it in CAN Reset mode. It configures the
+* mailboxes with these default settings:\n
+* Overwrite an unread mailbox data when new frames arrive.\n
+* Sets the device to use ID priority (normal CAN behavior, not the optional mailbox number priority).\n
+* Sets all mailboxes' masks invalid.\n
+* R_CAN_Create calls the R_CAN_SetBitrate function and configures CAN interrupts if USE_CAN_POLL is commented
+* in r_can_rx_config.h.\n
+* Before returning, it clears all mailboxes, sets the peripheral into Operation mode, and clears any errors.
+*/
 uint32_t R_CAN_Create(const uint32_t ch_nr, void (*tx_cb_func)(void), void (*rx_cb_func)(void), void (*err_cb_func)(void))
 {
     volatile struct st_can R_BSP_EVENACCESS_SFR * can_block_p;
@@ -221,7 +251,7 @@ uint32_t R_CAN_Create(const uint32_t ch_nr, void (*tx_cb_func)(void), void (*rx_
         return (R_CAN_BAD_CH_NR);
     }
 
-    if (tx_cb_func == NULL)
+    if (NULL == tx_cb_func)
     {
         /* Set the interrupt to a default function as a safety precaution. Even if in polled mode. */
         can_tx_callback[ch_nr] = universal_can_callback;
@@ -232,7 +262,7 @@ uint32_t R_CAN_Create(const uint32_t ch_nr, void (*tx_cb_func)(void), void (*rx_
         can_tx_callback[ch_nr] = tx_cb_func;
     }
 
-    if (rx_cb_func == NULL)
+    if (NULL == rx_cb_func)
     {
         /* Set the interrupt to a default function as a safety precaution. Even if in polled mode. */
         can_rx_callback[ch_nr] = universal_can_callback;
@@ -243,7 +273,7 @@ uint32_t R_CAN_Create(const uint32_t ch_nr, void (*tx_cb_func)(void), void (*rx_
         can_rx_callback[ch_nr] = rx_cb_func;
     }
 
-    if (err_cb_func == NULL)
+    if (NULL == err_cb_func)
     {
         /* Set the interrupt to a default function as a safety precaution. Even if in polled mode. */
         can_err_callback[ch_nr] = universal_can_callback;
@@ -322,7 +352,7 @@ uint32_t R_CAN_Create(const uint32_t ch_nr, void (*tx_cb_func)(void), void (*rx_
     /* Time Stamp Counter reset. Set the TSRC bit to 1 in CAN Operation mode. */
     can_block_p->CTLR.BIT.TSRC = 1;
     while ((can_block_p->CTLR.BIT.TSRC) && DEC_CHK_CAN_SW_TMR) {;}
-    if (can_tmo_cnt == 0)
+    if (0 == can_tmo_cnt)
     {
         api_status |= R_CAN_SW_TSRC_ERR;
     }
@@ -348,38 +378,43 @@ uint32_t R_CAN_Create(const uint32_t ch_nr, void (*tx_cb_func)(void), void (*rx_
     can_block_p->ECSR.BYTE = 0x00;
 
     return (api_status);
-} /* end R_CAN_Create() */
+}
+/******************************************************************************
+ End of function R_CAN_Create
+ *****************************************************************************/ /* end R_CAN_Create() */
 
-/***********************************************************************************
-Function name:  R_CAN_PortSet
-Description:    Configures the MCU and transceiver port pins. This function is 
-                responsible for configuring the MCU and transceiver port pins. 
-                Transceiver port pins such as Enable will vary depending on design, 
-                and this fucntion must then be modified. The function is also used 
-                to enter the CAN port test modes, such as Listen Only.
-            
-                Typical transceiver TJA1041 voltages with CAN active:
-                    PIN:   Voltage
-                    TXD    3.2
-                    RXD    3.2
-                    GND    0.0
-                    CANL   2.6
-                    CANH   2.6
-
-Arguments:      Channel nr.
-                action_types: ENABLE, DISABLE, CANPORT_TEST_LISTEN_ONLY, 
-                CANPORT_TEST_0_EXT_LOOPBACK, CANPORT_TEST_1_INT_LOOPBACK, and
-                CANPORT_RETURN_TO_NORMAL which is the default; no need to call 
-                unless another test mode was invoked previously.
-
-Return value:   R_CAN_OK                Action completed successfully.
-                R_CAN_SW_BAD_MBX        Bad mailbox number.
-                R_CAN_BAD_CH_NR         The channel number does not exist.
-                R_CAN_BAD_ACTION_TYPE   No such action type exists for this function.
-                R_CAN_SW_HALT_ERR       The CAN peripheral did not enter Halt mode.
-                R_CAN_SW_RST_ERR        The CAN peripheral did not enter Reset mode.
-                See also R_CAN_Control return values.
-***********************************************************************************/
+/***********************************************************************************************************************
+* Function Name: R_CAN_PortSet
+********************************************************************************************************************//**
+* @brief Configures the MCU and transceiver port pins. This function is responsible for configuring the MCU and
+* transceiver port pins. Transceiver port pins such as Enable will vary depending on design, and this function must
+* then be modified. The function is also used to enter the CAN port test modes, such as Listen Only.
+* @param[in] ch_nr - CAN channel to use (0-2 MCU dependent).
+* @param[in] action_type \n
+* Port actions:\n
+*  ENABLE                      Enable the CAN port pins and the CAN transceiver.\n
+*  DISABLE                     Disable the CAN port pins and the CAN transceiver.\n
+*  CANPORT_TEST_LISTEN_ONLY        Set to Listen Only mode. No ACKs or Error frames are sent.\n
+*  CANPORT_TEST_0_EXT_LOOPBACK Use external bus and loopback. Useful for initial debug. See separate test section.\n
+*  CANPORT_TEST_1_INT_LOOPBACK Only internal mailbox communication. Useful for initial debug. See separate test
+*                               section.\n
+*  CANPORT_RETURN_TO_NORMAL        Return to normal port usage.\n
+* @retval R_CAN_OK                Action completed successfully.
+* @retval R_CAN_SW_BAD_MBX        Bad mailbox number.
+* @retval R_CAN_BAD_CH_NR         The channel number does not exist.
+* @retval R_CAN_BAD_ACTION_TYPE   No such action type exists for this function.
+* @retval R_CAN_SW_HALT_ERR       The CAN peripheral did not enter Halt mode.
+* @retval R_CAN_SW_RST_ERR        The CAN peripheral did not enter Reset mode.\n
+* See also R_CAN_Control() return values.
+* @details Unless Internal Loopback mode is used (for initial test and debug) make sure this function is called after
+* any board default port set up function is used (e.g. 'hwsetup').\n
+* Observe that a stray output high/low on an MCU CAN port pin that was set by some other (default) board setup code
+* could affect the bus negatively. You may discover that a hard reset on a node could cause other nodes to go into
+* error mode. The reason may be that all ports were set as default output hi/low before CAN reconfigures the ports.
+* Such code should be removed, or else, for a brief period of time, the ports may be output low/high and disrupt the
+* CAN bus voltage level.\n
+* You may have to change/add transceiver port pins according to your transceiver.\n
+*/
 uint32_t R_CAN_PortSet(const uint32_t ch_nr, const uint32_t action_type)
 {
     volatile struct st_can R_BSP_EVENACCESS_SFR * can_block_p;
@@ -399,15 +434,14 @@ uint32_t R_CAN_PortSet(const uint32_t ch_nr, const uint32_t action_type)
     switch (action_type)
     {
         case ENABLE:
-            /* Check for null pointer. */
-            if (!pst_can_pin->p_CAN_Rx_Pin_MPC) 
+            if (!pst_can_pin->p_CAN_Rx_Pin_MPC) /* Check for null pointer. */
             {
                 return (R_CAN_BAD_CH_NR);    /* Channel port not defined */
             }
 
-            /* Initialize the RSK630 CTXn and CRXn pins. */
+            /* Initialize the CTXn and CRXn pins. */
 
-            /* RX630 Port pin function select register setting */
+            /* Port pin function select register setting */
             MPC.PWPR.BYTE = 0x00;    /* PWPR.PFSWE write protect off */
             MPC.PWPR.BYTE = 0x40;    /* PFS register write protect off */
 
@@ -470,8 +504,9 @@ uint32_t R_CAN_PortSet(const uint32_t ch_nr, const uint32_t action_type)
         break;
 
         case DISABLE:
+
             /* Configure CAN1 TX and RX pins. */
-            /* RX6x Port pin function select register setting */
+            /* Port pin function select register setting */
             MPC.PWPR.BYTE = 0x00;    /* PWPR.PFSWE write protect off */
             MPC.PWPR.BYTE = 0x40;    /* PFS register write protect off */
 
@@ -561,27 +596,39 @@ uint32_t R_CAN_PortSet(const uint32_t ch_nr, const uint32_t action_type)
         break;
     }
     return (api_status);
-} /* end R_CAN_PortSet() */
+}
+/******************************************************************************
+ End of function R_CAN_PortSet
+ *****************************************************************************/ /* end R_CAN_PortSet() */
 
-/*******************************************************************************
-Function name:  R_CAN_Control
-Description:    Controls transition to CAN operating modes determined by the CAN 
-                Control register. For example, the Halt mode should be used to 
-                later configure a recieve mailbox. 
-Arguments:      Channel nr.
-                action_type: EXITSLEEP_CANMODE, ENTERSLEEP_CANMODE,
-                RESET_CANMODE, HALT_CANMODE, OPERATE_CANMODE.
-Return value:   R_CAN_OK                Action completed successfully.
-                R_CAN_SW_BAD_MBX        Bad mailbox number.
-                R_CAN_BAD_CH_NR         The channel number does not exist.
-                R_CAN_BAD_ACTION_TYPE   No such action type exists for this function.
-                R_CAN_SW_WAKEUP_ERR     The CAN peripheral did not wake up from Sleep mode.
-                R_CAN_SW_SLEEP_ERR      The CAN peripheral did not enter Sleep mode.
-                R_CAN_SW_RST_ERR        The CAN peripheral did not enter Halt mode.
-                R_CAN_SW_HALT_ERR       The CAN peripheral did not enter Halt mode.
-                R_CAN_SW_RST_ERR        The CAN peripheral did not enter Reset mode.
-                See also R_CAN_PortSet return values.
-*******************************************************************************/
+/***********************************************************************************************************************
+* Function Name: R_CAN_Control
+********************************************************************************************************************//**
+* @brief Set CAN operating modes. Controls transition to CAN operating modes determined by the CAN Control
+* register. For example, the Halt mode should be used to later configure a receive mailbox.
+* @param[in] ch_nr - CAN channel to use (0-2 MCU dependent).
+* @param[in] action_type \n
+* Peripheral actions:\n
+*  EXITSLEEP_CANMODE       Exit CAN Sleep mode, the default state when the peripheral starts up.\n
+*  ENTERSLEEP_CANMODE      Enter CAN Sleep mode to save power.\n
+*  RESET_CANMODE           Put the CAN peripheral into Reset mode.\n
+*  HALT_CANMODE            Put the CAN peripheral into Halt mode. CAN peripheral is still connected to the bus, but stops
+*                           communicating.\n
+*  OPERATE_CANMODE         Put the CAN peripheral into normal Operation mode.\n
+* @retval R_CAN_OK                Action completed successfully.
+* @retval R_CAN_SW_BAD_MBX        Bad mailbox number.
+* @retval R_CAN_BAD_CH_NR         The channel number does not exist.
+* @retval R_CAN_BAD_ACTION_TYPE   No such action type exists for this function.
+* @retval R_CAN_SW_WAKEUP_ERR     The CAN peripheral did not wake up from Sleep mode.
+* @retval R_CAN_SW_SLEEP_ERR      The CAN peripheral did not enter Sleep mode.
+* @retval R_CAN_SW_HALT_ERR       The CAN peripheral did not enter Halt mode.
+* @retval R_CAN_SW_RST_ERR        The CAN peripheral did not enter Reset mode.\n
+* See also R_CAN_PortSet() return values.
+* @details Other than calling this API to enter Halt mode, CAN mode transitions are called via the other API
+* functions automatically. For example, the default mode when starting up is CAN Sleep mode. Use the API to switch
+* to other operating modes, for example first 'Exit Sleep' followed by 'Reset' to initialize the CAN registers for
+* bitrate and interrupts, then enter ‘Halt' mode to configure mailboxes.
+*/
 uint32_t R_CAN_Control(const uint32_t  ch_nr, const uint32_t  action_type)
 {
     volatile struct st_can R_BSP_EVENACCESS_SFR * can_block_p;
@@ -600,6 +647,7 @@ uint32_t R_CAN_Control(const uint32_t  ch_nr, const uint32_t  action_type)
     switch (action_type)
     {
         case EXITSLEEP_CANMODE:
+
             /* Set to Not Sleep, and ensure that RCAN exits in Operate mode.
             HW manual note says to write to the SLPM bit in CAN Halt mode,
             but if we currently are in Sleep mode, we should already also be
@@ -609,14 +657,14 @@ uint32_t R_CAN_Control(const uint32_t  ch_nr, const uint32_t  action_type)
             {
                 R_BSP_NOP();
             }
-            if (can_tmo_cnt == 0)
+            if (0 == can_tmo_cnt)
             { 
                 api_status = R_CAN_SW_WAKEUP_ERR;
             }
             R_CAN_Control(ch_nr, OPERATE_CANMODE);
             break;
-
         case ENTERSLEEP_CANMODE:
+
             /* Set to, and ensure that RCAN returns in, the Sleep state.
             Write to the SLPM bit in CAN Reset or CAN Halt modes. */
             api_status = R_CAN_Control(ch_nr, HALT_CANMODE);
@@ -626,26 +674,28 @@ uint32_t R_CAN_Control(const uint32_t  ch_nr, const uint32_t  action_type)
             {
                 R_BSP_NOP();
             }
-            if (can_tmo_cnt == 0)
+            if (0 == can_tmo_cnt)
             {
                 api_status = R_CAN_SW_SLEEP_ERR;
             }
         break;
 
         case RESET_CANMODE:
+
             /* Set to, and ensure that RCAN returns in, the Reset state. */
             can_block_p->CTLR.BIT.CANM = CAN_RESET;
             while ((!can_block_p->STR.BIT.RSTST) && DEC_CHK_CAN_SW_TMR)
             {
                 /* Wait loop. */ ;
             }
-            if (can_tmo_cnt == 0)
+            if (0 == can_tmo_cnt)
             {
                 api_status = R_CAN_SW_RST_ERR;
             }
         break;
 
         case HALT_CANMODE:
+
             /* Set to, and ensure that RCAN returns in, the Halt state. */
             /* The CAN module enters CAN Halt mode after waiting for the end of 
             message reception or transmission. */
@@ -654,13 +704,14 @@ uint32_t R_CAN_Control(const uint32_t  ch_nr, const uint32_t  action_type)
             {
                 /* Wait loop. */ ;
             }
-            if (can_tmo_cnt == 0)
+            if (0 == can_tmo_cnt)
             {
                 api_status = R_CAN_SW_HALT_ERR;
             }
         break;
 
         case OPERATE_CANMODE:  
+
             /* Take CAN out of Stop mode. */    
             can_module_stop_state_cancel(ch_nr); /* exit module stop state */
 
@@ -672,7 +723,7 @@ uint32_t R_CAN_Control(const uint32_t  ch_nr, const uint32_t  action_type)
             {
                 /* Wait loop. */ ;
             }
-            if (can_tmo_cnt == 0)
+            if (0 == can_tmo_cnt)
             {
                 api_status = R_CAN_SW_RST_ERR;
             }
@@ -683,22 +734,33 @@ uint32_t R_CAN_Control(const uint32_t  ch_nr, const uint32_t  action_type)
     }
 
     return (api_status);
-} /* end R_CAN_Control() */
+}
+/******************************************************************************
+ End of function R_CAN_Control
+ *****************************************************************************/ /* end R_CAN_Control() */
 
-/*******************************************************************************
-Function name:  R_CAN_TxSet
-Description:    Set up a CAN mailbox to transmit.
-Arguments:      Channel nr.
-                Mailbox nr.
-                frame_p - pointer to a data frame structure.
-                remote - REMOTE_FRAME to send remote request, DATA_FRAME for 
-                sending normal dataframe.
-Return value:   R_CAN_OK                The mailbox was set up for transmission.
-                R_CAN_SW_BAD_MBX        Bad mailbox number.
-                R_CAN_BAD_CH_NR         The channel number does not exist.
-                R_CAN_BAD_ACTION_TYPE   No such action type exists for this 
-                                        function.
-*******************************************************************************/
+/***********************************************************************************************************************
+* Function Name: R_CAN_TxSet
+********************************************************************************************************************//**
+* @brief Set up a mailbox to transmit. The API will write to a mailbox the specified ID, data length and data
+* frame payload, then set the mailbox to transmit mode and send a frame onto the bus by calling R_CAN_Tx().\n
+* @param[in] ch_nr - CAN channel to use (0-2 MCU dependent).
+* @param[in] mbox_nr - Mailbox to use.
+* @param[in] frame_p - Pointer to a data frame structure in memory. It is an address to the data structure containing
+* the ID, DLC and data that constitute the data frame the mailbox will transmit.
+* @param[in] frame_type \n
+*  DATA_FRAME  Send a normal data frame.\n
+*  REMOTE_FRAME    Send a remote data frame request.
+* @retval R_CAN_OK                The mailbox was set up for transmission.
+* @retval R_CAN_SW_BAD_MBX        Bad mailbox number.
+* @retval R_CAN_BAD_CH_NR         The channel number does not exist.
+* @retval R_CAN_BAD_ACTION_TYPE   No such action type exists for this function.
+* @details This function first waits for any previous transmission of the specified mailbox to complete. It then
+* interrupt disables the mailbox temporarily when setting up the mailbox: Sets the ID value for the mailbox, the
+* Data Length Code indicated by frame_p, selects data frame or remote frame request and finally copies the data frame
+* payload bytes (0-7) into the mailbox. The mailbox is interrupt enabled again unless USE_CAN_POLL was defined.
+* Finally R_CAN_Tx is called to deliver the message.
+*/
 uint32_t R_CAN_TxSet(const uint32_t         ch_nr,
                      const uint32_t         mbox_nr,
                      const can_frame_t*     frame_p,
@@ -732,7 +794,7 @@ uint32_t R_CAN_TxSet(const uint32_t         ch_nr,
     {
         /* Set message mailbox buffer Extended ID, masking off temporary XID flag bit. */
         can_block_p->MB[mbox_nr].ID.LONG = (frame_p->id & (~XID_MASK));
-        if (can_block_p->CTLR.BIT.IDFM == MIXED_ID_MODE)
+        if (MIXED_ID_MODE == can_block_p->CTLR.BIT.IDFM)
         {
             can_block_p->MB[mbox_nr].ID.BIT.IDE = 1;   /* Mixed mode; select to send extended frame. */
         }
@@ -750,7 +812,7 @@ uint32_t R_CAN_TxSet(const uint32_t         ch_nr,
     can_block_p->MB[mbox_nr].DLC = (unsigned short)frame_p->dlc;
 
     /* Frame select: Data frame = 0, Remote = 1 */
-    if (frame_type == REMOTE_FRAME)
+    if (REMOTE_FRAME == frame_type)
     {
         can_block_p->MB[mbox_nr].ID.BIT.RTR = 1;
     }
@@ -773,26 +835,34 @@ uint32_t R_CAN_TxSet(const uint32_t         ch_nr,
     api_status |= R_CAN_Tx(ch_nr, mbox_nr);
 
     return (api_status);
-} /* end R_CAN_TxSet() */
+}
+/******************************************************************************
+ End of function R_CAN_TxSet
+ *****************************************************************************/ /* end R_CAN_TxSet() */
 
-/*******************************************************************************
-Function name:  R_CAN_TxSetXid
-Description:    Set up a CAN mailbox to transmit in extended ID mode.
-                Uses temporary copy of the can_frame data structure to set the 
-                MSB of the frame ID field to serve as a flag to indicate extended 
-                ID mode, then calls the regular R_CAN_TxSet() function passing 
-                along all the parameters.
-Arguments:      Channel nr.
-                Mailbox nr.
-                frame_p - pointer to a data frame structure.
-                remote - REMOTE_FRAME to send remote request, DATA_FRAME for 
-                sending normal dataframe.
-Return value:   R_CAN_OK                The mailbox was set up for transmission.
-                R_CAN_SW_BAD_MBX        Bad mailbox number.
-                R_CAN_BAD_CH_NR         The channel number does not exist.
-                R_CAN_BAD_ACTION_TYPE   No such action type exists for this 
-                                        function.
-*******************************************************************************/
+/***********************************************************************************************************************
+* Function Name: R_CAN_TxSetXid
+********************************************************************************************************************//**
+* @brief Set up a mailbox to transmit.The API will write to a mailbox the specified ID, data length and data
+* frame payload, then set the mailbox to transmit mode and send a frame onto the bus by calling R_CAN_Tx(). If this
+* function is used, the ID will be a 29-bit ID.
+* @param[in] ch_nr - CAN channel to use (0-2 MCU dependent).
+* @param[in] mbox_nr - Mailbox to use.
+* @param[in] frame_p - Pointer to a data frame structure in memory. It is an address to the data structure containing
+* the ID, DLC and data that constitute the dataframe the mailbox will transmit.
+* @param[in] frame_type \n
+*  DATA_FRAME  Send a normal data frame.\n
+*  REMOTE_FRAME    Send a remote data frame request.
+* @retval R_CAN_OK                The mailbox was set up for transmission.
+* @retval R_CAN_SW_BAD_MBX        Bad mailbox number.
+* @retval R_CAN_BAD_CH_NR         The channel number does not exist.
+* @retval R_CAN_BAD_ACTION_TYPE   No such action type exists for this function.
+* @details This function first waits for any previous transmission of the specified mailbox to complete. It then
+* interrupt disables the mailbox temporarily when setting up the mailbox: Sets the ID value for the mailbox, the
+* Data Length Code indicated by frame_p, selects dataframe or remote frame request and finally copies the data frame
+* payload bytes (0-7) into the mailbox. The mailbox is interrupt enabled again unless USE_CAN_POLL was defined.
+* Finally R_CAN_Tx is called to deliver the message.
+*/
 uint32_t R_CAN_TxSetXid(const uint32_t     ch_nr, 
                         const uint32_t     mbox_nr,
                         can_frame_t*       frame_p,
@@ -810,22 +880,26 @@ uint32_t R_CAN_TxSetXid(const uint32_t     ch_nr,
     api_status = R_CAN_TxSet(ch_nr, mbox_nr, (can_frame_t*)&temp_frame, frame_type);
            
     return (api_status);
-}/* end R_CAN_TxSetXid() */
+}
+/******************************************************************************
+ End of function R_CAN_TxSetXid
+ *****************************************************************************//* end R_CAN_TxSetXid() */
 
-/*******************************************************************************
-Function name:  R_CAN_Tx
-Description:    Starts actual message transmission onto the CAN bus.
-Arguments:      Channel nr.
-                Mailbox nr.
-Return value:   R_CAN_OK            The mailbox was set to transmit a previously 
-                                    configured mailbox.
-                R_CAN_SW_BAD_MBX    Bad mailbox number.
-                R_CAN_BAD_CH_NR     The channel number does not exist.
-                R_CAN_SW_SET_TX_TMO Waiting for previous transmission to finish 
-                                    timed out.
-                R_CAN_SW_SET_RX_TMO Waiting for previous reception to complete 
-                                    timed out.
-*******************************************************************************/
+/***********************************************************************************************************************
+* Function Name: R_CAN_Tx
+********************************************************************************************************************//**
+* @brief Starts actual message transmission onto the CAN bus. This API will wait until the mailbox finishes handling
+* a prior frame, then set the mailbox to transmit mode.
+* @param[in] ch_nr - CAN channel to use (0-2 MCU dependent).
+* @param[in] mbox_nr - Which CAN mailbox to use. (0-32)
+* @retval R_CAN_OK - The mailbox was set to transmit a previously configured mailbox.
+* @retval R_CAN_SW_BAD_MBX - Bad mailbox number.
+* @retval R_CAN_BAD_CH_NR - The channel number does not exist.
+* @retval R_CAN_SW_SET_TX_TMO - Waiting for previous transmission to finish timed out.
+* @retval R_CAN_SW_SET_RX_TMO - Waiting for previous reception to complete timed out.
+* @details R_CAN_TxSet must have been called at least once for this mailbox after system start to set up the mailbox
+* content, as this function only tells the mailbox to send its content.
+*/
 uint32_t R_CAN_Tx(const uint32_t  ch_nr, const uint32_t  mbox_nr)
 {
     volatile struct st_can R_BSP_EVENACCESS_SFR * can_block_p;
@@ -853,23 +927,27 @@ uint32_t R_CAN_Tx(const uint32_t  ch_nr, const uint32_t  mbox_nr)
     can_block_p->MCTL[mbox_nr].BIT.TX.TRMREQ = 1;
 
     return (api_status);
-} /* end R_CAN_Tx() */
+}
+/******************************************************************************
+ End of function R_CAN_Tx
+ *****************************************************************************/ /* end R_CAN_Tx() */
 
-/*****************************************************************************
-Function name:  R_CAN_TxCheck
-Description:    Use to check a mailbox for a successful data frame transmission.
-                Primarily used when polling to check that message was sent, so 
-                that the next in series of messages can be sent. To do this when 
-                using CAN interrupts, this function can be called to check which 
-                mailbox caused the interrupt.
-Arguments:      Channel nr.
-                Mailbox nr.
-Return value:   R_CAN_OK            Transmission was completed successfully.
-                R_CAN_SW_BAD_MBX    Bad mailbox number.
-                R_CAN_BAD_CH_NR     The channel number does not exist.
-                R_CAN_MSGLOST       Message was overwritten or lost.
-                R_CAN_NO_SENTDATA   No message was sent.
-*****************************************************************************/
+/***********************************************************************************************************************
+* Function Name: R_CAN_TxCheck
+********************************************************************************************************************//**
+* @brief Check for successful data frame transmission. Use to check a mailbox for a successful data frame transmission.
+* @param[in] ch_nr - CAN channel to use (0-2 MCU dependent).
+* @param[in] mbox_nr - Which CAN mailbox to use. (0-32)
+* @retval R_CAN_OK            Transmission was completed successfully.
+* @retval R_CAN_SW_BAD_MBX    Bad mailbox number.
+* @retval R_CAN_BAD_CH_NR     The channel number does not exist.
+* @retval R_CAN_MSGLOST       Message was overwritten or lost.
+* @retval R_CAN_NO_SENTDATA   No message was sent.
+* @details This function is only needed if an application needs to verify that a message has been transmitted for
+* example so that it can progress a state machine, or if messages are sent back-to-back. With CAN’s level of transport
+* control built into the silicon, it can reasonably be assumed that once a mailbox has been asked to send with the API
+* that the message will indeed be sent. Safest if of course to use this function after a transmission.
+*/
 uint32_t R_CAN_TxCheck(const uint32_t ch_nr, const uint32_t mbox_nr)
 {
     volatile struct st_can R_BSP_EVENACCESS_SFR * can_block_p;
@@ -886,7 +964,7 @@ uint32_t R_CAN_TxCheck(const uint32_t ch_nr, const uint32_t mbox_nr)
     }
 
     /* Read and clear SentData flag. */
-    if (can_block_p->MCTL[mbox_nr].BIT.TX.SENTDATA == 0)
+    if (0 == can_block_p->MCTL[mbox_nr].BIT.TX.SENTDATA)
     {
         api_status = R_CAN_NO_SENTDATA;
     }
@@ -901,20 +979,28 @@ uint32_t R_CAN_TxCheck(const uint32_t ch_nr, const uint32_t mbox_nr)
     }
 
     return (api_status);
-} /* end R_CAN_TxCheck() */
+}
+/******************************************************************************
+ End of function R_CAN_TxCheck
+ *****************************************************************************/ /* end R_CAN_TxCheck() */
 
-/*****************************************************************************
-Function name:  R_CAN_TxStopMsg
-Description:    Stop a mailbox that has been asked to transmit a frame. If the 
-                message was not stopped, R_CAN_SW_ABORT_ERR is returned. Note 
-                that the cause of this could be that the message was already sent. 
-Arguments:      Channel nr.
-                Mailbox nr.
-Return value:   R_CAN_OK            Action completed successfully.
-                R_CAN_SW_BAD_MBX    Bad mailbox number.
-                R_CAN_BAD_CH_NR     The channel number does not exist.
-                R_CAN_SW_ABORT_ERR  Waiting for an abort timed out.
-*****************************************************************************/
+/***********************************************************************************************************************
+* Function Name: R_CAN_TxStopMsg
+********************************************************************************************************************//**
+* @brief Stop a mailbox that has been asked to transmit a frame
+* @param[in] ch_nr \n
+*    CAN channel to use (0-2 MCU dependent).
+* @param[in] mbox_nr \n
+*    Which CAN mailbox to use. (0-32)
+* @retval R_CAN_OK            Action completed successfully.
+* @retval R_CAN_SW_BAD_MBX    Bad mailbox number.
+* @retval R_CAN_BAD_CH_NR     The channel number does not exist.
+* @retval R_CAN_SW_ABORT_ERR  Waiting for an abort timed out.
+* @details This function clears the mailbox control flags so that a transmission is stopped (TrmReq is set to 0.)
+* A software counter then waits for an abort for a maximum period of time.\n
+* If the message was not stopped, R_CAN_SW_ABORT_ERR is returned. Note that the cause of this could be that the
+* message was already sent.
+*/
 uint32_t R_CAN_TxStopMsg(const uint32_t ch_nr, const uint32_t mbox_nr)
 {
     volatile struct st_can R_BSP_EVENACCESS_SFR * can_block_p;
@@ -939,34 +1025,44 @@ uint32_t R_CAN_TxStopMsg(const uint32_t ch_nr, const uint32_t mbox_nr)
     /* Wait for abort. */
     while ((can_block_p->MCTL[mbox_nr].BIT.TX.TRMABT) && DEC_CHK_CAN_SW_TMR)
     {;}
-    if (can_tmo_cnt == 0)
+    if (0 == can_tmo_cnt)
     {
         api_status = R_CAN_SW_ABORT_ERR;
     }
+
     /* Clear abort flag. Do a byte-write to avoid read-modify-write with HW writing another bit inbetween. */
     can_block_p->MCTL[mbox_nr].BYTE = 0;
 
     return (api_status);
-}/* end R_CAN_TxStopMsg() */
+}
+/******************************************************************************
+ End of function R_CAN_TxStopMsg
+ *****************************************************************************//* end R_CAN_TxStopMsg() */
 
-/*******************************************************************************
-Function name:  R_CAN_RxSet
-Description:    Set up a mailbox to receive. The API sets up a given mailbox to 
-                receive dataframes with the given CAN ID. Incoming data frames 
-                with the same ID will be stored in the mailbox. 
-Arguments:      Channel nr.
-                Mailbox nr.
-                Frame ID value
-                remote - REMOTE_FRAME to listen for remote requests, DATA_FRAME
-                for receiving normal dataframes.
-Return value:   R_CAN_OK            Action completed successfully.
-                R_CAN_SW_BAD_MBX    Bad mailbox number.
-                R_CAN_BAD_CH_NR     The channel number does not exist.
-                R_CAN_SW_SET_TX_TMO Waiting for previous transmission to finish 
-                                    timed out.
-                R_CAN_SW_SET_RX_TMO Waiting for previous reception to complete 
-                                    timed out.
-*******************************************************************************/
+/***********************************************************************************************************************
+* Function Name: R_CAN_RxSet
+********************************************************************************************************************//**
+* @brief Set up a mailbox to receive.\n
+* The API sets up a given mailbox to receive data frames with the given CAN 11-bit ID. Incoming data frames with the
+* same ID will be stored in the mailbox.
+* @param[in] ch_nr \n
+*               CAN channel to use (0-2 MCU dependent).
+* @param[in] mbox_nr \n
+*               Which CAN mailbox to use. (0-32)
+* @param[in] id \n
+*               The CAN ID which the mailbox should receive.
+* @param[in] frame_type \n
+*  DATA_FRAME      Send a normal data frame. \n
+*  REMOTE_FRAME    Send a remote data frame request.
+* @retval R_CAN_OK                Action completed successfully.
+* @retval R_CAN_SW_BAD_MBX        Bad mailbox number.
+* @retval R_CAN_BAD_CH_NR         The channel number does not exist.
+* @retval R_CAN_SW_SET_TX_TMO     Waiting for previous transmission to finish timed out.
+* @retval R_CAN_SW_SET_RX_TMO     Waiting for previous reception to complete timed out.
+* @details The function will first wait for any previous transmission/reception to complete, then temporarily
+* interrupt disable the mailbox. It sets the mailbox to the given standard ID value, and whether to receive normal
+* CAN dataframes or remote frame requests.
+*/
 uint32_t R_CAN_RxSet(const uint32_t  ch_nr,
                      const uint32_t  mbox_nr,
                      const uint32_t  id,
@@ -1008,7 +1104,7 @@ uint32_t R_CAN_RxSet(const uint32_t  ch_nr,
     }
 
     /* Set IDE bit depending on if want to receive SID or XID frame. Only for mixed mode. */
-    if (can_block_p->CTLR.BIT.IDFM == MIXED_ID_MODE)
+    if (MIXED_ID_MODE == can_block_p->CTLR.BIT.IDFM)
     {
         if (id & XID_MASK)
         {
@@ -1026,7 +1122,7 @@ uint32_t R_CAN_RxSet(const uint32_t  ch_nr,
     }
 
     /* Dataframe = 0, Remote frame = 1    */
-    if (frame_type == REMOTE_FRAME)
+    if (REMOTE_FRAME == frame_type)
     {
         can_block_p->MB[mbox_nr].ID.BIT.RTR = 1;
     }
@@ -1044,19 +1140,35 @@ uint32_t R_CAN_RxSet(const uint32_t  ch_nr,
     can_block_p->MCTL[mbox_nr].BYTE = 0x40;
 
     return (api_status);
-} /* end R_CAN_RxSet() */
+}
+/******************************************************************************
+ End of function R_CAN_RxSet
+ *****************************************************************************/ /* end R_CAN_RxSet() */
 
-/*******************************************************************************
-Function name:  R_CAN_RxSetXid
-Description:    Calls R_CAN_RxSet() after setting a bit in the xid parameter to
-                serve as an extended ID mode flag.          
-Arguments:      Channel nr.
-                Mailbox nr.
-                Frame ID value
-                remote - REMOTE_FRAME to listen for remote requests, DATA_FRAME
-                for receiving normal dataframes.
-Return value:   value returned by R_CAN_RxSet is passed on.
-*******************************************************************************/
+/***********************************************************************************************************************
+* Function Name: R_CAN_RxSetXid
+********************************************************************************************************************//**
+* @brief Set up a mailbox to receive.\n
+* The API sets up a given mailbox to receive data frames with the given CAN 11-bit ID. Incoming data frames with the
+* same ID will be stored in the mailbox, except the ID will be a 29-bit ID.
+* @param[in] ch_nr \n
+*               CAN channel to use (0-2 MCU dependent).
+* @param[in] mbox_nr \n
+*               Which CAN mailbox to use. (0-32)
+* @param[in] xid \n
+*               The CAN ID which the mailbox should receive.
+* @param[in] frame_type \n
+*  DATA_FRAME      Send a normal data frame. \n
+*  REMOTE_FRAME    Send a remote data frame request.
+* @retval R_CAN_OK                Action completed successfully.
+* @retval R_CAN_SW_BAD_MBX        Bad mailbox number.
+* @retval R_CAN_BAD_CH_NR         The channel number does not exist.
+* @retval R_CAN_SW_SET_TX_TMO     Waiting for previous transmission to finish timed out.
+* @retval R_CAN_SW_SET_RX_TMO     Waiting for previous reception to complete timed out.
+* @details The function will first wait for any previous transmission/reception to complete, then temporarily
+* interrupt disable the mailbox. It sets the mailbox to the given standard ID value, and whether to receive normal
+* CAN dataframes or remote frame requests.
+*/
 uint32_t R_CAN_RxSetXid(const uint32_t     ch_nr, 
                         const uint32_t     mbox_nr, 
                         uint32_t           xid,
@@ -1064,19 +1176,33 @@ uint32_t R_CAN_RxSetXid(const uint32_t     ch_nr,
 {
     /* Add the Xid bit so that 29-bit ID will be used by R_CAN_RxSet(). */
     return (R_CAN_RxSet(ch_nr, mbox_nr, (xid | XID_MASK) , frame_type));
-} /* end R_CAN_RxSetXid() */
+}
+/******************************************************************************
+ End of function R_CAN_RxSetXid
+ *****************************************************************************/ /* end R_CAN_RxSetXid() */
 
-/*******************************************************************************
-Function name:  R_CAN_RxPoll
-Description:    Checks for received message in mailbox.
-Arguments:      Channel nr.
-                Mailbox nr.
-Return value:   R_CAN_OK            There is a message waiting.
-                R_CAN_NOT_OK        No message waiting.
-                R_CAN_RXPOLL_TMO    Message pending but timed out.
-                R_CAN_SW_BAD_MBX    Bad mailbox number.
-                R_CAN_BAD_CH_NR     The channel number does not exist.
-*******************************************************************************/
+/***********************************************************************************************************************
+* Function Name: R_CAN_RxPoll
+********************************************************************************************************************//**
+* @brief Checks if a mailbox has received a message
+* @param[in] ch_nr \n
+*               CAN channel to use (0-2 MCU dependent).
+* @param[in] mbox_nr \n
+*               Which CAN mailbox to check (0-32).
+* @retval R_CAN_OK            There is a message waiting.
+* @retval R_CAN_NOT_OK        No message waiting.
+* @retval R_CAN_RXPOLL_TMO    Message pending but timed out.
+* @retval R_CAN_SW_BAD_MBX    Bad mailbox number.
+* @retval R_CAN_BAD_CH_NR     The channel number does not exist.
+* @details When a mailbox is set up to receive certain messages, it is important to determine when it has finished
+* receiving successfully. There are two methods for doing this: \n
+* Polling. Call the API regularly to check for new messages. USE_CAN_POLL must be defined in the CAN configuration
+* file. If there is a message use R_CAN_RxRead to fetch it. \n
+* Using the CAN receive interrupt (USE_CAN_POLL not defined): Use this API to check which mailbox received. Then
+* notify the application. \n
+* The function returns R_CAN_OK if new data was found in the mailbox.
+*
+*/
 uint32_t R_CAN_RxPoll(const uint32_t  ch_nr, const uint32_t  mbox_nr)
 {
     volatile struct st_can R_BSP_EVENACCESS_SFR * can_block_p;
@@ -1099,32 +1225,43 @@ uint32_t R_CAN_RxPoll(const uint32_t  ch_nr, const uint32_t  mbox_nr)
         poll_delay--;
     }
 
-    if (poll_delay == 0)
-    /* Still updating mailbox. Come back later. */
+    if (0 == poll_delay)    /* Still updating mailbox. Come back later. */
     {
         api_status = R_CAN_RXPOLL_TMO;
     }
     else /* Message received? */
     {
         /* If message received, tell user. */
-        if (can_block_p->MCTL[mbox_nr].BIT.RX.NEWDATA == 1)
+        if (1 == can_block_p->MCTL[mbox_nr].BIT.RX.NEWDATA)
             api_status = R_CAN_OK;
     }
     return (api_status);
-} /* end R_CAN_RxPoll() */
+}
+/******************************************************************************
+ End of function R_CAN_RxPoll
+ *****************************************************************************//* end R_CAN_RxPoll() */
 
-/*******************************************************************************
-Function name:  R_CAN_RxRead
-Description:    Call from CAN receive interrupt. Copies received data from
-                message mailbox to memory.
-Arguments:      Channel nr.
-                Mailbox nr.
-                frame_p: Data frame structure
-Return value:   R_CAN_OK            There is a message waiting.
-                R_CAN_SW_BAD_MBX    Bad mailbox number.
-                R_CAN_BAD_CH_NR     The channel number does not exist.
-                R_CAN_MSGLOST       Message was overwritten or lost.
-*******************************************************************************/
+/***********************************************************************************************************************
+* Function Name: R_CAN_RxRead
+********************************************************************************************************************//**
+* @brief Read the CAN data frame content from a mailbox. The API checks if a given mailbox has received a message.
+* If so, a copy of the mailbox’s dataframe will be written to the given structure.
+* @param[in] ch_nr \n
+*               CAN channel to use (0-2 MCU dependent).
+* @param[in] mbox_nr \n
+*               Which CAN mailbox to check (0-32).
+* @param[in] frame_p \n
+*              Refers to a pointer to a data frame structure in memory. It is an address to the data structure into
+*              which the function will place a copy of the mailbox’s received CAN data frame.
+* @retval R_CAN_OK            There is a message waiting.
+* @retval R_CAN_SW_BAD_MBX    Bad mailbox number.
+* @retval R_CAN_BAD_CH_NR     The channel number does not exist.
+* @retval R_CAN_MSGLOST       Message was overwritten or lost.
+* @details Use R_CAN_RxPoll() first to check whether the mailbox has received a message. \n
+* This function is used to fetch the message from a mailbox, either when using polled mode or from a CAN receive
+* interrupt.
+
+*/
 uint32_t R_CAN_RxRead(const uint32_t       ch_nr,
                       const uint32_t       mbox_nr,
                       can_frame_t* const   frame_p)
@@ -1145,15 +1282,15 @@ uint32_t R_CAN_RxRead(const uint32_t       ch_nr,
 
     /* EXT_ID_MODE */
     /* Copy received data from message mailbox to memory. The IDE bit is only valid in mixed mode. */
-    if (can_block_p->CTLR.BIT.IDFM == EXT_ID_MODE)
+    if (EXT_ID_MODE == can_block_p->CTLR.BIT.IDFM)
     {
         /* Get mailbox Extended ID, keeping only lower 29 bits. */
         frame_p->id = (can_block_p->MB[mbox_nr].ID.LONG & (~XID_MASK)); 
     }
     /* MIXED_ID_MODE */
-    else if (can_block_p->CTLR.BIT.IDFM == MIXED_ID_MODE)
+    else if (MIXED_ID_MODE == can_block_p->CTLR.BIT.IDFM)
     {
-        if (can_block_p->MB[mbox_nr].ID.BIT.IDE == 1) /* Check for XID control bit set. */
+        if (1 == can_block_p->MB[mbox_nr].ID.BIT.IDE) /* Check for XID control bit set. */
         {
             /* Get mailbox Extended ID, keeping only lower 29 bits. */
             frame_p->id = (can_block_p->MB[mbox_nr].ID.LONG & (~XID_MASK));
@@ -1190,27 +1327,28 @@ uint32_t R_CAN_RxRead(const uint32_t       ch_nr,
     can_block_p->MCTL[mbox_nr].BYTE = 0x40;
 
     return (api_status);
-} /* end R_CAN_RxRead() */
+}
+/******************************************************************************
+ End of function R_CAN_RxRead
+ *****************************************************************************//* end R_CAN_RxRead() */
 
-/*******************************************************************************
-Function name:  R_CAN_RxSetMask
-Description:    Set a CAN bus mask for specified mask register. Note that the 
-                MKIVLR register is used to disable the acceptance filtering 
-                function individually for each mailbox.
-Arguments:      Channel nr.
-                mask value. For each bit that is 1; corresponding ID bit 
-                  is compared.
-                mbox_nr     0-31. The mailbox nr translates to mask_reg_nr:
-                                0 for mailboxes 0-3
-                                1 for mailboxes 4-7
-                                2 for mailboxes 8-11
-                                3 for mailboxes 12-15
-                                4 for mailboxes 16-19
-                                5 for mailboxes 20-23
-                                6 for mailboxes 24-27
-                                7 for mailboxes 28-31
-Return value:   -
-*******************************************************************************/
+/***********************************************************************************************************************
+* Function Name: R_CAN_RxSetMask
+********************************************************************************************************************//**
+* @brief Sets the CAN ID Acceptance Masks. To accept only one ID, set mask to all ones. To accept all messages, set
+* mask to all zeros. To accept a range of messages, set the corresponding ID bits to zero.
+* @param[in] ch_nr \n
+*               CAN channel to use (0-2 MCU dependent).
+* @param[in] mbox_nr \n
+*               Which mailbox to mask (0-32). Four mailboxes will be affected within its group.
+* @param[in] mask_value \n
+*               Mask value. (0-0x7FF)
+* @details Receive mailboxes can use a mask to filter out one message, or expand receiving to a range of messages
+* (CAN IDs). The mask enables this using the mailbox group’s ID field. There is one mask for mailbox 0-3, one
+* for 4-7, etc. Changing a mask will therefore affect the behavior of adjacent mailboxes. \n
+* Each '0' in the mask means "mask this bit", or "don't look at that bit"; accept anything.\n
+* Each '1' means check if the CAN-ID bit in this position matches the CAN-ID of the mailbox.
+*/
 void R_CAN_RxSetMask( const uint32_t  ch_nr,
                       const uint32_t  mbox_nr,
                       const uint32_t  mask_value)
@@ -1230,7 +1368,7 @@ void R_CAN_RxSetMask( const uint32_t  ch_nr,
     R_CAN_Control(ch_nr, HALT_CANMODE);
 
     /* Set mask for the group of mailboxes. */
-    if ((can_block_p->CTLR.BIT.IDFM == EXT_ID_MODE) || (can_block_p->CTLR.BIT.IDFM == MIXED_ID_MODE))
+    if ((EXT_ID_MODE == can_block_p->CTLR.BIT.IDFM) || (MIXED_ID_MODE == can_block_p->CTLR.BIT.IDFM))
     {
         /* Set XID 29-bit mask value in mask register. */
         can_block_p->MKR[mbox_nr/4].LONG = (mask_value & (~XID_MASK));
@@ -1246,7 +1384,10 @@ void R_CAN_RxSetMask( const uint32_t  ch_nr,
 
     R_CAN_Control(ch_nr, OPERATE_CANMODE);
 
-} /* end R_CAN_RxSetMask() */
+}
+/******************************************************************************
+ End of function R_CAN_RxSetMask
+ *****************************************************************************//* end R_CAN_RxSetMask() */
 
 /*****************************************************************************
 Function name:  can_wait_tx_rx
@@ -1277,9 +1418,9 @@ uint32_t can_wait_tx_rx(const uint32_t  ch_nr, const uint32_t  mbox_nr)
     /* Wait for any previous transmission to complete. */
     if (can_block_p->MCTL[mbox_nr].BIT.TX.TRMREQ)
     {
-        while ((can_block_p->MCTL[mbox_nr].BIT.TX.SENTDATA == 0) && DEC_CHK_CAN_SW_TMR)
+        while ((0 == can_block_p->MCTL[mbox_nr].BIT.TX.SENTDATA) && DEC_CHK_CAN_SW_TMR)
             {;}
-        if (can_tmo_cnt == 0)
+        if (0 == can_tmo_cnt)
         {
             api_status = R_CAN_SW_SET_TX_TMO;
         }
@@ -1287,25 +1428,41 @@ uint32_t can_wait_tx_rx(const uint32_t  ch_nr, const uint32_t  mbox_nr)
     /* Wait for any previous reception to complete. */
     else if (can_block_p->MCTL[mbox_nr].BIT.RX.RECREQ)
     {
-        while ((can_block_p->MCTL[mbox_nr].BIT.RX.INVALDATA == 1) && DEC_CHK_CAN_SW_TMR)
+        while ((1 == can_block_p->MCTL[mbox_nr].BIT.RX.INVALDATA) && DEC_CHK_CAN_SW_TMR)
         {;}
-        if (can_tmo_cnt == 0)
+        if (0 == can_tmo_cnt)
         {
             api_status = R_CAN_SW_SET_RX_TMO;
         }
     }
     return (api_status);
-} /* end can_wait_tx_rx() */
+}
+/******************************************************************************
+ End of function can_wait_tx_rx
+ *****************************************************************************/
+/* end can_wait_tx_rx() */
 
-/*******************************************************************************
-Function name:  R_CAN_CheckErr
-Description:    Checks CAN peripheraol error state.
-Arguments:      -
-Return value:   0 = No error
-                1 = CAN is in error active state
-                2 = CAN is in error passive state
-                4 = CAN is in bus-off state
-*******************************************************************************/
+/***********************************************************************************************************************
+* Function Name: R_CAN_CheckErr
+********************************************************************************************************************//**
+* @brief Check for bus errors. The API checks the CAN status, or Error State, of the CAN peripheral.
+* @param[in] ch_nr \n
+*               CAN channel to use (0-2 MCU dependent).
+* @retval R_CAN_BAD_CH_NR               The channel number does not exist.
+* @retval R_CAN_STATE_ERROR_ACTIVE      CAN bus status is normal.
+* @retval R_CAN_STATE_ERROR_PASSIVE     Node has sent at least 127 Error frames for either the Transmit Error Counter,
+*                                       or the Receive Error Counter.
+* @retval R_CAN_STATE_BUSOFF            Node’s Transmit Error Counter has surpassed 255 due to the node’s failure to
+*                                       transmit correctly.
+* @details The API checks the CAN status flags of the CAN peripheral and returns the status error code. It tells
+* whether the node is in a functioning state or not and is used for application error handling.\n
+* It should be polled either routinely from the main loop, or via the CAN error interrupt. Since the peripheral
+* automatically handles retransmissions and Error frames it is usually of no advantage to include an error interrupt
+* routine. \n
+* If an error state is encountered the application can just wait and monitor for the peripheral to recover, as the
+* CAN peripheral takes itself on or off line depending on its state. After a recovery is discovered, the application
+* should restart.
+*/
 uint32_t R_CAN_CheckErr(const uint32_t ch_nr)
 {
     volatile struct st_can R_BSP_EVENACCESS_SFR * can_block_p;
@@ -1340,15 +1497,28 @@ uint32_t R_CAN_CheckErr(const uint32_t ch_nr)
     }
     
     return (api_status);
-} /* end R_CAN_CheckErr() */
+}
+/******************************************************************************
+ End of function R_CAN_CheckErr
+ *****************************************************************************//* end R_CAN_CheckErr() */
 
-/*******************************************************************************
-Function name:  R_CAN_SetBitrate
-Description:    Sets clock speed and bit rate for CAN as defined in 
-                config.h.
-Arguments:      Channel nr.
-Return value:   -
-*******************************************************************************/
+/***********************************************************************************************************************
+* Function Name: R_CAN_SetBitrate
+********************************************************************************************************************//**
+* @brief Set the CAN bitrate (communication speed). The baud rate and bit timing must always be set during the
+* configuration process. It can be changed later if reset mode is entered.
+* @param[in] ch_nr - CAN channel to use (0-2 MCU dependent).
+* @details Setting the baud rate or data speed on the CAN bus requires some understanding of CAN bit timing and MCU
+* frequency, as well as reading hardware manual figures and tables. The default bitrate setting of the API is 500kB,
+* and unless the MCU clock or peripheral frequencies are changed, it is sufficient to just call the function.\n
+* The bitrate is set via macros inside r_can_rx_config.h. Some calculations need to be done to set these macros.
+* First some explanations. The CAN system clock, fcanclk, is the internal clock period of the CAN peripheral.
+* This CAN system clock is determined by the CAN Baud Rate Prescaler value and the peripheral bus clock. One Time
+* Quantum is equal to the period of the CAN clock.\n
+* One CAN bus bit-time is an integer sum of a number of Time Quanta, Tq. Each bitrate register is then given a
+* certain number of Tq of the total number of Time Quanta that make up one CAN bit period, or Tqtot.\n
+* See r_can_rx_config.h for details.
+*/
 void R_CAN_SetBitrate(const uint32_t ch_nr)
 {
     volatile struct st_can R_BSP_EVENACCESS_SFR * can_block_p;
@@ -1370,7 +1540,10 @@ void R_CAN_SetBitrate(const uint32_t ch_nr)
     can_block_p->BCR.BIT.TSEG1 = CAN_TSEG1 - 1;
     can_block_p->BCR.BIT.TSEG2 = CAN_TSEG2 - 1;
     can_block_p->BCR.BIT.SJW = CAN_SJW - 1;
-} /* end R_CAN_SetBitrate() */
+}
+/******************************************************************************
+ End of function R_CAN_SetBitrate
+ *****************************************************************************/ /* end R_CAN_SetBitrate() */
 
 /******************************************************************************
 Function name:  can_module_stop_state_cancel
@@ -1384,32 +1557,42 @@ void can_module_stop_state_cancel(const uint32_t ch_nr)
     Peripherals.
     0: The module stop state is canceled.
     1: Transition to the module stop state is made. */
-
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) 
+    bsp_int_ctrl_t int_ctrl;
+#endif
     /* First unlock the protect register. */
     /* Enable writing to PRCR bits while simultaneously enabling PRC1. */
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
-
-    if (ch_nr == 0)
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) 
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
+    if (0 == ch_nr)
     {
         MSTP(CAN0) = 0;
     }
 #ifdef CAN1
-    else if (ch_nr == 1)
+    else if (1 == ch_nr)
     {
         MSTP(CAN1) = 0;
     }
 #endif /* CAN1 */
 #ifdef CAN2
-    else if (ch_nr == 2)
+    else if (2 == ch_nr)
     {
         MSTP(CAN2) = 0;
     }
 #endif /* CAN2 */
-
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) 
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
     /* Re-lock the protect register. */
     /* Enable writing to PRCR bits while simultaneously disabling PRC1. */
     R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);
-} /* end CAN_ModuleStopState_cancel() */
+}
+/******************************************************************************
+ End of function can_module_stop_state_cancel
+ *****************************************************************************/
+/* end CAN_ModuleStopState_cancel() */
 
 /**********************************************************************************
 Function name:  config_can_interrupts
@@ -1419,9 +1602,14 @@ Return value :  -
 ***********************************************************************************/
 static void config_can_interrupts(const uint32_t ch_nr)
 {
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) 
+bsp_int_ctrl_t int_ctrl;
+#endif
+
 #if (USE_CAN_POLL == 0)
-    if (ch_nr == 0)
+    if (0 == ch_nr)
     {
+#if (CAN_USE_CAN0 == 1)
         /* Configure CAN Tx interrupt. */
         R_BSP_InterruptRequestEnable(VECT(CAN0, TXM0));  /* 1 = interrupt enabled. */
         IPR(CAN0, TXM0) = CAN0_INT_LVL; /* priority */
@@ -1433,8 +1621,13 @@ static void config_can_interrupts(const uint32_t ch_nr)
         /* Configure CAN Error interrupt. Must enable group that it belongs to */
         /* in addition to individual source. */
         R_BSP_InterruptRequestEnable(VECT(ICU, GROUPBE0));
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) 
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
         EN(CAN0, ERS0) = 1; /* resolves to:  ICU.GEN[GEN_CAN0_ERS0].BIT.EN0 = 1; */
-
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) 
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
         ICU.IPR[IPR_ICU_GROUPBE0].BIT.IPR = CAN0_INT_LVL;
         R_BSP_InterruptWrite(BSP_INT_SRC_BE0_CAN0_ERS0, (bsp_int_cb_t) can_err_callback[0]);
 
@@ -1444,9 +1637,11 @@ static void config_can_interrupts(const uint32_t ch_nr)
         /* Mailbox interrupt enable registers. Disable interrupts for all slots. 
         They will be enabled individually by the API. */
         CAN0.MIER.LONG = 0x00000000;
+#endif /* CAN_USE_CAN0 */
     }
 #ifdef CAN1
-    else if (ch_nr == 1)
+#if (CAN_USE_CAN1 == 1)
+    else if (1 == ch_nr)
     {
         R_BSP_InterruptRequestEnable(VECT(CAN1, TXM1)); /* 1 = interrupt enabled. */
         IPR(CAN1, TXM1) = CAN1_INT_LVL; /* priority */
@@ -1458,8 +1653,13 @@ static void config_can_interrupts(const uint32_t ch_nr)
         /* Configure CAN Error interrupt. Must enable group that it belongs to */
         /* in addition to individual source. */
         R_BSP_InterruptRequestEnable(VECT(ICU, GROUPBE0));
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) 
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
         EN(CAN1, ERS1) = 1;  /* Resolves to:  ICU.GEN[GEN_CAN1_ERS1].BIT.EN1 = 1; */
-
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) 
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
         ICU.IPR[IPR_ICU_GROUPBE0].BIT.IPR = CAN1_INT_LVL; /* EDIT */
         R_BSP_InterruptWrite(BSP_INT_SRC_BE0_CAN1_ERS1, (bsp_int_cb_t) can_err_callback[1]);
 
@@ -1470,9 +1670,11 @@ static void config_can_interrupts(const uint32_t ch_nr)
         They will be enabled individually by the API. */
         CAN1.MIER.LONG = 0x00000000;
     }
+#endif /* CAN_USE_CAN1 */
 #endif /* CAN1 */
 #ifdef CAN2
-    else if (ch_nr == 2)
+#if (CAN_USE_CAN2 == 1)
+    else if (2 == ch_nr)
     {
         /* Configure CAN Tx interrupt. */
         R_BSP_InterruptRequestEnable(VECT(CAN2, TXM2)); /* 1 = interrupt enabled. */
@@ -1485,21 +1687,30 @@ static void config_can_interrupts(const uint32_t ch_nr)
         /* Configure CAN Error interrupt. Must enable group that it belongs to */
         /* in addition to individual source. */
         R_BSP_InterruptRequestEnable(VECT(ICU, GROUPBE0)); /* Enable group JWP Edit */
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) 
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
         EN(CAN2, ERS2) = 1; /* resolves to:  ICU.GEN[GEN_CAN2_ERS2].BIT.EN2 = 1; */
-
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6) 
+        R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
         ICU.IPR[IPR_ICU_GROUPBE0].BIT.IPR = CAN2_INT_LVL;
         R_BSP_InterruptWrite(BSP_INT_SRC_BE0_CAN2_ERS2, (bsp_int_cb_t) can_err_callback[2]);
 
         /* Enable all CAN error interrupts. */
         CAN2.EIER.BYTE = 0xFF;
 
-        /* Mailbox interrupt enable registers. Disable interrupts for all slots. 
+        /* Mailbox interrupt enable registers. Disable interrupts for all slots.
         They will be enabled individually by the API. */
         CAN2.MIER.LONG = 0x00000000;
     }
+#endif /* CAN_USE_CAN2 */
 #endif /* CAN2 */
 #endif /* USE_CAN_POLL */
-} /* end config_can_interrupts() */
+}
+/******************************************************************************
+ End of function config_can_interrupts
+ *****************************************************************************//* end config_can_interrupts() */
 
 #if !USE_CAN_POLL
 /*********************************************************************************
@@ -1509,6 +1720,7 @@ static void config_can_interrupts(const uint32_t ch_nr)
 
 
 **********************************************************************************/
+#if (CAN_USE_CAN0 == 1)
 /*****************************************************************************
 Function name:  CAN0_TXM0_ISR
 Parameters:     -
@@ -1519,7 +1731,10 @@ R_BSP_PRAGMA_INTERRUPT(CAN0_TXM0_ISR, VECT_CAN0_TXM0)    /* See mcu_mapped_inter
 R_BSP_ATTRIB_INTERRUPT void CAN0_TXM0_ISR(void)
 {
     can_tx_callback[0]();
-} /* end CAN0_TXM0_ISR() */
+}
+/******************************************************************************
+ End of function CAN0_TXM0_ISR
+ *****************************************************************************//* end CAN0_TXM0_ISR() */
 
 /*****************************************************************************
 Function name:  CAN0_RXM0_ISR()
@@ -1531,9 +1746,13 @@ R_BSP_PRAGMA_INTERRUPT(CAN0_RXM0_ISR, VECT_CAN0_RXM0)
 R_BSP_ATTRIB_INTERRUPT void CAN0_RXM0_ISR(void)
 {
     can_rx_callback[0]();
-} /* end CAN0_RXM0_ISR() */
-
+}
+/******************************************************************************
+ End of function CAN0_RXM0_ISR
+ *****************************************************************************//* end CAN0_RXM0_ISR() */
+#endif /* CAN_USE_CAN0 */
 #ifdef CAN1
+#if (CAN_USE_CAN1 == 1)
 /*****************************************************************************
 Function name:  CAN1_TXM1_ISR
 Parameters:     -
@@ -1544,7 +1763,10 @@ R_BSP_PRAGMA_INTERRUPT(CAN1_TXM1_ISR, VECT_CAN1_TXM1)
 R_BSP_ATTRIB_INTERRUPT void CAN1_TXM1_ISR(void)
 {
     can_tx_callback[1]();
-} /* end CAN1_TXM1_ISR() */
+}
+/******************************************************************************
+ End of function CAN1_TXM1_ISR
+ *****************************************************************************/ /* end CAN1_TXM1_ISR() */
 
 /*****************************************************************************
 Function name:  CAN1_RXM1_ISR()
@@ -1556,10 +1778,15 @@ R_BSP_PRAGMA_INTERRUPT(CAN1_RXM1_ISR, VECT_CAN1_RXM1)
 R_BSP_ATTRIB_INTERRUPT void CAN1_RXM1_ISR(void)
 {
     can_rx_callback[1]();
-} /* end CAN1_RXM1_ISR() */
+}
+/******************************************************************************
+ End of function CAN1_RXM1_ISR
+ *****************************************************************************/ /* end CAN1_RXM1_ISR() */
+#endif /* CAN_USE_CAN1 */
 #endif /* CAN1 */
 
 #ifdef CAN2
+#if (CAN_USE_CAN2 == 1)
 /*Function name:  CAN2_TXM2_ISR
 Parameters:     -
 Returns:        -
@@ -1569,7 +1796,10 @@ R_BSP_PRAGMA_INTERRUPT(CAN2_TXM2_ISR, VECT_CAN2_TXM2)    /* See mcu_mapped_inter
 R_BSP_ATTRIB_INTERRUPT void CAN2_TXM2_ISR(void)
 {
     can_tx_callback[2]();
-} /* end CAN2_TXM2_ISR() */
+}
+/******************************************************************************
+ End of function CAN2_TXM2_ISR
+ *****************************************************************************/ /* end CAN2_TXM2_ISR() */
 
 /*****************************************************************************
 Name:           CAN2_RXM2_ISR()
@@ -1581,7 +1811,11 @@ R_BSP_PRAGMA_INTERRUPT(CAN2_RXM2_ISR, VECT_CAN2_RXM2)    /* See mcu_mapped_inter
 R_BSP_ATTRIB_INTERRUPT void CAN2_RXM2_ISR(void)
 {
     can_rx_callback[2]();
-}/* end CAN2_RXM2_ISR() */
+}
+/******************************************************************************
+ End of function CAN2_RXM2_ISR
+ *****************************************************************************//* end CAN2_RXM2_ISR() */
+#endif /* CAN_USE_CAN2 */
 #endif /* CAN2 */
 
 #endif /* USE_CAN_POLL */
@@ -1597,7 +1831,10 @@ Description:    Callback in case user did not provide one. Will execute for
 void universal_can_callback(void)
 {
     R_BSP_NOP();
-} /* end universal_can_callback() */
+}
+/******************************************************************************
+ End of function universal_can_callback
+ *****************************************************************************/
+/* end universal_can_callback() */
 
 /* file end */
-

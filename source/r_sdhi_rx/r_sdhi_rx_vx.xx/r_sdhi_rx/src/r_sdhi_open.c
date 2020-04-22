@@ -19,7 +19,7 @@
 /**********************************************************************************************************************
 * System Name  : SDHI Driver
 * File Name    : r_sdhi_open.c
-* Version      : 2.05
+* Version      : 2.06
 * Device       : RX
 * Abstract     : API & Sub module
 * Tool-Chain   : For RX e2_studio
@@ -34,6 +34,7 @@
 *              : 20.05.2019 2.04    Added support for GNUC and ICCRX.
 *                                   Fixed coding style. 
 *              : 30.07.2019 2.05    Added  WAIT LOOP 
+*              : 22.11.2019 2.06    Modified comment of API function to Doxygen style.
 **********************************************************************************************************************/
 
 /**********************************************************************************************************************
@@ -57,15 +58,25 @@ sdhi_sdhndl_t * g_sdhi_handle[((sizeof(g_sdhi_ip_base)) / sizeof(uint32_t))];
 sdhi_sdhndl_t g_sdhi_work_area[((sizeof(g_sdhi_ip_base)) / sizeof(uint32_t))];
 
 /**********************************************************************************************************************
-* Outline      : Initialize SD Driver
-* Function Name: R_SDHI_Open
-* Description  : Initializes the SD Driver work memory specified by channel.
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-* Return Value : SDHI_SUCCESS                            ;   Successful operation
-*              : SDHI_ERR                                ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_Open
+ *****************************************************************************************************************/ /**
+ * @brief This function is run first when utilizing the API functions provided by the SDHI FIT module.
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @retval    SDHI_SUCCESS Successful operation
+ * @retval    SDHI_ERR     General error
+ * @details   Obtains the SDHI channel resource specified by the argument channel, and initializes the SDHI FIT module
+ *            and SDHI channel. Also, takes exclusive possession of the SDHI channel resource.
+ * @note      The value after initialization of the swap control register (SDSWAP) depends on the endian setting.\n 
+ *            \li Little endian: 0x00000000 (Swap write/read: Disable)
+ *            \li Big endian: 0x000000c0 (Swap write/read: Enable)
+ *
+ *            Pin settings must be entered before running this function. 
+ *            See Section 4 in application note for details.\n 
+ *            If this function does not complete successfully, library functions other than R_SDHI_GetVersion(), 
+ *            R_SDHI_Log(), and R_SDHI_SetLogHdlAddress() cannot be used.\n 
+ *            The pin states remain unchanged before and after this function is run.
+ */
 sdhi_status_t R_SDHI_Open(uint32_t channel)
 {
     sdhi_sdhndl_t   * p_hndl = 0;
@@ -148,15 +159,21 @@ sdhi_status_t R_SDHI_Open(uint32_t channel)
 } /* End of function R_SDHI_Open() */
 
 /**********************************************************************************************************************
-* Outline      : Finish SD Driver
-* Function Name: R_SDHI_Close
-* Description  : Finishes the SDHI Driver operation.
-* Arguments    : uint32_t           channel              ;   SDHI Channel No.
-* Return Value : SDHI_SUCCESS                            ;   Successful operation
-*              : SDHI_ERR                                ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : After this function finished, SD handle is unavailable.
-**********************************************************************************************************************/
+ * Function Name: R_SDHI_Close
+ *****************************************************************************************************************/ /**
+ * @brief This function releases the resource currently in use by the SDHI FIT module.
+ * @param[in] channel
+ *             Channel number : SDHI channel number to be used (starting from 0)
+ * @retval    SDHI_SUCCESS Successful operation
+ * @retval    SDHI_ERR     General error
+ * @details   Ends all processing by the SDHI FIT module, and releases the SDHI channel resource specified by 
+ *            the argument channel.\n 
+ *            The SDHI channel is then set to the module stop state.\n 
+ *            Insertion-extraction interrupts are disabled after this function runs.
+ * @note      Pin settings must be entered before running this function. See Section 4 in application note for details.
+ *            Before running this function, initialization processing by the R_SDHI_Open() function is required.\n 
+ *            The pin states remain unchanged before and after this function is run.
+ */
 sdhi_status_t R_SDHI_Close(uint32_t channel)
 {
     sdhi_sdhndl_t   * p_hndl = 0;

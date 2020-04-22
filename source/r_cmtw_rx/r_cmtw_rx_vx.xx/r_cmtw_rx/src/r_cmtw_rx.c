@@ -30,6 +30,10 @@
 *                              Fixed GSCE Code Checker errors.
 *         : 20.05.2019 2.00    Added support for GNUC and ICCRX.
 *         : 15.08.2019 2.10    Fixed warnings in IAR.
+*         : 30.12.2019 2.20    Added support RX66N, RX72N.
+*                              Modified comment of API function to Doxygen style.
+*                              Added support for atomic control.
+*                              Removed support for Generation 1 devices.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -180,29 +184,28 @@ static void cmtw_isr_common(cmtw_event_t event, uint32_t count, cmtw_prv_ch_ctrl
 
 /***********************************************************************************************************************
 * Function Name: R_CMTW_Open
-* Description  : Applies power to the CMTW channel, initializes the registers,
-*                and sets the user configurable options
-* Arguments    : channel -
-*                   Number of the CMTW channel to be initialized
-*                pconfig -
-*                   Pointer to the CMTW channel settings data structure
-*                pcallback -
-*                   Pointer to the user function to call
-* Return Value : CMTW_SUCCESS -
-*                   Successful, channel is opened
-*                CMTW_ERR_BAD_CHAN -
-*                   Invalid channel number
-*                CMTW_ERR_CH_NOT_CLOSED -
-*                   Channel currently in operation, perform R_CMTW_Close() first
-*                CMTW_ERR_INVALID_ARG -
-*                   An element of the pconfig structure contains an invalid value
-*                CMTW_ERR_OUT_OF_RANGE -
-*                   Calculated count value is not in range
-*                CMTW_ERR_NULL_PTR -
-*                   Either pconfig or pcallback is null
-*                CMTW_ERR_LOCK -
-*                   The lock could not be acquired, the channel is busy
-***********************************************************************************************************************/
+********************************************************************************************************************//**
+* @brief This function powers up the specified CMTW channel, initializes the associated CMTW registers and enables
+* interrupts if requested.  Takes a callback function pointer for responding to interrupt events.  After successful
+* completion, the channel moves to open state.  This function must be called before calling any other API functions.
+* @param[in] channel Number of the CMTW channel to initialize
+* @param[in] pconfig Pointer to the CMTW channel settings data structure
+* @param[in] pcallback Pointer to the user function to call from the interrupt
+* @retval CMTW_SUCCESS Successful, channel is initialized
+* @retval CMTW_ERR_BAD_CHAN Invalid channel number
+* @retval CMTW_ERR_CH_NOT_ENABLED Channel is disabled by user configuration
+* @retval CMTW_ERR_CH_NOT_CLOSED Channel currently in operation, perform R_CMTW_Close() first
+* @retval CMTW_ERR_INVALID_ARG An element of the pconfig structure contains an invalid value
+* @retval CMTW_ERR_OUT_OF_RANGE Calculated count value is not in range
+* @retval CMTW_ERR_NULL_PTR Either pconfig or pcallback is null
+* @retval CMTW_ERR_LOCK The lock could not be acquired, the channel is busy
+* @details This function sets up a CMTW channel.  After completion of the open function the CMTW channel will be
+* initialized and ready to be started by calling R_CMTW_Control().  This function must be called once prior to calling
+* any other CMTW API functions. Once successfully completed, the status of the selected CMTW channel will be set
+* to "open".  After that this function should not be called again for the same CMTW channel without first performing
+* a "close" by calling R_CMTW_Close().
+* @note None
+*/
 cmtw_err_t    R_CMTW_Open(cmtw_channel_t          channel,
                           cmtw_channel_settings_t *pconfig,
                           void                    (* const pcallback)(void *pdata))
@@ -576,18 +579,19 @@ cmtw_err_t    R_CMTW_Open(cmtw_channel_t          channel,
 
 /***********************************************************************************************************************
 * Function Name: R_CMTW_Close
-* Description  : Disables the CMTW timers for the channel and removes power
-* Arguments    : channel -
-*                   Number of the CMTW channel
-* Return Value : CMTW_SUCCESS -
-*                   Successful, channel is closed
-*                CMTW_ERR_BAD_CHAN -
-*                   Invalid channel number
-*                CMTW_ERR_CH_NOT_OPENED -
-*                   Channel currently closed, perform R_CMTW_Open() first
-*                CMTW_ERR_LOCK -
-*                   The lock could not be acquired, the channel is busy
-***********************************************************************************************************************/
+********************************************************************************************************************//**
+* @brief Disables the specified CMTW channel and powers it down. The channel moves to the closed state.
+* @param[in] channel Number of the CMTW channel to close
+* @retval CMTW_SUCCESS Successful, channel is closed
+* @retval CMTW_ERR_BAD_CHAN Invalid channel number
+* @retval CMTW_ERR_CH_NOT_ENABLED Channel is disabled by user configuration
+* @retval CMTW_ERR_CH_NOT_OPENED Channel currently closed, perform R_CMTW_Open() first
+* @retval CMTW_ERR_LOCK The lock could not be acquired, the channel is busy
+* @details This function stops and disables a CMTW channel that is in the open or running state.  Once successfully
+* completed, the status of the selected CMTW channel will be set to "stopped" and the channel is powered down to reduce
+* power consumption.  The channel cannot be used again until it has been reopened with the R_CMTW_Open() function.
+* @note None
+*/
 cmtw_err_t    R_CMTW_Close(cmtw_channel_t    channel)
 {
     cmtw_prv_ch_ctrl_info_t *hdl;
@@ -686,24 +690,28 @@ cmtw_err_t    R_CMTW_Close(cmtw_channel_t    channel)
 
 /***********************************************************************************************************************
 * Function Name: R_CMTW_Control
-* Description  : Executes commands for the channel
-* Arguments    : channel -
-*                   Number of the CMTW channel
-* Return Value : CMTW_SUCCESS -
-*                   Successful, channel is controlled
-*                CMTW_ERR_BAD_CHAN -
-*                   Invalid channel number
-*                CMTW_ERR_CH_NOT_OPENED -
-*                   Channel currently closed, perform R_CMTW_Open() first
-*                CMTW_ERR_CH_NOT_RUNNIG -
-*                   Channel currently not started - perform R_CMTW_Control() to start
-*                CMTW_ERR_CH_NOT_STOPPED -
-*                   Channel currently running - perform R_CMTW_Control() to stop
-*                CMTW_ERR_UNKNOWN_CMD -
-*                   Invalid command
-*                CMTW_ERR_LOCK -
-*                   The lock could not be acquired, the channel is busy
-***********************************************************************************************************************/
+********************************************************************************************************************//**
+* @brief This function starts, stops, resumes, or restarts a CMTW channel that is in the open state.
+* @param[in] channel Number of the CMTW channel to control
+* @param[in] cmd Enumerated command codes:\n
+* CMTW_CMD_START: Activate the timer\n
+* CMTW_CMD_RESUME: Same as start\n
+* CMTW_CMD_STOP: Pause the timer\n
+* CMTW_CMD_RESTART: Zero the counter then activate the timer
+* @retval CMTW_SUCCESS Successful, the command is executed
+* @retval CMTW_ERR_BAD_CHAN Invalid channel number
+* @retval CMTW_ERR_CH_NOT_ENABLED Channel is disabled by user configuration
+* @retval CMTW_ERR_CH_NOT_OPENED Channel currently closed, perform R_CMTW_Open() first
+* @retval CMTW_ERR_CH_NOT_RUNNIG Channel currently not started - perform R_CMTW_Control() to start
+* @retval CMTW_ERR_CH_NOT_STOPPED Channel currently running - perform R_CMTW_Control() to stop
+* @retval CMTW_ERR_UNKNOWN_CMD Invalid command
+* @retval CMTW_ERR_LOCK The lock could not be acquired, the channel is busy
+* @details This function starts or resumes a CMTW channel that is in the open state.  Once successfully completed, the
+* status of the selected CMTW channel will be set to "running".  Stop command pauses a channel that is in a running state.
+* In this state the timer registers retain their values immediately before executing the stop command.  Timer operations
+* can be continued by start or resume commands.  The restart command clears the timer counter and resumes the operations.
+* @note None
+*/
 cmtw_err_t    R_CMTW_Control(cmtw_channel_t     channel,
                              cmtw_cmd_t         cmd)
 {
@@ -836,22 +844,20 @@ cmtw_err_t    R_CMTW_Control(cmtw_channel_t     channel,
     return(CMTW_SUCCESS);
 } /* End of function R_CMTW_Control() */
 
-
 /***********************************************************************************************************************
 * Function Name: R_CMTW_GetVersion
-* Description  : Returns the current version of this module. The version number is encoded where the top 2 bytes are the
-*                major version number and the bottom 2 bytes are the minor version number. For example, Version 4.25 
-*                would be returned as 0x00040019.
-* Arguments    : none
-* Return Value : Version of this module.
-***********************************************************************************************************************/
+********************************************************************************************************************//**
+* @brief This function returns the driver version number at runtime.
+* @return Version_number with major and minor version digits packed into a single 32-bit value.
+* @details This function returns the version of this module. The version number is encoded such that the top 2 bytes are
+* the major version number and the bottom 2 bytes are the minor version number.
+* @note None
+*/
 uint32_t R_CMTW_GetVersion (void)
 {
     /* These version macros are defined in r_cmtw_rx_if.h. */
     return((((uint32_t)CMTW_RX_VERSION_MAJOR) << 16) | (uint32_t)CMTW_RX_VERSION_MINOR);
 } /* End of function R_CMTW_GetVersion() */
-
-
 
 /***********************************************************************************************************************
 * Function Name: power_on
@@ -862,10 +868,23 @@ uint32_t R_CMTW_GetVersion (void)
 ***********************************************************************************************************************/
 static void power_on(cmtw_prv_ch_ctrl_info_t  * const hdl)
 {
+    
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+#endif
+
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
+
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
 
     /* Power on CMTW */
     SYSTEM.MSTPCRA.LONG &= (~hdl->rom->stop_mask);
+
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
 
     R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);
 } /* End of function power_on() */
@@ -879,10 +898,23 @@ static void power_on(cmtw_prv_ch_ctrl_info_t  * const hdl)
 ***********************************************************************************************************************/
 static void power_off(cmtw_prv_ch_ctrl_info_t  * const hdl)
 {
+    
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t int_ctrl;
+#endif
+
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
+
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
 
     /* Power off CMTW */
     SYSTEM.MSTPCRA.LONG |= hdl->rom->stop_mask;
+
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
 
     R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);
 } /* End of function power_off() */

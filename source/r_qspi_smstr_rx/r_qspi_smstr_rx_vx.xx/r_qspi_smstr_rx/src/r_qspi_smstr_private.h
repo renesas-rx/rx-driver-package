@@ -24,7 +24,7 @@
 /*******************************************************************************
 * System Name  : QSPI single master driver
 * File Name    : r_qspi_smstr_private.h
-* Version      : 1.13
+* Version      : 1.14
 * Device       : RX
 * Abstract     : Private header file for QSPI single master driver
 * Tool-Chain   : Renesas RXC Toolchain v3.01.00
@@ -46,6 +46,7 @@
 *              : 20.05.2019 1.12     Added support for GNUC and ICCRX.
 *                                    Fixed coding style. 
 *              : 30.07.2019 1.13     Added RX72M.
+*              : 22.11.2019 1.14     Added RX72N and RX66N.
 *******************************************************************************/
 #ifndef QSPI_SMSTR_PRIVATE_H_
 #define QSPI_SMSTR_PRIVATE_H_
@@ -63,10 +64,14 @@ Includes <System Includes> , "Project Includes"
     #include "./src/targets/rx64m/r_qspi_smstr_target.h"
 #elif defined(BSP_MCU_RX65N)
     #include "./src/targets/rx65n/r_qspi_smstr_target.h"
+#elif defined(BSP_MCU_RX66N)
+    #include "./src/targets/rx66n/r_qspi_smstr_target.h"
 #elif defined(BSP_MCU_RX71M)
     #include "./src/targets/rx71m/r_qspi_smstr_target.h"
 #elif defined(BSP_MCU_RX72M)
     #include "./src/targets/rx72m/r_qspi_smstr_target.h"
+#elif defined(BSP_MCU_RX72N)
+    #include "./src/targets/rx72n/r_qspi_smstr_target.h"
 #else
     #error "This MCU is not supported by the current r_qspi_smstr_rx module."
 #endif

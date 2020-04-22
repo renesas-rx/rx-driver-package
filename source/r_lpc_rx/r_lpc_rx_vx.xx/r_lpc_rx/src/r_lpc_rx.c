@@ -26,6 +26,7 @@
  * History : DD.MM.YYYY Version Description           
  *         : 01.10.2016 1.00    First Release
  *         : 04.22.2019 1.41    Delete inline definition of GetVersion function
+ *         : 14.11.2019 2.00    Added support for GNUC and ICCRX.
  ***********************************************************************************************************************/
 /*******************************************************************************
   Includes <System Includes> , "Project Includes"
@@ -76,7 +77,7 @@ lpc_err_t R_LPC_LowPowerModeConfigure (lpc_low_power_mode_t e_mode)
 
 /*********************************************************************************************************************
  * Function Name: R_LPC_LowPowerModeActivate
- * Description  : This function will activate the pre-configured low power mode. The wait() function re-enables
+ * Description  : This function will activate the pre-configured low power mode. The R_BSP_WAIT() function re-enables
  *                interrupts.
  * Arguments    : void (*pcallback)(void* pdata)-
  *                Call back function to configure any un-configured interrupt that can be used to wake up from the low

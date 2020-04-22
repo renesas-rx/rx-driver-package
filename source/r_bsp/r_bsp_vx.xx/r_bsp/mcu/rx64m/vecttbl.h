@@ -26,6 +26,7 @@
 *         : 19.11.2012 1.10     Updated code to use 'BSP_' and 'BSP_CFG_' prefix for macros.
 *         : 21.06.2013 1.20     Removed prototypes for static callbacks since dynamic callbacks are now used.
 *         : 28.02.2019 1.21     Fixed coding style.
+*         : 31.07.2019 1.22     Added typedef for option-setting memory.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -42,6 +43,23 @@ Macro definitions
 /***********************************************************************************************************************
 Typedef definitions
 ***********************************************************************************************************************/
+#if defined(__GNUC__)
+typedef struct st_ofsm_sec_ofs3
+{
+    uint32_t __OSIS1reg;
+    uint32_t __OSIS2reg;
+    uint32_t __OSIS3reg;
+    uint32_t __OSIS4reg;
+} st_ofsm_sec_ofs3_t;
+
+typedef struct st_ofsm_sec_ofs4
+{
+    uint32_t __TMINFreg;
+    uint32_t __MDEreg;
+    uint32_t __OFS0reg;
+    uint32_t __OFS1reg;
+} st_ofsm_sec_ofs4_t;
+#endif /* defined(__GNUC__) */
 
 /***********************************************************************************************************************
 Exported global functions (to be accessed by other files)

@@ -30,12 +30,14 @@
  *         : 31.10.2015 1.80     RX130, RX230, RX23T support added.
  *         : 04.03.2016 1.90     RX24T support added.
  *         : 01.10.2016 2.00     RX65N support added.
- *         : 16.12.2016 2.20     Changed include path becuase changed file structure.
+ *         : 16.12.2016 2.20     Changed include path because changed file structure.
  *         :                     RX24U support added.
  *         : 22.10.2017 2.30     RX66T support added.
  *         : 21.09.2018 2.40     RX72T support added.
  *         : 20.06.2019 2.42     RX23W support added.
  *         : 30.07.2019 2.43     RX72M support added.
+ *         : 30.10.2019 2.44     RX13T support added.
+ *         : 22.11.2019 2.45     RX66N, RX72N support added.
  **********************************************************************************************************************/
 /* Guards against multiple inclusion */
 #ifndef SCI_IIC_PLATFORM_H
@@ -52,6 +54,8 @@
         #include "./targets/rx113/r_sci_iic_rx113_private.h"
     #elif defined(BSP_MCU_RX130)
         #include "./targets/rx130/r_sci_iic_rx130_private.h"
+    #elif defined(BSP_MCU_RX13T)
+        #include "./targets/rx13t/r_sci_iic_rx13t_private.h"
     #elif defined(BSP_MCU_RX230)
         #include "./targets/rx230/r_sci_iic_rx230_private.h"
     #elif defined(BSP_MCU_RX231)
@@ -72,12 +76,16 @@
         #include "./targets/rx65n/r_sci_iic_rx65n_private.h"
     #elif defined(BSP_MCU_RX66T)
         #include "./targets/rx66t/r_sci_iic_rx66t_private.h"
+    #elif defined(BSP_MCU_RX66N)
+        #include "./targets/rx66n/r_sci_iic_rx66n_private.h"
     #elif defined(BSP_MCU_RX71M)
         #include "./targets/rx71m/r_sci_iic_rx71m_private.h"
     #elif defined(BSP_MCU_RX72T)
         #include "./targets/rx72t/r_sci_iic_rx72t_private.h"
     #elif defined(BSP_MCU_RX72M)
         #include "./targets/rx72m/r_sci_iic_rx72m_private.h"
+    #elif defined(BSP_MCU_RX72N)
+        #include "./targets/rx72n/r_sci_iic_rx72n_private.h"
     #else
         #error "This MCU is not supported by the current r_sci_iic_rx module."
     #endif

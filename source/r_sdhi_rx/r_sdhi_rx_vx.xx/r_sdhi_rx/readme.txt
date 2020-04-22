@@ -5,12 +5,12 @@ r_sdhi_rx
 
 Document Number 
 ---------------
-R01AN3852EJ0205
-R01AN3852JJ0205
+R01AN3852EJ0206
+R01AN3852JJ0206
 
 Version
 -------
-v2.05
+v2.06
 
 Overview
 --------
@@ -33,8 +33,10 @@ Supported MCUs
 * RX23W Group
 * RX64M Group
 * RX65N Group
+* RX66N Group
 * RX71M Group
 * RX72M Group
+* RX72N Group
 
 Boards Tested On
 ----------------
@@ -44,6 +46,7 @@ Boards Tested On
 * RSK for RX65N
 * RSK for RX71M
 * RSK for RX72M
+* RSK for RX72N
  
 Limitations
 -----------
@@ -55,7 +58,7 @@ Peripherals Used Directly
 
 Required Packages
 -----------------
-* r_bsp    v5.20
+* r_bsp    v5.50
 
 How to add to your project
 --------------------------
@@ -98,9 +101,9 @@ r_sdhi_rx
 +---doc
 |   |
 |   +---en
-|   |       r01an3852ej0205-rx-communication.pdf
+|   |       r01an3852ej0206-rx-communication.pdf
 |   +---ja
-|           r01an3852jj0205-rx-communication.pdf
+|           r01an3852jj0206-rx-communication.pdf
 |
 +---ref
 |       r_sdhi_rx_config_reference.h
@@ -133,11 +136,22 @@ r_sdhi_rx
         |       r_sdhi_register.c
         |       r_sdhi_rx_target.h
         |
+        +---rx66n
+        |       r_sdhi_dev.c
+        |       r_sdhi_register.c
+        |       r_sdhi_rx_target.h
+        |
         +---rx71m
         |       r_sdhi_dev.c
         |       r_sdhi_register.c
         |       r_sdhi_rx_target.h
+        |
         +---rx72m
+        |       r_sdhi_dev.c
+        |       r_sdhi_register.c
+        |       r_sdhi_rx_target.h
+        |
+        +---rx72n
                 r_sdhi_dev.c
                 r_sdhi_register.c
                 r_sdhi_rx_target.h

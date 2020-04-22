@@ -29,7 +29,7 @@
 *           06.07.2015 2.40    Added support for RX231.
 *           01.03.2016 2.41    Added support for RX130.
 *                              Added support for RX230.
-*           01.10.2016 2.50    Added support for RX65N
+*           01.10.2016 2.50    Added support for RX65N.
 *           31.07.2017 2.70    Added support for RX65N-2MB and RX130-512KB.
 *                              Removed support for RX210 and RX63N/631.
 *                              Removed definitions related to RX210, RX63N/631
@@ -45,6 +45,8 @@
 *                              Fixed coding style. 
 *           20.06.2019 2.76    Changed Minor version to 2.76.
 *           30.07.2019 2.77    Added support for RX72M.
+*           22.11.2019 2.78    Added support for RX66N.
+*                              Added support for RX72N.
 ***********************************************************************************************************************/
 
 #ifndef RTC_RX_INTERFACE_HEADER_FILE
@@ -61,8 +63,14 @@ Macro definitions
 ***********************************************************************************************************************/
 /* Version Number of API. */
 #define RTC_RX_VERSION_MAJOR        (2)
-#define RTC_RX_VERSION_MINOR        (77)
+#define RTC_RX_VERSION_MINOR        (78)
 
+/***********************************************************************************************************************
+BSP version detection
+***********************************************************************************************************************/
+#if R_BSP_VERSION_MAJOR < 5
+    #error "This module must use BSP module of Rev.5.00 or higher. Please use the BSP module of Rev.5.00 or higher."
+#endif
 
 /***********************************************************************************************************************
 Typedef definitions
@@ -144,7 +152,7 @@ typedef enum
     RTC_CMD_STOP_COUNTERS,
     RTC_CMD_PARTIAL_RESET,          // primarily output clock, alarms and capture registers
 #if !defined(BSP_MCU_RX11_ALL) && !defined(BSP_MCU_RX130)
-    RTC_CMD_CONFIG_CAPTURE,         // configure capture pin; RX230, RX231, RX64M, RX65N, RX71M, RX72M
+    RTC_CMD_CONFIG_CAPTURE,         // configure capture pin; RX230, RX231, RX64M, RX65N, RX71M, RX72M, RX66N, RX72N
     RTC_CMD_CHECK_PIN0_CAPTURE,     // see if capture event occurred; load time if yes
     RTC_CMD_CHECK_PIN1_CAPTURE,
     RTC_CMD_CHECK_PIN2_CAPTURE,

@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_sdhi_rx
-VERSION = 		v2.05
+VERSION = 		v2.06
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules

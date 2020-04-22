@@ -5,12 +5,12 @@ r_memdrv_rx (Serial memory driver interface software)
 
 Document Number 
 ---------------
-R01AN4548EJ0101
-R01AN4548JJ0101
+R01AN4548EJ0102
+R01AN4548JJ0102
 
 Version
 -------
-v1.01
+v1.02
 
 Overview
 --------
@@ -45,7 +45,7 @@ Peripherals Used Directly
 
 Required Packages
 -----------------
-* r_bsp    v5.20
+* r_bsp    v5.50
 
 How to add to your project
 --------------------------
@@ -76,6 +76,8 @@ Refer to "Adding Firmware Integration Technology Modules to CS+ Projects (R01AN1
 Toolchain(s) Used
 -----------------
 * Renesas RX v3.01 release 00
+* GCC for Renesas RX 4.8.4
+* IAR C/C++ Compiler for Renesas RX 4.12.1
 
 File Structure
 --------------
@@ -86,9 +88,9 @@ r_memdrv_rx
 +---doc
 |   |
 |   +---en
-|   |       r01an4548ej0101-rx-serial.pdf
+|   |       r01an4548ej0102-rx-serial.pdf
 |   +---ja
-|           r01an4548jj0101-rx-serial.pdf
+|           r01an4548jj0102-rx-serial.pdf
 |
 +---ref
 |       r_memdrv_rx_config_reference.h

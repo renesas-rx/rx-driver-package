@@ -18,13 +18,14 @@
 ***********************************************************************************************************************/
 /***********************************************************************************************************************
 * File Name    : r_ether_setting_rx72m.c
-* Version      : 1.17
+* Version      : 1.20
 * Device       : RX72M
 * Description  : Ethernet module device driver
 ***********************************************************************************************************************/
 /**********************************************************************************************************************
 * History : DD.MM.YYYY Version  Description
 *         : 30.07.2019 1.17     First Release
+*         : 22.11.2019 1.20     Added support for atomic control. 
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -72,9 +73,15 @@ void ether_enable_icu(uint32_t channel)
 {
     volatile uint32_t   dummy;
     bsp_int_ctrl_t int_ctrl;
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t    ipl_value;
+#endif
 
     int_ctrl.ipl = ETHER_CFG_AL1_INT_PRIORTY;
 
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &ipl_value);
+#endif
     if (ETHER_CHANNEL_0 == channel)
     {
         ICU.GENAL1.BIT.EN4 = 1;
@@ -85,6 +92,9 @@ void ether_enable_icu(uint32_t channel)
         ICU.GENAL1.BIT.EN5 = 1;
         R_BSP_InterruptControl(BSP_INT_SRC_AL1_EDMAC1_EINT1, BSP_INT_CMD_GROUP_INTERRUPT_ENABLE, &int_ctrl);
     }
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &ipl_value);
+#endif
 
     dummy = channel;
 } /* End of function ether_enable_icu() */
@@ -99,7 +109,13 @@ void ether_enable_icu(uint32_t channel)
 void ether_disable_icu(uint32_t channel)
 {
     volatile uint32_t   dummy;
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    bsp_int_ctrl_t    int_ctrl;
+#endif
 
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
     if (ETHER_CHANNEL_0 == channel)
     {
         ICU.GENAL1.BIT.EN4 = 0;
@@ -110,6 +126,9 @@ void ether_disable_icu(uint32_t channel)
         ICU.GENAL1.BIT.EN5 = 0;
         R_BSP_InterruptControl(BSP_INT_SRC_AL1_EDMAC1_EINT1, BSP_INT_CMD_GROUP_INTERRUPT_DISABLE, FIT_NO_PTR);
     }
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
 
     dummy = channel;
 } /* End of function ether_disable_icu() */

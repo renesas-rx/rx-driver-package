@@ -26,6 +26,7 @@
 *         : 16.07.2013 1.10     Added bsp_register_protect_open() function.
 *         : 28.02.2019 2.00     Added bsp_ram_initialize function.
 *                               Fixed coding style.
+*         : 26.07.2019 2.10     Added R_BSP_SoftwareReset function.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -84,6 +85,7 @@ uint32_t R_BSP_CpuInterruptLevelRead(void);
 bool     R_BSP_CpuInterruptLevelWrite(uint32_t level);
 void     R_BSP_RegisterProtectEnable(bsp_reg_protect_t regs_to_protect);
 void     R_BSP_RegisterProtectDisable(bsp_reg_protect_t regs_to_unprotect);
+void     R_BSP_SoftwareReset(void);
 
 void     bsp_register_protect_open(void); //r_bsp internal function. DO NOT CALL.
 void     bsp_ram_initialize(void);

@@ -23,6 +23,7 @@
 /***********************************************************************************************************************
 * History      : DD.MM.YYYY Version  Description
 *              : 15.08.2019 1.00     First Release
+*              : 30.12.2019 2.00     Fixed define for LVD_GROUP_INT to LVD_GROUP_INT_ICUD
 ***********************************************************************************************************************/
 #ifndef LVD_RX72M_HEADER_FILE
 #define LVD_RX72M_HEADER_FILE
@@ -44,7 +45,7 @@ Macro definitions
 #define LVD_GROUP_SETUP                         (LVD_GROUP_SETUP_LVDA_2)
 
 /* Group: ICU group */
-#define LVD_GROUP_INT                           (LVD_GROUP_INT_ICUB)
+#define LVD_GROUP_INT                           (LVD_GROUP_INT_ICUD)
 
 /* Support: Maskable interrupt */
 #define LVD_SUPPORT_MI_CH1                      (LVD_ENABLE)

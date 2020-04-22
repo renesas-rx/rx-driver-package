@@ -19,7 +19,7 @@
 /**********************************************************************************************************************
 * System Name  : MMC Driver
 * File Name    : r_mmcif_write.c
-* Version      : 1.05.00
+* Version      : 1.07.00
 * Device       : RX64M (LQFP-176)
 * Abstract     : API & Sub module
 * Tool-Chain   : For RX64M Group
@@ -34,6 +34,7 @@
 *              : 03.09.2014 1.00    First Release
 *              : 20.05.2019 1.05    Added support for GNUC and ICCRX.
 *                                   Fixed coding style.
+*              : 22.11.2019 1.07    Modified comment of API function to Doxygen style.
 **********************************************************************************************************************/
 
 /**********************************************************************************************************************
@@ -61,16 +62,35 @@ static mmc_status_t r_mmcif_write_sect_sub(uint32_t channel, mmc_access_t *p_mmc
 
 
 /**********************************************************************************************************************
-* Outline      : Write Data to MMC
-* Function Name: R_MMCIF_Write_Memory
-* Description  : Writes data to the MMC.
-* Arguments    : uint32_t           channel             ;   MMC Channel No.
-*              : mmc_access_t      *p_mmc_Access        ;   MMC driver transfer configuration
-* Return Value : MMC_SUCCESS                            ;   Successful operation
-*              : other                                  ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_MMCIF_Write_Memory
+ *****************************************************************************************************************/ /**
+ * @brief This function performs write processing.
+ * @param[in] channel
+ *             Channel number : The number of the MMCIF channel used (numbering starts at 0)
+ * @param[in] *p_mmc_Access
+ *             Access information structure (See section 3.8 in application note for structure details.)
+ * @return    MMC_SUCCESS:          Successful operation.\n
+ *            Other than the above: Error termination(See section 2.10 in application note for details).
+ * @details   Writes the data from p_buff in the argument p_mmc_Access to an area with the number of blocks set by 
+ *            cnt in the argument p_mmc_Access. That area starts at the block specified by lbn in the argument 
+ *            p_mmc_Access.\n 
+ *            If MMC card removal is detected at the start of this function's execution, processing is interrupted and 
+ *            processing is terminated and an error is returned.\n 
+ *            If a forced stop request due to an R_MMCIF_Control() function MMC_SET_STOP (forced stop request) command 
+ *            is detected at the start of this function's execution, the forced stop is cleared and processing is 
+ *            terminated and an error is returned.\n 
+ *            The following commands are used to write out the block data.\n 
+ *            \li First block: WRITE_SINGLE_BLOCK command (CMD24)
+ *            \li Second and later blocks: WRITE_MULTIPLE_BLOCK command (CMD25)
+ *            
+ * @note      Both initialization processing by the R_MMCIF_Open() function and mount processing by 
+ *            the R_MMCIF_Mount() function are required prior to executing this function.\n 
+ *            We recommend repeating the write operation when this function terminates with a write error.\n 
+ *            If the number of blocks to be transferred exceeds 65,535, break up the read into multiple function 
+ *            calls. This issue requires care when this functionality is called from upper layer application programs 
+ *            such as the FAT file system.\n 
+ *            Note that the size of a block is 512 bytes.
+ */
 mmc_status_t R_MMCIF_Write_Memory(uint32_t channel, mmc_access_t *p_mmc_Access)
 {
     mmc_mmchndl_t       *p_hndl = 0;
@@ -224,16 +244,37 @@ mmc_status_t R_MMCIF_Write_Memory(uint32_t channel, mmc_access_t *p_mmc_Access)
 
 
 /**********************************************************************************************************************
-* Outline      : Write Data to MMC(software_trans onry)
-* Function Name: R_MMCIF_Write_Memory_Software_Trans
-* Description  : Writes data to the MMC using software transfer only.
-* Arguments    : uint32_t           channel             ;   MMC Channel No.
-*              : mmc_access_t      *p_mmc_Access        ;   MMC driver transfer configuration
-* Return Value : MMC_SUCCESS                            ;   Successful operation
-*              : other                                  ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_MMCIF_Write_Memory_Software_Trans
+ *****************************************************************************************************************/ /**
+ * @brief This function performs write processing (software transfers).
+ * @param[in] channel
+ *             Channel number : The number of the MMCIF channel used (numbering starts at 0)
+ * @param[in] *p_mmc_Access
+ *             Access information structure (See section 3.9 in application note for structure details.)
+ * @return    MMC_SUCCESS:          Successful operation.\n
+ *            Other than the above: Error termination(See section 2.10 in application note for details).
+ * @details   Writes the data from p_buff in the argument p_mmc_Access to an area with the number of blocks set by 
+ *            cnt in the argument p_mmc_Access. That area starts at the block specified by lbn in the argument
+ *             p_mmc_Access.\n
+ *            Software transfer is used, regardless of the operating mode data transfer setting at command processing
+ *            time.\n 
+ *            If MMC card removal is detected at the start of this function's execution, processing is interrupted and 
+ *            processing is terminated and an error is returned.\n 
+ *            If a forced stop request due to an R_MMCIF_Control() function MMC_SET_STOP (forced stop request) command 
+ *            is detected at the start of this function's execution, the forced stop is cleared and processing is 
+ *            terminated and an error is returned.\n 
+ *            The following commands are used to write out the block data.\n 
+ *            \li First block: WRITE_SINGLE_BLOCK command (CMD24)
+ *            \li Second and later blocks: WRITE_MULTIPLE_BLOCK command (CMD25)
+ *
+ * @note      Both initialization processing by the R_MMCIF_Open() function and mount processing by the R_MMCIF_Mount()
+ *            function are required prior to executing this function.\n 
+ *            We recommend repeating the write operation when this function terminates with a write error.\n 
+ *            If the number of blocks to be transferred exceeds 65,535, break up the read into multiple function calls.
+ *            This issue requires care when this functionality is called from upper layer application programs such as 
+ *            the FAT file system.\n 
+ *            Note that the size of a block is 512 bytes.
+ */
 mmc_status_t R_MMCIF_Write_Memory_Software_Trans(uint32_t channel, mmc_access_t *p_mmc_Access)
 {
     mmc_mmchndl_t       *p_hndl = 0;

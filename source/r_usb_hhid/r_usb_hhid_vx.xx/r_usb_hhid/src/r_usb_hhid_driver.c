@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer
  *
- * Copyright (C) 2014(2019) Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2014(2020) Renesas Electronics Corporation. All rights reserved.
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_usb_hhid_driver.c
@@ -36,8 +36,9 @@
  *                           "hhid_read_complete"->"usb_hhid_read_complete"
  *                           "hhid_write_complete"->"usb_hhid_write_complete"
  *         : 31.03.2018 1.23 Supporting Smart Configurator 
- *         : 16.11.2018 1.24 Supporting RTOS.
+ *         : 16.11.2018 1.24 Supporting BSP_CFG_RTOS_USED
  *         : 31.05.2019 1.26 Added support for GNUC and ICCRX.
+ *         : 01.03.2020 1.30 RX72N/RX66N is added and uITRON is supported.
  ***********************************************************************************************************************/
 
 /******************************************************************************
@@ -51,6 +52,8 @@
 #include "r_usb_bitdefine.h"
 #include "r_usb_hhid_if.h"
 #include "r_usb_hhid.h"
+#include "r_rtos_abstract.h"
+#include "r_usb_cstd_rtos.h"
 
 /******************************************************************************
  Exported global variables
@@ -70,7 +73,7 @@ static uint16_t  usb_hhid_cmd_submit (usb_utr_t *ptr, usb_cb_t complete);
 #if (BSP_CFG_RTOS_USED)
 uint16_t usb_hhid_get_string_info(usb_utr_t *mess, uint16_t addr, uint16_t string);
 uint16_t usb_hhid_req_trans_wait_tmo(uint16_t tmo);
-void     usb_hhid_req_trans_result(usb_utr_t *mess, uint16_t data1, uint16_t data2);
+void     usb_hhid_req_trans_result(usb_utr_t *p_mess, uint16_t data1, uint16_t data2);
 
 #else /* (BSP_CFG_RTOS_USED) */
 static void      usb_hhid_check_result (usb_utr_t *ptr, uint16_t unused, uint16_t status);
@@ -102,7 +105,7 @@ uint8_t  *g_p_usb_hhid_interface_table[USB_NUM_USBIP];                      /* I
 /******************************************************************************
  Renesas Abstracted USB Driver functions
  ******************************************************************************/
-#if (BSP_CFG_RTOS_USED == 0)
+#if (BSP_CFG_RTOS_USED == 0)    /* Non-OS */
 /******************************************************************************
  Function Name   : usb_hhid_check_result
  Description     : String Descriptor receive complete callback.
@@ -548,8 +551,8 @@ void usb_hid_suspended (usb_utr_t *ptr, uint16_t devadr)
     ctrl.module = ptr->ip; /* Module number setting */
     ctrl.address = devadr;
     ctrl.type = USB_HHID;
-#if (BSP_CFG_RTOS_USED == 1)
-    ctrl.p_data = (void *)ptr->cur_task_hdl;
+#if (BSP_CFG_RTOS_USED == 1)        /* FreeRTOS */
+    ctrl.p_data = (void *)ptr->task_id;
 #endif /* (BSP_CFG_RTOS_USED == 1) */
     usb_set_event(USB_STS_SUSPEND, &ctrl);
 } /* End of function hid_suspended() */
@@ -620,8 +623,8 @@ void usb_hid_resume_complete (usb_utr_t *ptr, uint16_t devadr, uint16_t data2)
     ctrl.module = ptr->ip; /* Module number setting */
     ctrl.address = devadr;
     ctrl.type = USB_HHID;
-#if (BSP_CFG_RTOS_USED == 1)
-    ctrl.p_data = (void *)ptr->cur_task_hdl;
+#if (BSP_CFG_RTOS_USED == 1)        /* FreeRTOS */
+    ctrl.p_data = (void *)ptr->task_id;
 #endif /* (BSP_CFG_RTOS_USED == 1) */
     usb_set_event(USB_STS_RESUME, &ctrl);
 }
@@ -663,8 +666,8 @@ void usb_hhid_read_complete (usb_utr_t *mess, uint16_t data1, uint16_t data2)
             ctrl.status = USB_ERR_NG;
         break;
     }
-#if (BSP_CFG_RTOS_USED == 1)
-    ctrl.p_data = (void *)mess->cur_task_hdl;
+#if (BSP_CFG_RTOS_USED == 1)                                    /* FreeRTOS */
+    ctrl.p_data = (void *)mess->task_id;
 #endif /* (BSP_CFG_RTOS_USED == 1) */
 
     usb_set_event(USB_STS_READ_COMPLETE, &ctrl);                /* Set Event()  */
@@ -698,8 +701,8 @@ void usb_hhid_write_complete (usb_utr_t *mess, uint16_t data1, uint16_t data2)
     {
         ctrl.status = USB_ERR_NG;
     }
-#if (BSP_CFG_RTOS_USED == 1)
-    ctrl.p_data = (void *)mess->cur_task_hdl;
+#if (BSP_CFG_RTOS_USED == 1)                                    /* FreeRTOS */
+    ctrl.p_data = (void *)mess->task_id;
 #endif /* (BSP_CFG_RTOS_USED == 1) */
 
     usb_set_event(USB_STS_WRITE_COMPLETE, &ctrl);               /* Set Event()  */
@@ -782,7 +785,7 @@ void usb_hhid_registration (usb_utr_t *ptr)
     {
         usb_hstd_driver_registration(ptr, &driver);                         /* Host HID class driver registration. */
     }
-#if (BSP_CFG_RTOS_USED == 0)
+#if (BSP_CFG_RTOS_USED == 0)    /* Non-OS */
     usb_cstd_set_task_pri(USB_HUB_TSK, USB_PRI_3);                          /* Hub Task Priority set */
 #endif /* (BSP_CFG_RTOS_USED == 0) */
     usb_hhub_registration(ptr, (usb_hcdreg_t *) USB_NULL);                  /* Hub registration. */
@@ -829,7 +832,7 @@ void usb_hhid_driver_start (usb_utr_t *ptr)
         init |= (1 << ptr->ip);
     }
 
-#if (BSP_CFG_RTOS_USED == 0)
+#if (BSP_CFG_RTOS_USED == 0)    /* Non-OS */
     usb_cstd_set_task_pri(USB_HHID_TSK, USB_PRI_3); /* Host HID task priority set */
 #endif /* (BSP_CFG_RTOS_USED == 0) */
 }
@@ -1055,16 +1058,28 @@ uint16_t usb_hhid_get_string_info(usb_utr_t *mess, uint16_t addr, uint16_t strin
                    uint16_t data2
  Return value    : none
  ******************************************************************************/
-void usb_hhid_req_trans_result(usb_utr_t *mess, uint16_t data1, uint16_t data2)
+void usb_hhid_req_trans_result(usb_utr_t *p_mess, uint16_t data1, uint16_t data2)
 {
+#if (BSP_CFG_RTOS_USED == 0)    /* Non-OS */
     usb_er_t err;
+#else /* (BSP_CFG_RTOS_USED == 0) */
+    rtos_err_t  ret;
+#endif /* (BSP_CFG_RTOS_USED == 0) */
 
+#if (BSP_CFG_RTOS_USED == 0)    /* Non-OS */
     /* Send a message to HHID mailbox */
-    err = USB_SND_MSG(USB_HHID_MBX, (usb_msg_t *)mess);
+    err = USB_SND_MSG(USB_HHID_MBX, (usb_msg_t *)p_mess);
     if (USB_OK != err)
     {
         USB_PRINTF1("### HHID snd_msg error (%ld)\n", err);
     }
+#else /* (BSP_CFG_RTOS_USED == 0) */
+    ret = rtos_send_mailbox (&g_rtos_usb_hhid_mbx_id, (void *)p_mess);
+    if (RTOS_SUCCESS != ret)
+    {
+        USB_PRINTF1("### HHID snd_msg error (%ld)\n", ret);
+    }
+#endif /* (BSP_CFG_RTOS_USED == 0) */
 }
 /******************************************************************************
  End of function usb_hhid_req_trans_result
@@ -1078,18 +1093,30 @@ void usb_hhid_req_trans_result(usb_utr_t *mess, uint16_t data1, uint16_t data2)
  ******************************************************************************/
 uint16_t usb_hhid_req_trans_wait_tmo(uint16_t tmo)
 {
-    usb_utr_t *mess;
+    usb_utr_t *p_mess;
+#if (BSP_CFG_RTOS_USED == 0)    /* Non-OS */
     usb_er_t err;
+#else /* (BSP_CFG_RTOS_USED == 0) */
+    rtos_err_t  ret;
+#endif /* (BSP_CFG_RTOS_USED == 0) */
 
+#if (BSP_CFG_RTOS_USED == 0)    /* Non-OS */
     /* Receive message from HHID mailbox with time-out */
-    err = USB_TRCV_MSG(USB_HHID_MBX, (usb_msg_t **)&mess, (usb_tm_t)tmo);
+    err = USB_TRCV_MSG(USB_HHID_MBX, (usb_msg_t **)&p_mess, (usb_tm_t)tmo);
     if (USB_OK != err)
     {
         USB_PRINTF1("### HHID trcv_msg error (%ld)\n", err);
         return USB_ERROR;
     }
+#else /* (BSP_CFG_RTOS_USED == 0) */
+    ret = rtos_receive_mailbox (&g_rtos_usb_hhid_mbx_id, (void **)&p_mess, (rtos_time_t)tmo);
+    if (RTOS_SUCCESS != ret)
+    {
+        USB_PRINTF1("### HHID snd_msg error (%ld)\n", ret);
+    }
+#endif /* (BSP_CFG_RTOS_USED == 0) */
 
-    return (mess->status);
+    return (p_mess->status);
 }
 /******************************************************************************
  End of function usb_hhid_req_trans_wait_tmo

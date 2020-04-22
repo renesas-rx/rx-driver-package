@@ -19,7 +19,7 @@
 /**********************************************************************************************************************
 * System Name  : MMC Driver
 * File Name    : r_mmcif_read.c
-* Version      : 1.05.00
+* Version      : 1.07.00
 * Device       : RX64M (LQFP-176)
 * Abstract     : API & Sub module
 * Tool-Chain   : For RX64M Group
@@ -34,6 +34,7 @@
 *              : 03.09.2014 1.00    First Release
 *              : 20.05.2019 1.05    Added support for GNUC and ICCRX.
 *                                   Fixed coding style.
+*              : 22.11.2019 1.07    Modified comment of API function to Doxygen style.
 **********************************************************************************************************************/
 
 /**********************************************************************************************************************
@@ -61,16 +62,35 @@ static mmc_status_t r_mmcif_read_sect_sub(uint32_t channel, mmc_access_t *p_mmc_
 
 
 /**********************************************************************************************************************
-* Outline      : Read Data from MMC
-* Function Name: R_MMCIF_Read_Memory
-* Description  : Reads the data from the MMC.
-* Arguments    : uint32_t           channel             ;   MMC Channel No.
-*              : mmc_access_t      *p_mmc_Access        ;   MMC Driver transfer config
-* Return Value : MMC_SUCCESS                            ;   Successful operation
-*              : other                                  ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_MMCIF_Read_Memory
+ *****************************************************************************************************************/ /**
+ * @brief This function performs read processing.
+ * @param[in] channel
+ *             Channel number : The number of the MMCIF channel used (numbering starts at 0)
+ * @param[in] *p_mmc_Access
+ *             Access information structure (See section 3.6 in application note for structure details.)
+ * @return    MMC_SUCCESS:          Successful operation.\n
+ *            Other than the above: Error termination(See section 2.10 in application note for details).
+ * @details   Reads the number of blocks of data specified by cnt in the argument p_mmc_Access starting at the block 
+ *            specified by lbn in the argument p_mmc_Access and stores that data in the buffer specified by p_buff in 
+ *            the argument p_mmc_Access.\n 
+ *            If MMC card removal is detected at the start of this function's execution, processing is interrupted 
+ *            and processing is terminated and an error is returned.\n 
+ *            If a forced stop request due to an R_MMCIF_Control() function MMC_SET_STOP (forced stop request) command 
+ *            is detected at the start of this function's execution, the forced stop is cleared and processing is 
+ *            terminated and an error is returned.\n 
+ *            The following commands are used to read out the block data.\n 
+ *            \li First block: READ_SINGLE_BLOCK command (CMD17)
+ *            \li Second and later blocks: READ_MULTIPLE_BLOCK command (CMD18)
+ *            
+ * @note      Both initialization processing by the R_MMCIF_Open() function and mount processing by the R_MMCIF_Mount()
+ *            function are required prior to executing this function.\n 
+ *            We recommend repeating the read operation when this function terminates with a read error.\n 
+ *            If the number of blocks to be transferred exceeds 65,535, break up the read into multiple function calls. 
+ *            This issue requires care when this functionality is called from upper layer application programs such as
+ *            the FAT file system.\n 
+ *            Note that the size of a block is 512 bytes.
+ */
 mmc_status_t R_MMCIF_Read_Memory(uint32_t channel, mmc_access_t *p_mmc_Access)
 {
     mmc_mmchndl_t       *p_hndl = 0;
@@ -222,16 +242,37 @@ mmc_status_t R_MMCIF_Read_Memory(uint32_t channel, mmc_access_t *p_mmc_Access)
 
 
 /**********************************************************************************************************************
-* Outline      : Read block data from MMC(software_trans onry)
-* Function Name: R_MMCIF_Read_Memory_Software_Trans
-* Description  : Reads the block data from the MMC using software transfer only.
-* Arguments    : uint32_t           channel             ;   MMC Channel No.
-*              : mmc_access_t      *p_mmc_Access        ;   MMC Driver transfer config
-* Return Value : MMC_SUCCESS                            ;   Successful operation
-*              : other                                  ;   Failed operation
-*----------------------------------------------------------------------------------------------------------------------
-* Notes        : None
-**********************************************************************************************************************/
+ * Function Name: R_MMCIF_Read_Memory_Software_Trans
+ *****************************************************************************************************************/ /**
+ * @brief This function performs read processing (software transfers).
+ * @param[in] channel
+ *             Channel number : The number of the MMCIF channel used (numbering starts at 0)
+ * @param[in] *p_mmc_Access
+ *             Access information structure (See section 3.7 in application note for structure details.)
+ * @return    MMC_SUCCESS:          Successful operation.\n
+ *            Other than the above: Error termination(See section 2.10 in application note for details).
+ * @details   Reads the number of blocks of data specified by cnt in the argument p_mmc_Access starting at the block 
+ *            specified by lbn in the argument p_mmc_Access and stores that data in the buffer specified by p_buff 
+ *            in the argument p_mmc_Access.\n 
+ *            Software transfer is used, regardless of the operating mode data transfer setting at command processing 
+ *            time.\n 
+ *            If MMC card removal is detected at the start of this function's execution, processing is interrupted 
+ *            and processing is terminated and an error is returned.\n 
+ *            If a forced stop request due to an R_MMCIF_Control() function MMC_SET_STOP (forced stop request) command 
+ *            is detected at the start of this function's execution, the forced stop is cleared and processing is 
+ *            terminated and an error is returned.\n 
+ *            The following commands are used to read out the block data.\n 
+ *            \li First block: READ_SINGLE_BLOCK command (CMD17)
+ *            \li Second and later blocks: READ_MULTIPLE_BLOCK command (CMD18)
+ *            
+ * @note      Both initialization processing by the R_MMCIF_Open() function and mount processing by the R_MMCIF_Mount()
+ *            function are required prior to executing this function.\n 
+ *            We recommend repeating the read operation when this function terminates with a read error.\n 
+ *            If the number of blocks to be transferred exceeds 65,535, break up the read into multiple function calls.
+ *            This issue requires care when this functionality is called from upper layer application programs such as 
+ *            the FAT file system.\n 
+ *            Note that the size of a block is 512 bytes.
+ */
 mmc_status_t R_MMCIF_Read_Memory_Software_Trans(uint32_t channel, mmc_access_t *p_mmc_Access)
 {
     mmc_mmchndl_t       *p_hndl = 0;

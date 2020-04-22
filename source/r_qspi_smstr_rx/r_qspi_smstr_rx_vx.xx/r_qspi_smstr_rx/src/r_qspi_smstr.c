@@ -48,6 +48,7 @@
 *              : 20.05.2019 1.12     Added support for GNUC and ICCRX.
 *              :                     Fixed coding style. 
 *              : 30.07.2019 1.13     Added WAIT LOOP.
+*              : 22.11.2019 1.14     Modified comment of API function to Doxygen style.
 *******************************************************************************/
 
 /*******************************************************************************
@@ -84,21 +85,33 @@ static longq_hdl_t       p_qspi_smstr_long_que;       /* LONGQ handler */
 #endif  /* QSPI_SMSTR_CFG_LONGQ_ENABLE */
 
 
-/*******************************************************************************
-* Function Name: R_QSPI_SMstr_Open
-* Description  : Initializes setting of ports.
-*                Initializes the QSPI registers for QSPI control.
-* Arguments    : channel -
-*                    Which channel to use
-*                spbr_data -
-*                    Setting of QSPI Bit Rate Register (SPBR)
-* Return Value : QSPI_SMSTR_SUCCESS -
-*                    Successful operation
-*                QSPI_SMSTR_ERR_PARAM -
-*                    Parameter error
-*                QSPI_SMSTR_ERR_OTHER -
-*                    QSPI resource has been acquired by other task already.
-*******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_QSPI_SMstr_Open
+ *****************************************************************************************************************/ /**
+ * @brief This function is run first when using the APIs of the QSPI clock synchronous single master control module.
+ * @param[in] channel
+ *             QSPI channel number
+ * @param[in] spbr_data
+ *             QSPI bit rate register (SPBR) setting value
+ * @retval    QSPI_SMSTR_SUCCESS    Successful operation
+ * @retval    QSPI_SMSTR_ERR_PARAM  Parameter error
+ * @retval    QSPI_SMSTR_ERR_OTHER  QSPI resource has been acquired by other task.
+ * @details   Initializes the QSPI registers of the channel number specified by the argument channel.\n
+ *            Sets the value specified by the argument spbr_data in the QSPI bit rate register (SPBR). In the QSPI FIT
+ *            module the setting value of the bit rate division setting bits (SPCMD0.BRDV[1:0]) is 0. Refer to the 
+ *            User's Manual: Hardware of the microcontroller and set spbr_data as appropriate for the operating 
+ *            environment.\n
+ *            Sets QSPCLK polarity to CPOL = 1 and phase to CPHA = 1.\n
+ *            When the function completes successfully, the QSPI module stop state is canceled, and QSPCLK pin is set
+ *            as general output port in the high-output state, and the QIO0 to QIO3 pins are set as a general input 
+ *            port.\n
+ *            Note that this function monopolizes the QSPI resource for the channel number specified by the argument 
+ *            channel. To release this resource, call R_QSPI_SMstr_Close().\n
+ *            Do not call this function when communication is in progress. Communication cannot be guaranteed if the 
+ *            function is called when communication is in progress.
+ * @note      This function controls the GPIO and MPC to set each pin as a general I/O port. Confirm that no other
+ *            peripheral function is using any of the affected pins before calling this function.
+ */
 qspi_smstr_status_t R_QSPI_SMstr_Open(uint8_t channel, uint8_t spbr_data)
 {
     qspi_smstr_status_t ret = QSPI_SMSTR_SUCCESS;
@@ -135,17 +148,26 @@ qspi_smstr_status_t R_QSPI_SMstr_Open(uint8_t channel, uint8_t spbr_data)
 }
 
 
-/*******************************************************************************
-* Function Name: R_QSPI_SMstr_Close
-* Description  : Stops QSPI and puts it in module stop to conserve power.
-*                Resets setting of ports..
-* Arguments    : channel -
-*                    Which channel to use
-* Return Value : QSPI_SMSTR_SUCCESS -
-*                    Successful operation
-*                QSPI_SMSTR_ERR_PARAM -
-*                    Parameter error
-*******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_QSPI_SMstr_Close
+ *****************************************************************************************************************/ /**
+ * @brief This function is used to release the resources of the QSPI FIT module currently in use.
+ * @param[in] channel
+ *             QSPI channel number
+ * @retval    QSPI_SMSTR_SUCCESS    Successful operation
+ * @retval    QSPI_SMSTR_ERR_PARAM  Parameter error
+ * @details   Sets the QSPI of the channel number specified by the argument channel to the module stop state. \n
+ *            When the function completes successfully, the QSPCLK pin is set as general output port in the high-output
+ *            state, and the QIO0 to QIO3 pins are set as a general input port.\n
+ *            Note that this function releases the QSPI resource for the channel number specified by the argument
+ *            channel. To restart communication, call R_QSPI_SMstr_Open().\n
+ *            Do not call this function when communication is in progress. Communication cannot be guaranteed if the
+ *            function is called when communication is in progress.
+ * @note      This function controls the GPIO and MPC to set each pin as a general I/O port. Confirm that no other
+ *            peripheral function is using any of the affected pins before calling this function.\n
+ *            After this function is called the states of the QSPCLK pin differ from that after a reset (general input 
+ *            port). Review the pin settings if necessary.
+ */
 qspi_smstr_status_t R_QSPI_SMstr_Close(uint8_t channel)
 {
     qspi_smstr_status_t ret = QSPI_SMSTR_SUCCESS;
@@ -173,24 +195,31 @@ qspi_smstr_status_t R_QSPI_SMstr_Close(uint8_t channel)
 }
 
 
-/*******************************************************************************
-* Function Name: R_QSPI_SMstr_Control
-* Description  : Changes setting of SPI clock mode and bit rate of QSPI.
-* Arguments    : channel -
-*                    Which channel to use
-*                clk_mode -
-*                    Number of SPI clock mode
-*                        0: CPOL=0, CPHA=0
-*                        1: CPOL=0, CPHA=1
-*                        2: CPOL=1, CPHA=0
-*                        3: CPOL=1, CPHA=1
-*                spbr_data -
-*                    Setting of QSPI Bit Rate Register (SPBR)
-* Return Value : QSPI_SMSTR_SUCCESS -
-*                    Successful operation
-*                QSPI_SMSTR_ERR_PARAM -
-*                    Parameter error
-*******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_QSPI_SMstr_Control
+ *****************************************************************************************************************/ /**
+ * @brief This function is used to change settings such as the bit rate and QSPCLK phase/polarity.
+ * @param[in] channel
+ *             QSPI channel number
+ * @param[in] clk_mode
+ *             QSPCLK mode. Make the following settings.\n
+ *              clk_mode = 0: CPOL = 0, CPHA = 0\n
+ *              clk_mode = 1: CPOL = 0, CPHA = 1\n
+ *              clk_mode = 2: CPOL = 1, CPHA = 0\n
+ *              clk_mode = 3: CPOL = 1, CPHA = 1
+ * @param[in] spbr_data
+ *             QSPI bit rate register (SPBR) setting value
+ * @retval    QSPI_SMSTR_SUCCESS    Successful operation
+ * @retval    QSPI_SMSTR_ERR_PARAM  Parameter error
+ * @details   Changes settings such as the QSPI bit rate and QSPCLK phase/polarity for the channel number specified by
+ *            the argument channel. \n
+ *            Sets the value specified by the argument spbr_data in the QSPI bit rate register. In the QSPI FIT module 
+ *            the setting value of the bit rate division setting bits (SPCMD0.BRDV[1:0]) is 0. Refer to the User's 
+ *            Manual: Hardware of the microcontroller and set spbr_data as appropriate for the operating environment.\n
+ *            Do not call this function when communication is in progress. Communication cannot be guaranteed if this
+ *            function is called when communication is in progress.
+ * @note      None
+ */
 qspi_smstr_status_t R_QSPI_SMstr_Control(uint8_t channel, uint8_t clk_mode, uint8_t spbr_data)
 {
     qspi_smstr_status_t ret = QSPI_SMSTR_SUCCESS;
@@ -216,23 +245,43 @@ qspi_smstr_status_t R_QSPI_SMstr_Control(uint8_t channel, uint8_t clk_mode, uint
 }
 
 
-/*******************************************************************************
-* Function Name: R_QSPI_SMstr_Write
-* Description  : Executes transmission operation.
-*                When using DMAC or DTC, supports that the number of data is a multiple of 16.
-* Arguments    : channel -
-*                    Which channel to use
-*                * p_qspi_smstr_info -
-*                    QSPI information
-* Return Value : QSPI_SMSTR_SUCCESS -
-*                    Successful operation
-*                QSPI_SMSTR_ERR_PARAM -
-*                    Parameter error
-*                QSPI_SMSTR_ERR_HARD -
-*                    Hardware error
-*------------------------------------------------------------------------------
-* Note         : Set the "p_qspi_smstr_info->data_cnt" to a multiple of 16 using DMAC or DTC.
-*******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_QSPI_SMstr_Write
+ *****************************************************************************************************************/ /**
+ * @brief This function is used to transmit data.
+ * @param[in] channel
+ *             QSPI channel number
+ * @param[in] *p_qspi_smstr_info
+ *             QSPI information structure\n
+ * @retval    QSPI_SMSTR_SUCCESS    Successful operation
+ * @retval    QSPI_SMSTR_ERR_PARAM  Parameter error
+ * @retval    QSPI_SMSTR_ERR_HARD   Hardware error
+ * @details   Uses the QSPI of the channel number specified by the argument channel to transmit data. \n
+ *            When DMAC transfer or DTC transfer is specified by the argument tran_mode, the transferrable byte counts 
+ *            are multiples of 16. If the value is not a multiple of 16, the function ends with an error and no 
+ *            transfer takes place. \n
+ * @note      Take note of the following points when specifying DMAC transfer or DTC transfer. \n
+ *            \li The DMAC FIT module, DTC FIT module, and timer module (CMT FIT module, for example) must be obtained 
+ *              separately. \n
+ *            \li Use a buffer address aligned with a 4-byte boundary. \n
+ *            \li Specify a transfer data count that is a multiple of 16 when calling this function. If the transfer
+ *              data count results in a final transfer with a data count of 1 to 15, specify software transfer instead 
+ *              when calling this function. \n
+ *            \li Make settings such that block transfer is selected as the transfer mode and 16 bytes of data are
+ *              transferred for each activation source. For example, is the data transfer size is 4 bytes, specify a 
+ *              block transfer count of 4. \n
+ *            \li The data transmit-end wait processing function r_qspi_smstr_tx_dmacdtc_wait() uses a timer. Before 
+ *              calling this function, activate a 1 millisecond (ms) timer using the CMT, or the like. Then call 
+ *              R_QSPI_SMstr_1ms_Interval() at 1 millisecond (ms) intervals. \n
+ *            \li Make the necessary settings to make the DMAC or DTC ready to start before calling this function. \n
+ *            \li If this function is called by setting tran_mode to QSPI_SMSTR_DMAC before the DMAC is ready to be
+ *              activated, no DMAC transfer will take place. The return value in this case is QSPI_SMSTR_ERR_HARD. \n
+ *            \li If this function is called by setting tran_mode to QSPI_SMSTR_DTC before the DTC is ready to be
+ *              activated, no DTC transfer will take place. The return value in this case is QSPI_SMSTR_ERR_HARD. \n
+ *            \li When calling this function in the setting of DMAC transfer or DTC transfer and Little endian, change 
+ *              the data sequence of transmitted data stored in the buffer, and then send the data. After the 
+ *              transmission is complete, original data will be returned.
+ */
 qspi_smstr_status_t R_QSPI_SMstr_Write(uint8_t channel, qspi_smstr_info_t * p_qspi_smstr_info)
 {
     qspi_smstr_status_t   ret = QSPI_SMSTR_SUCCESS;
@@ -335,23 +384,40 @@ qspi_smstr_status_t R_QSPI_SMstr_Write(uint8_t channel, qspi_smstr_info_t * p_qs
 }
 
 
-/*******************************************************************************
-* Function Name: R_QSPI_SMstr_Read
-* Description  : Executes reception operation.
-*                When using DMAC or DTC, supports that the number of data is a multiple of 16.
-* Arguments    : channel -
-*                    Which channel to use
-*                * p_qspi_smstr_info -
-*                    QSPI information
-* Return Value : QSPI_SMSTR_SUCCESS -
-*                    Successful operation
-*                QSPI_SMSTR_ERR_PARAM -
-*                    Parameter error
-*                QSPI_SMSTR_ERR_HARD -
-*                    Hardware error
-*------------------------------------------------------------------------------
-* Note         : Set the "p_qspi_smstr_info->data_cnt" to a multiple of 16 using DMAC or DTC.
-*******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_QSPI_SMstr_Read
+ *****************************************************************************************************************/ /**
+ * @brief This function is used to receive data.
+ * @param[in] channel
+ *             QSPI channel number
+ * @param[in] *p_qspi_smstr_info
+ *             QSPI information structure
+ * @retval    QSPI_SMSTR_SUCCESS     Successful operation
+ * @retval    QSPI_SMSTR_ERR_PARAM   Parameter error
+ * @retval    QSPI_SMSTR_ERR_HARD    Hardware error
+ * @details   Uses the QSPI of the channel number specified by the argument channel to receive data. \n
+ *            When DMAC transfer or DTC transfer is specified by the argument tran_mode, the transferrable byte counts 
+ *            are multiples of 16. If the value is not a multiple of 16, the function ends with an error and no 
+ *            transfer takes place. \n
+ * @note      Add the following processing when specifying DMAC transfer or DTC transfer. \n
+ *            \li The DMAC FIT module, DTC FIT module, and timer module (CMT FIT module, for example) must be obtained 
+ *              separately. \n
+ *            \li Use a buffer address aligned with a 4-byte boundary. \n
+ *            \li Specify a transfer data count that is a multiple of 16 when calling this function. If the transfer 
+ *              data count results in a final transfer with a data count of 1 to 15, specify software transfer instead 
+ *              when calling this function. \n
+ *            \li Make settings such that block transfer is selected as the transfer mode and 16 bytes of data are
+ *              transferred for each activation source. For example, is the data transfer size is 4 bytes, specify a 
+ *              block transfer count of 4. \n
+ *            \li The data transmit-end wait processing function r_qspi_smstr_tx_dmacdtc_wait() uses a timer. Before 
+ *              calling this function, activate a 1 millisecond (ms) timer using the CMT, or the like. Then call 
+ *              R_QSPI_SMstr_1ms_Interval() at 1 millisecond (ms) intervals. \n
+ *            \li Make the necessary settings to make the DMAC or DTC ready to start before calling this function. \n
+ *            \li If this function is called by setting tran_mode to QSPI_SMSTR_DMAC before the DMAC is ready to be 
+ *              activated, no DMAC transfer will take place. The return value in this case is QSPI_SMSTR_ERR_HARD. \n
+ *            \li If this function is called by setting tran_mode to QSPI_SMSTR_DTC before the DTC is ready to be 
+ *              activated, no DTC transfer will take place. The return value in this case is QSPI_SMSTR_ERR_HARD.
+ */
 qspi_smstr_status_t R_QSPI_SMstr_Read(uint8_t channel, qspi_smstr_info_t * p_qspi_smstr_info)
 {
     qspi_smstr_status_t   ret = QSPI_SMSTR_SUCCESS;
@@ -1524,20 +1590,19 @@ void r_qspi_smstr_rx_software_trans_dummy(uint8_t channel)
 }
 
 
-/*******************************************************************************
-* Function Name: R_QSPI_SMstr_Get_BuffRegAddress
-* Description  : Gets address of QSPI data register (SPDR).
-*              : Use the address of QSPI data register to set the transfer source
-*              : register or transfer destination register in DMAC or DTC.
-* Arguments    : channel -
-*                    Which channel to use
-*                p_spdr_adr -
-*                    Address of QSPI data register (SPDR)
-* Return Value : QSPI_SMSTR_SUCCESS -
-*                    Successful operation
-*                QSPI_SMSTR_ERR_PARAM -
-*                    Parameter error
-*******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_QSPI_SMstr_Get_BuffRegAddress
+ *****************************************************************************************************************/ /**
+ * @brief This function is used to fetch the address of the QSPI data register (SPDR).
+ * @param[in] channel
+ *             QSPI channel number
+ * @param[in] *p_spdr_adr
+ *             The pointer for storing the address of SPDR. Set this to the address of the storage destination.
+ * @retval    QSPI_SMSTR_SUCCESS     Successful operation
+ * @retval    QSPI_SMSTR_ERR_PARAM   Parameter error
+ * @details   Use this function when setting the DMAC or DTC transfer destination/transfer source address, etc.
+ * @note      None
+ */
 qspi_smstr_status_t R_QSPI_SMstr_Get_BuffRegAddress(uint8_t channel, uint32_t *p_spdr_adr)
 {
     qspi_smstr_status_t ret = QSPI_SMSTR_SUCCESS;
@@ -1562,15 +1627,14 @@ qspi_smstr_status_t R_QSPI_SMstr_Get_BuffRegAddress(uint8_t channel, uint32_t *p
 }
 
 
-/*****************************************************************************
-* Function Name: R_QSPI_SMstr_GetVersion
-* Description  : Returns the version of QSPI single master driver.
-*                The version number is encoded such that the top two bytes are
-*                the major version number and the bottom two bytes are the minor
-*                version number.
-* Arguments    : none
-* Return Value : version number
-******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_QSPI_SMstr_GetVersion
+ *****************************************************************************************************************/ /**
+ * @brief This function is used to fetch the driver version information.
+ * @return    Version number.   Upper 2 bytes: major version, lower 2 bytes: minor version.
+ * @details   Returns the version information.
+ * @note      None
+ */
 uint32_t R_QSPI_SMstr_GetVersion(void)
 {
     uint32_t const version = (QSPI_SMSTR_VERSION_MAJOR << 16) | QSPI_SMSTR_VERSION_MINOR;
@@ -1578,23 +1642,30 @@ uint32_t R_QSPI_SMstr_GetVersion(void)
     return version;
 }
 
-
-#ifdef QSPI_SMSTR_CFG_LONGQ_ENABLE
-/*******************************************************************************
-* Function Name: R_QSPI_SMstr_Set_LogHdlAddress
-* Description  : Sets handler Address.
-* Arguments    : user_long_que -
-*                    Handler Address
-* Return Value : QSPI_SMSTR_SUCCESS -
-*                    Successful operation
-*******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_QSPI_SMstr_Set_LogHdlAddress
+ *****************************************************************************************************************/ /**
+ * @brief This function specifies the handler address for the LONGQ FIT module. Call this function when using error 
+ *        log acquisition processing.
+ * @param[in] user_long_que
+ *             Specify the handler address of the LONGQ FIT module.
+ * @retval    QSPI_SMSTR_SUCCESS   Successful operation
+ * @details   The handler address of the LONGQ FIT module is set in the QSPI FIT module. \n
+ *            Uses the LONGQ FIT module perform preparatory processing for fetching the error log. \n
+ *            Run this processing before calling R_QSPI_SMstr_Open().
+ * @note      Incorporate the LONGQ FIT module separately. Also, enable
+ *            QSPI_SMSTR_CFG_LONGQ_ENABLE in r_qspi_smstr_rx_config.h. \n
+ *            If the QSPI_SMSTR_CFG_LONGQ_ENABLE disable and this function is called, this function does nothing.
+ */
 qspi_smstr_status_t R_QSPI_SMstr_Set_LogHdlAddress(uint32_t user_long_que)
 {
+#ifdef QSPI_SMSTR_CFG_LONGQ_ENABLE
     p_qspi_smstr_long_que = (longq_hdl_t)user_long_que;
+#endif  /* QSPI_SMSTR_CFG_LONGQ_ENABLE */
     return QSPI_SMSTR_SUCCESS;
 }
 
-
+#ifdef QSPI_SMSTR_CFG_LONGQ_ENABLE
 /*******************************************************************************
 * Function Name: r_qspi_smstr_log
 * Description  : Stores error information to LONGQ buffer.
@@ -1634,42 +1705,33 @@ uint32_t r_qspi_smstr_log(uint32_t flg, uint32_t fid, uint32_t line)
     }
     return 0;
 }
-#else
-/*******************************************************************************
-* Function Name: R_QSPI_SMstr_Set_LogHdlAddress
-* Description  : Sets handler Address.
-* Arguments    : user_long_que -
-*                    Handler Address
-* Return Value : QSPI_SMSTR_SUCCESS -
-*                    Successful operation
-*******************************************************************************/
-qspi_smstr_status_t R_QSPI_SMstr_Set_LogHdlAddress(uint32_t user_long_que)
-{
-    return QSPI_SMSTR_SUCCESS;
-}
 #endif  /* QSPI_SMSTR_CFG_LONGQ_ENABLE */
 
-
-/*******************************************************************************
-* Function Name: R_QSPI_SMstr_Log
-* Description  : Stores error information to LONGQ buffer.
-* Arguments    : flg -
-*                    Breakpoint processing
-*                fid -
-*                    QSPI driver file No.
-*                line -
-*                    QSPI driver line number
-* Return Value : 0 -
-*                    Successful operation
-*                1 -
-*                    Error
-*******************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_QSPI_SMstr_Log
+ *****************************************************************************************************************/ /**
+ * @brief This function fetches the error log. When an error occurs, call this function immediately before user 
+ *        processing ends.
+ * @param[in] flg
+ *             Set this to 0x00000001 (fixed value).
+ * @param[in] fid
+ *             Set this to 0x0000003f (fixed value).
+ * @param[in] line
+ *             Set this to 0x0001ffff (fixed value).
+ * @retval    0    Successful operation
+ * @retval    1    Error
+ * @details   This function fetches the error log. Executes the end processing of fetching the error log using LONGQ 
+ *            FIT module. When an error occurs, call this function immediately before user processing ends. \n
+ *            For the setting of the error log size, refer to the LONGQ FIT module. \n
+ * @note      Incorporate the LONGQ FIT module separately. Also, enable
+ *            QSPI_SMSTR_CFG_LONGQ_ENABLE in r_qspi_smstr_rx_config.h. \n
+ *            If the QSPI_SMSTR_CFG_LONGQ_ENABLE disable and this function is called, this function does nothing.
+ */
 uint32_t R_QSPI_SMstr_Log(uint32_t flg, uint32_t fid, uint32_t line)
 {
     R_QSPI_SMSTR_LOG_FUNC(flg, fid, line);
     return 0;
 }
-
 
 /* End of File */
 

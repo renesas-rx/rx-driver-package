@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer
  *
- * Copyright (C) 2015(2018) Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2015(2020) Renesas Electronics Corporation. All rights reserved.
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_usb_phid_driver.c
@@ -29,6 +29,7 @@
  *                           "phid_write_complete"->"usb_phid_write_complete"
  *                           "phid_read_complete"->"usb_phid_read_complete"
  *         : 31.03.2018 1.23 Supporting Smart Configurator
+ *         : 01.03.2020 1.30 RX72N/RX66N is added and uITRON is supported.
  ***********************************************************************************************************************/
 
 /******************************************************************************
@@ -80,8 +81,8 @@ void usb_phid_write_complete (usb_utr_t *mess, uint16_t data1, uint16_t data2)
     {
         ctrl.status = USB_ERR_NG;
     }
-#if (BSP_CFG_RTOS_USED == 1)
-    ctrl.p_data = (void *)mess->cur_task_hdl;
+#if (BSP_CFG_RTOS_USED == 1)                          /* FreeRTOS */
+    ctrl.p_data = (void *)mess->task_id;
 #endif /* (BSP_CFG_RTOS_USED == 1) */
     usb_set_event(USB_STS_WRITE_COMPLETE, &ctrl);
 }
@@ -124,8 +125,8 @@ void usb_phid_read_complete (usb_utr_t *mess, uint16_t data1, uint16_t data2)
             ctrl.status = USB_ERR_NG;
         break;
     }
-#if (BSP_CFG_RTOS_USED == 1)
-    ctrl.p_data = (void *)mess->cur_task_hdl;
+#if (BSP_CFG_RTOS_USED == 1)                         /* FreeRTOS */
+    ctrl.p_data = (void *)mess->task_id;
 #endif /* (BSP_CFG_RTOS_USED == 1) */
     usb_set_event(USB_STS_READ_COMPLETE, &ctrl);
 }

@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_sci_rx
-VERSION = 		v3.20
+VERSION = 		v3.40
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules

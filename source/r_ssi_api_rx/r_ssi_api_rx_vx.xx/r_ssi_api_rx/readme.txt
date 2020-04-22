@@ -3,14 +3,6 @@ PLEASE REFER TO THE APPLICATION NOTE FOR THIS MIDDLEWARE FOR MORE INFORMATION
 r_ssi_api_rx
 =======================
 
-Document Number 
----------------
-r01an2150jj0124-rx-ssi.pdf
-
-Version
--------
-v1.24
-
 Overview
 --------
 This is a FIT compliant module for RX's SSI peripheral.
@@ -28,6 +20,9 @@ Supported MCUs
 * RX231 Group
 * RX230 Group
 * RX23W Group
+* RX72M Group
+* RX72N Group
+* RX66N Group
 
 Boards Tested On
 ----------------
@@ -36,6 +31,8 @@ Boards Tested On
 * RSKRX113
 * RSKRX231
 * RSSKRX23W
+* RSKRX72M
+* RSKRX72N
  
 Limitations
 -----------
@@ -52,6 +49,7 @@ Required Packages
 How to add to your project
 --------------------------
 * Add src\r_ssi_api_rx.c and r_ssi_api_rx_private.h to your project.
+* Add src\r_ssie_api_rx.c and r_ssie_api_rx_private.h to your project.
 * Add an include path to the 'r_ssi_api_rx' directory. 
 * Add an include path to the 'r_ssi_api_rx\src directory.
 * Copy r_ssi_api_rx_config_reference.h from 'ref' directory to
@@ -75,9 +73,9 @@ r_ssi_api_rx
 +---doc
 |   |
 |   +---en
-|   |      r01an2150ej{VERSION_NUMBER}_rx.pdf
+|   |      r01an2150ej{VERSION_NUMBER}-rx-ssi.pdf
 |   +---ja
-|          r01an2150jj{VERSION_NUMBER}_rx.pdf
+|          r01an2150jj{VERSION_NUMBER}-rx-ssi.pdf
 |
 +---ref
 |       r_ssi_api_rx_config_reference.h
@@ -85,6 +83,8 @@ r_ssi_api_rx
 \---src
         r_ssi_api_rx.c
         r_ssi_api_rx_private.h
+        r_ssie_api_rx.c
+        r_ssie_api_rx_private.h
 
 r_config
     r_ssi_api_rx_config.h

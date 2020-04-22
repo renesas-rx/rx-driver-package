@@ -48,6 +48,17 @@
 *                              Fixed coding style.
 *                              Deleted the following macro definition.
 *                                - BSP_CFG_ROM_CODE_PROTECT_VALUE
+*         : 23.07.2019 3.01    Modified comments of the following macro definition.
+*                               - BSP_CFG_RTOS_USED : The value '1'(FreeRTOS is used.) is available.
+*                              Added the following macro definition.
+*                               - BSP_CFG_RTOS_SYSTEM_TIMER
+*         : 08.10.2019 3.02    Added the following macro definition.
+*                               - BSP_CFG_SWINT_UNIT1_ENABLE
+*                               - BSP_CFG_SWINT_TASK_BUFFER_NUMBER
+*                               - BSP_CFG_SWINT_IPR_INITIAL_VALUE
+*                              Modified comment for added support of Renesas RTOS (RI600V4 or RI600PX).
+*                              Added the following macro definition.
+*                               - BSP_CFG_RENESAS_RTOS_USED
 ***********************************************************************************************************************/
 
 #ifndef R_BSP_CONFIG_REF_HEADER_FILE
@@ -131,13 +142,15 @@ Configuration Options
  * 0 = Use 1 stack. Disable user stack. User stack size set below will be ignored.
  * 1 = Use 2 stacks. User stack and interrupt stack will both be used.
  * NOTE: This setting is available only when using CCRX and GNUC.
+ *       This is invalid when using Renesas RTOS with CCRX.
  */
 #define BSP_CFG_USER_STACK_ENABLE       (1)
 
 /* If only 1 stack is chosen using BSP_CFG_USER_STACK_ENABLE then no RAM will be allocated for the user stack. */
 #if BSP_CFG_USER_STACK_ENABLE == 1
 /* User Stack size in bytes. 
-   NOTE: This setting is available only when using CCRX and GNUC. */
+ * NOTE: This setting is available only when using CCRX and GNUC.
+ *       This is invalid when using Renesas RTOS with CCRX. */
 #define BSP_CFG_USTACK_BYTES            (0x400)
 #endif
 
@@ -150,7 +163,7 @@ Configuration Options
    1) Set this macro (BSP_CFG_HEAP_BYTES) to 0.
    2) Set the macro BSP_CFG_IO_LIB_ENABLE to 0.
    3) Disable stdio from being built into the project library. This is done by going into the Renesas RX Toolchain 
-      settings and choosing the Standard Library section. After that choose 'Contents' in E2Studio.
+      settings and choosing the Standard Library section. After that choose 'Contents' in e2 studio.
       This will present a list of modules that can be included. Uncheck the box for stdio.h.
    NOTE: This setting is available only when using CCRX and GNUC. */
 #define BSP_CFG_HEAP_BYTES              (0x400)
@@ -173,6 +186,7 @@ Configuration Options
    on the differences between these 2 modes see the CPU >> Processor Mode section of your MCU's hardware manual.
    0 = Stay in Supervisor mode.
    1 = Switch to User mode.
+   NOTE: This is invalid when using Renesas RTOS with CCRX.
 */
 #define BSP_CFG_RUN_IN_USER_MODE        (0)
 
@@ -313,12 +327,32 @@ Configuration Options
 
 /* This macro lets other modules no if a RTOS is being used.
    0 = RTOS is not used.
-   1 = FreeRTOS is used.(This is not available.)
+   1 = FreeRTOS is used.
    2 = embOS is used.(This is not available.)
    3 = MicroC_OS is used.(This is not available.)
-   4 = RI600V4 or RI600PX is used.(This is not available.)
+   4 = Renesas ITRON OS (RI600V4 or RI600PX) is used.
 */
 #define BSP_CFG_RTOS_USED               (0)
+
+/* This macro is used to select which Renesas ITRON OS.
+   0 = RI600V4 is used.
+   1 = RI600PX is used.
+*/
+#define BSP_CFG_RENESAS_RTOS_USED       (0)
+
+/* This macro is used to select which CMT channel used for system timer of RTOS.
+ * The setting of this macro is only valid if the macro BSP_CFG_RTOS_USED is set to a value other than 0. */
+#if BSP_CFG_RTOS_USED != 0
+/* Setting value.
+ * 0      = CMT channel 0 used for system timer of RTOS (recommended to be used for RTOS).
+ * 1      = CMT channel 1 used for system timer of RTOS.
+ * 2      = CMT channel 2 used for system timer of RTOS.
+ * 3      = CMT channel 3 used for system timer of RTOS.
+ * Others = Invalid.
+ * NOTE: This is invalid when using Renesas RTOS with CCRX.
+ */
+#define BSP_CFG_RTOS_SYSTEM_TIMER       (0)
+#endif
 
 /* By default modules will use global locks found in mcu_locks.c. If the user is using a RTOS and would rather use its
    locking mechanisms then they can change this macro.
@@ -403,6 +437,30 @@ Configuration Options
    1 = Smart Configurator initialization code used
 */
 #define BSP_CFG_CONFIGURATOR_SELECT                 (0)
+
+/* Software Interrupt (SWINT).
+   0 = Software interrupt is not used.
+   1 = Software interrupt is used.
+   NOTE: When this macro is set to 1, the software interrupt is initialized in bsp startup routine. 
+*/
+#define BSP_CFG_SWINT_UNIT1_ENABLE    (1)
+
+/* Software Interrupt Task Buffer Number.
+   For software interrupt, this value is number of buffering user tasks.
+   So user can increase this value if user system would have many software interrupt tasks
+   and user system has enough buffer. This value requires 9 byte per task.
+   NOTE: This setting is common to all units. It can not be set individually. 
+         The maximum value is 254.
+*/
+#define BSP_CFG_SWINT_TASK_BUFFER_NUMBER     (8)
+
+/* Initial value of the software interrupt priority.
+   For software interrupt, this value is interrupt priority. Range is 0x0 - 0xF.
+   NOTE: This setting is common to all units. It can not be set individually. 
+         Please be careful that this setting is the initial value of the interrupt priority register(IPR).
+         It is possible to dynamically change the IPR.
+*/
+#define BSP_CFG_SWINT_IPR_INITIAL_VALUE     (0x1)
 
 #endif /* R_BSP_CONFIG_REF_HEADER_FILE */
 

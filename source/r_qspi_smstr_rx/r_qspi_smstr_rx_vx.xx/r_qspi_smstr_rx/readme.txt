@@ -5,12 +5,12 @@ r_qspi_smstr_rx (QSPI clock synchronous single master driver)
 
 Document Number 
 ---------------
-R01AN1940EJ0113
-R01AN1940JJ0113
+R01AN1940EJ0114
+R01AN1940JJ0114
      
 Version
 -------
-v1.13
+v1.14
 
 Overview
 --------
@@ -35,8 +35,10 @@ Supported MCUs
 --------------
 * RX64M Group
 * RX65N Group
+* RX66N Group
 * RX71M Group
 * RX72M Group
+* RX72N Group
 
 Boards Tested On
 ----------------
@@ -45,6 +47,7 @@ Boards Tested On
 * RSK for RX71M
 * RSK for RX65N-2MB
 * RSK for RX72M
+* RSK for RX72N
 
 Limitations
 -----------
@@ -56,7 +59,7 @@ Peripherals Used Directly
 
 Required Packages
 -----------------
-* r_bsp    v5.20
+* r_bsp    v5.50
 
 How to add to your project
 --------------------------
@@ -99,9 +102,9 @@ r_qspi_smstr_rx
 +---doc
 |   |
 |   +---en
-|   |       r01an1940ej0113-rx-serial.pdf
+|   |       r01an1940ej0114-rx-serial.pdf
 |   +---ja
-|           r01an1940jj0113-rx-serial.pdf
+|           r01an1940jj0114-rx-serial.pdf
 |
 +---ref
 |       r_qspi_smstr_rx_config_reference.h
@@ -123,12 +126,22 @@ r_qspi_smstr_rx
         |       r_qspi_smstr_target.h
         |       r_qspi_smstr_target_dev_port.c
         |
+        +---rx66n
+        |       r_qspi_smstr_target.c
+        |       r_qspi_smstr_target.h
+        |       r_qspi_smstr_target_dev_port.c
+        |
         +---rx71m
         |       r_qspi_smstr_target.c
         |       r_qspi_smstr_target.h
         |       r_qspi_smstr_target_dev_port.c
         |
         +---rx72m
+        |       r_qspi_smstr_target.c
+        |       r_qspi_smstr_target.h
+        |       r_qspi_smstr_target_dev_port.c
+        |
+        +---rx72n
                 r_qspi_smstr_target.c
                 r_qspi_smstr_target.h
                 r_qspi_smstr_target_dev_port.c

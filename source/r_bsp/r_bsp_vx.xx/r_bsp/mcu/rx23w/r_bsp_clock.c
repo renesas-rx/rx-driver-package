@@ -23,6 +23,7 @@
 /**********************************************************************************************************************
 * History : DD.MM.YYYY Version  Description
 *         : 29.03.2019 1.00     First Release
+*         : 26.07.2019 1.01     Modified comment of API function to Doxygen style.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -49,12 +50,14 @@ Private global variables and functions
 #if BSP_CFG_STARTUP_DISABLE == 0
 
 #if BSP_CFG_CLKOUT_RF_MAIN == 1
-/***********************************************************************************************************************
-* Function name: R_BSP_ConfigClockSetting
-* Description  : This function sets each clock when using the BLE clock as the main clock.
-* Arguments    : none
-* Return value : none
-***********************************************************************************************************************/
+/**********************************************************************************************************************
+ * Function Name: R_BSP_ConfigClockSetting
+ ******************************************************************************************************************//**
+ * @brief This function is available only on the RX23W. This function is used by Bluetooth Low Energy Protocol Stack 
+ * Basic Package.
+ * @details Under certain conditions, Bluetooth Low Energy Protocol Stack Basic Package uses this function to set the 
+ * clock. For details, refer to Bluetooth Low Energy Protocol Stack Basic Package User's Manual (R01UW0205)
+ */
 void R_BSP_ConfigClockSetting(void)
 {
 #if BSP_CFG_CLOCK_SOURCE == 1

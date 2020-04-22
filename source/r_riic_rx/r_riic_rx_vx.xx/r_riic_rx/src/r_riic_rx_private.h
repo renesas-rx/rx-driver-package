@@ -65,6 +65,8 @@
  *         : 15.10.2018 2.40     Added RX72T support.
  *         : 20.06.2019 2.42     Added RX23W support.
  *         : 30.07.2019 2.43     Added RX72M support.
+ *         : 10.10.2019 2.44     Added RX13T support.
+ *         : 22.11.2019 2.45     Added RX66N, RX72N support.
  **********************************************************************************************************************/
 /* Guards against multiple inclusion */
 #ifndef RIIC_PRIVATE_H
@@ -110,6 +112,12 @@
         #include "./targets/rx23w/r_riic_rx23w_private.h"
     #elif defined(BSP_MCU_RX72M)
         #include "./targets/rx72m/r_riic_rx72m_private.h"
+    #elif defined(BSP_MCU_RX13T)
+        #include "./targets/rx13t/r_riic_rx13t_private.h"
+    #elif defined(BSP_MCU_RX66N)
+        #include "./targets/rx66n/r_riic_rx66n_private.h"
+    #elif defined(BSP_MCU_RX72N)
+        #include "./targets/rx72n/r_riic_rx72n_private.h"
     #else
         #error "This MCU is not supported by the current r_riic_rx module."
     #endif

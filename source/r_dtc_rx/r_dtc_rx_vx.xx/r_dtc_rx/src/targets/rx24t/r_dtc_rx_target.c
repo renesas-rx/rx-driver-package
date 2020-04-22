@@ -38,6 +38,7 @@
 *         : 24.12.2015 2.04    Added RX130, RX23T and RX24T.
 *         : 31.03.2017 2.07    Added RX24T-512KB.
 *         : 31.07.2017 2.08    Fixed to correspond to Renesas coding rule.
+*         : 25.11.2019 3.30    Added support for atomic control.
 *******************************************************************************/
 
 /*****************************************************************************
@@ -150,15 +151,29 @@ bool r_dtc_check_DMAC_locking_byUSER(void)
 *******************************************************************************/
 void r_dtc_module_enable(void)
 {
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+bsp_int_ctrl_t int_ctrl;
+#endif
     /* Enable writing to MSTP registers. */
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
+
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
     /* Release from module stop state. */
     MSTP(DTC) = 0;
+
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
     /* Disable writing to MSTP registers. */
     R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);
 
     return;
 }
+/******************************************************************************
+ End of function r_dtc_module_enable
+ *****************************************************************************/
 
 /*******************************************************************************
 * Function Name: r_dtc_module_disable
@@ -168,15 +183,29 @@ void r_dtc_module_enable(void)
 *******************************************************************************/
 void r_dtc_module_disable(void)
 {
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+bsp_int_ctrl_t int_ctrl;
+#endif
     /* Enable writing to MSTP registers. */
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_LPC_CGC_SWR);
+
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_DISABLE, &int_ctrl);
+#endif
     /* Set to module stop state. */
     MSTP(DTC) = 1;
+
+#if ((R_BSP_VERSION_MAJOR == 5) && (R_BSP_VERSION_MINOR >= 30)) || (R_BSP_VERSION_MAJOR >= 6)
+    R_BSP_InterruptControl(BSP_INT_SRC_EMPTY, BSP_INT_CMD_FIT_INTERRUPT_ENABLE, &int_ctrl);
+#endif
     /* Disable writing to MSTP registers. */
     R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_LPC_CGC_SWR);
 
     return;
 }
+/******************************************************************************
+ End of function r_dtc_module_disable
+ *****************************************************************************/
 
 
 #endif /* defined(BSP_MCU_RX24T) */

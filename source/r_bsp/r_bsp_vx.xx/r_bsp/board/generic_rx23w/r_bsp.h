@@ -24,6 +24,11 @@
 /***********************************************************************************************************************
 * History : DD.MM.YYYY Version  Description
 *         : 29.03.2019 1.00     First Release
+*         : 26.07.2019 1.01     Added the following include path.
+*                                - r_bsp_vbatt.h
+*         : 08.10.2019 1.02     Added the following include path.
+*                                - r_bsp_software_interrupt.h
+*                               Changed include of r_bsp_config.h for added support of Renesas RTOS(RI600V4 or RI600PX).
 ***********************************************************************************************************************/
 
 /* Make sure that no other platforms have already been defined. Do not touch this! */
@@ -41,9 +46,8 @@ extern "C" {
 INCLUDE APPROPRIATE MCU AND BOARD FILES
 ***********************************************************************************************************************/
 #include    "mcu/all/r_bsp_common.h"
-#include    "mcu/all/r_rx_compiler.h"
-
 #include    "r_bsp_config.h"
+#include    "mcu/all/r_rx_compiler.h"
 
 #include    "mcu/all/lowlvl.h"
 #include    "mcu/all/lowsrc.h"
@@ -58,6 +62,7 @@ INCLUDE APPROPRIATE MCU AND BOARD FILES
 #endif /* defined(__CCRX__), defined(__GNUC__), defined(__ICCRX__) */
 #include    "mcu/rx23w/r_bsp_cpu.h"
 #include    "mcu/rx23w/r_bsp_locking.h"
+#include    "mcu/rx23w/r_bsp_vbatt.h"
 #include    "mcu/rx23w/mcu_clocks.h"
 #include    "mcu/rx23w/mcu_info.h"
 #include    "mcu/rx23w/mcu_init.h"
@@ -69,6 +74,7 @@ INCLUDE APPROPRIATE MCU AND BOARD FILES
 #include    "board/generic_rx23w/hwsetup.h"
 
 #include    "mcu/all/r_bsp_interrupts.h"
+#include    "mcu/all/r_bsp_software_interrupt.h"
 #include    "mcu/all/r_rx_intrinsic_functions.h"
 #include    "mcu/all/r_rtos.h"
 

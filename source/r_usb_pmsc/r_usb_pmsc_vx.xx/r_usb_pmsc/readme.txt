@@ -10,7 +10,7 @@ R01AN2029JJ
 
 Version
 -------
-v1.27
+v1.30
 
 Overview
 --------
@@ -32,6 +32,8 @@ Supported MCUs
 * RX66T Group
 * RX72T Group
 * RX72M Group
+* RX72N Group
+* RX66N Group
 
 
 Boards Tested On
@@ -42,6 +44,7 @@ Boards Tested On
 * RSKRX65N_2MB
 * RSKRX72T
 * RSKRX72M
+* RSKRX72N
 
  
 Limitations
@@ -74,9 +77,9 @@ r_usb_pmsc
 |
 +---doc
 |     \en
-|     |   r01an2029ej0127_usb.pdf
+|     |   r01an2029ej0130_usb.pdf
 |     \jp
-|         r01an2029jj0127_usb.pdf
+|         r01an2029jj0130_usb.pdf
 |
 +---ref
 |       r_usb_pmsc_config_reference.h

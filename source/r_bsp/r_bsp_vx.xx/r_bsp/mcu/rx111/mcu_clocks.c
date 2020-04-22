@@ -36,6 +36,9 @@
 *                               - BSP_PRV_SUB_CLK_SOSCCR
 *                               - BSP_PRV_NORMALIZE_X10
 *                               Deleted the error check of BSP_CFG_CLOCK_SOURCE in the clock_source_select function.
+*         : 17.12.2019 2.01     Deleted the unused variable of clock_source_select function.
+*                               Fixed warning of clock_source_select function with IAR compiler.
+*         : 14.02.2020 2.02     Fixed warning of clock_source_select function with CCRX and IAR compiler.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -305,9 +308,9 @@ static void operating_frequency_set (void)
 ***********************************************************************************************************************/
 static void clock_source_select (void)
 {
-    /* Declared volatile for software delay purposes. */
-    volatile uint32_t i;
-    volatile uint8_t tmp;
+#if (BSP_PRV_SUB_CLK_SOSCCR == 1) || (BSP_CFG_RTC_ENABLE == 1)
+    uint8_t tmp;
+#endif
 
 #if BSP_CFG_CLOCK_SOURCE == 1
     /* HOCO is chosen. Start it operating if it is not already operating. */

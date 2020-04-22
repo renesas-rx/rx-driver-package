@@ -28,17 +28,61 @@
 *           03.04.2017 2.30    Added RX130-512KB support.
 *           05.04.2019 4.00    Modified comment.
 ***********************************************************************************************************************/
-#ifndef S12AD_RX130_IF_H
-#define S12AD_RX130_IF_H
 
 /******************************************************************************
 Includes   <System Includes> , "Project Includes"
 *******************************************************************************/
 #include "platform.h"
 
+#ifndef S12AD_PRV_RX130_IF_H
+#define S12AD_PRV_RX130_IF_H
+
 /******************************************************************************
 Macro definitions
 *******************************************************************************/
+#define ADC_SST_CNT_MIN     (5)     /* For PCLKB:ADCLK = 1:1, 1:2, 1:4, 1:8 */
+#define ADC_SST_CNT_MAX     (255)
+#define ADC_SST_CNT_DEFAULT (13)
+
+#define ADC_DDA_STATE_CNT_MIN       (2)  /* ADDISCR.ADNDIS[0..3] bits. */
+#define ADC_DDA_STATE_CNT_MAX       (15)
+
+
+/* for ADC_CMD_ENABLE_CHANS */
+/* Bitwise OR these masks together for desired channels and sensors
+   Used for all commands containing a "mask" or "flags" field */
+#define ADC_MASK_CH0    (1<<0)
+#define ADC_MASK_CH1    (1<<1)
+#define ADC_MASK_CH2    (1<<2)
+#define ADC_MASK_CH3    (1<<3)
+#define ADC_MASK_CH4    (1<<4)
+#define ADC_MASK_CH5    (1<<5)
+#define ADC_MASK_CH6    (1<<6)
+#define ADC_MASK_CH7    (1<<7)
+#define ADC_MASK_CH16   (1<<16)
+#define ADC_MASK_CH17   (1<<17)
+#define ADC_MASK_CH18   (1<<18)
+#define ADC_MASK_CH19   (1<<19)
+#define ADC_MASK_CH20   (1<<20)
+#define ADC_MASK_CH21   (1<<21)
+#define ADC_MASK_CH22   (1<<22)
+#define ADC_MASK_CH23   (1<<23)
+#define ADC_MASK_CH24   (1<<24)
+#define ADC_MASK_CH25   (1<<25)
+#define ADC_MASK_CH26   (1<<26)
+#define ADC_MASK_CH27   (1<<27)
+#define ADC_MASK_CH28   (1<<28)
+#define ADC_MASK_CH29   (1<<29)
+#define ADC_MASK_CH30   (1<<30)
+#define ADC_MASK_CH31   (1<<31)
+#define ADC_MASK_TEMP   (1<<8)     /* temperature sensor */
+#define ADC_MASK_VOLT   (1<<9)     /* internal reference voltage sensor */
+
+#define ADC_MASK_SENSORS            (ADC_MASK_TEMP | ADC_MASK_VOLT)
+#define ADC_MASK_GROUPB_OFF         (0)
+#define ADC_MASK_ADD_OFF            (0)
+#define ADC_MASK_SAMPLE_HOLD_OFF    (0)
+
 
 /*****************************************************************************
 Typedef definitions
@@ -169,8 +213,6 @@ typedef enum e_adc_charge           // Disconnection Detection Assist (DDA)
     ADC_DDA_OFF       = 0x02
 } adc_charge_t;
 
-#define ADC_DDA_STATE_CNT_MIN       (2)  //ADDISCR.ADNDIS[0..3] bits.
-#define ADC_DDA_STATE_CNT_MAX       (15)
 
 typedef struct st_adc_dda
 {
@@ -198,9 +240,6 @@ typedef enum e_adc_sst_reg          // sample state registers
     ADC_SST_REG_MAX = ADC_SST_VOLTAGE
 } adc_sst_reg_t;
 
-#define ADC_SST_CNT_MIN     (5)     //For PCLKB:ADCLK = 1:1, 1:2, 1:4, 1:8
-#define ADC_SST_CNT_MAX     (255)
-#define ADC_SST_CNT_DEFAULT (13)
 
 typedef struct st_adc_sst
 {
@@ -208,41 +247,6 @@ typedef struct st_adc_sst
     uint8_t         num_states;     // ch16-21, 24-26 use the same value
 } adc_sst_t;
 
-
-/* for ADC_CMD_ENABLE_CHANS */
-/* Bitwise OR these masks together for desired channels and sensors
-   Used for all commands containing a "mask" or "flags" field */
-#define ADC_MASK_CH0    (1<<0)
-#define ADC_MASK_CH1    (1<<1)
-#define ADC_MASK_CH2    (1<<2)
-#define ADC_MASK_CH3    (1<<3)
-#define ADC_MASK_CH4    (1<<4)
-#define ADC_MASK_CH5    (1<<5)
-#define ADC_MASK_CH6    (1<<6)
-#define ADC_MASK_CH7    (1<<7)
-#define ADC_MASK_CH16   (1<<16)
-#define ADC_MASK_CH17   (1<<17)
-#define ADC_MASK_CH18   (1<<18)
-#define ADC_MASK_CH19   (1<<19)
-#define ADC_MASK_CH20   (1<<20)
-#define ADC_MASK_CH21   (1<<21)
-#define ADC_MASK_CH22   (1<<22)
-#define ADC_MASK_CH23   (1<<23)
-#define ADC_MASK_CH24   (1<<24)
-#define ADC_MASK_CH25   (1<<25)
-#define ADC_MASK_CH26   (1<<26)
-#define ADC_MASK_CH27   (1<<27)
-#define ADC_MASK_CH28   (1<<28)
-#define ADC_MASK_CH29   (1<<29)
-#define ADC_MASK_CH30   (1<<30)
-#define ADC_MASK_CH31   (1<<31)
-#define ADC_MASK_TEMP   (1<<8)     // temperature sensor
-#define ADC_MASK_VOLT   (1<<9)     // internal reference voltage sensor
-
-#define ADC_MASK_SENSORS            (ADC_MASK_TEMP | ADC_MASK_VOLT)
-#define ADC_MASK_GROUPB_OFF         (0)
-#define ADC_MASK_ADD_OFF            (0)
-#define ADC_MASK_SAMPLE_HOLD_OFF    (0)
 
 typedef enum e_adc_grpa                 // action when groupa interrupts groupb scan
 {
@@ -281,11 +285,11 @@ typedef struct st_adc_ch_cfg
 
 /* for ADC_CMD_EN_COMPARATOR_LEVEL and ADC_CMD_EN_COMPARATOR_WINDOW */
 
-typedef struct st_adc_cmpwin_cfg        // bit-OR ADC_MASK_xxx to
-{                                       //   indicate channels/sensors
+typedef struct st_adc_cmpwin_cfg        // bit-OR ADC_MASK_xxx to indicate channels/sensors
+{
     uint32_t        compare_mask;       // channels/sensors to compare
-    uint32_t        inside_window_mask; // condition met when within range
-                                        // default=0 met when outside range
+    uint32_t        inside_window_mask; /* condition met when within range
+                                           default=0 met when outside range */
     uint16_t        level_lo;           // Low-value of window
     uint16_t        level_hi;           // High-value of window
     bool            windowa_enable;     // comparison window A enable
@@ -345,5 +349,5 @@ typedef struct st_adc_data
 Public Functions
 ******************************************************************************/
 
-#endif /* S12AD_RX130_IF_H */
+#endif /* S12AD_PRV_RX130_IF_H */
 

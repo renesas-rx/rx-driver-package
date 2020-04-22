@@ -38,6 +38,7 @@
 *                               Fixed coding style. 
 *         : 20.06.2019 2.02     Supported RX23W.
 *         : 30.07.2019 2.03     Supported RX72M.
+*         : 22.11.2019 2.04     Supported RX72N and RX66N.
 ***********************************************************************************************************************/
 
 #ifndef RSPI_API_HEADER_FILE
@@ -64,7 +65,7 @@ Macro definitions
 
 /* Version Number of API. */
 #define RSPI_RX_VERSION_MAJOR           (2)
-#define RSPI_RX_VERSION_MINOR           (03)
+#define RSPI_RX_VERSION_MINOR           (04)
 
 /***********************************************************************************************************************
 Typedef definitions
@@ -324,12 +325,6 @@ rspi_err_t R_RSPI_GetBuffRegAddress(rspi_handle_t handle,
 rspi_err_t R_RSPI_IntSptiIerClear(rspi_handle_t handle);
 
 rspi_err_t R_RSPI_IntSpriIerClear(rspi_handle_t handle);
-
-rspi_err_t R_RSPI_IntSptiDmacdtcFlagSet(rspi_handle_t handle,
-                                        rspi_trans_flg_t flg);
-                                        
-rspi_err_t R_RSPI_IntSpriDmacdtcFlagSet(rspi_handle_t handle,
-                                        rspi_trans_flg_t flg);
                                         
 rspi_err_t R_RSPI_SetLogHdlAddress(uint32_t user_long_que);
 

@@ -38,6 +38,8 @@
 *                              Fixed issue that count stop occurred at warm start.
 *                              - There is no change in this file.
 *           30.07.2019 2.77    Added support for RX72M.
+*           22.11.2019 2.78    Added support for RX66N.
+*                              Added support for RX72N.
 ***********************************************************************************************************************/
 
 #ifndef R_RTC_RX_CONFIG_H
@@ -58,14 +60,14 @@ Configuration Options
 #define RTC_CFG_CALCULATE_YDAY          (0)
 
 
-/* SPECIFY SUB-CLOCK OSCILLATOR DRIVE CAPACITY ON RX11x, RX130, RX23x, RX64M or RX71M, RX65N, RX72M 
+/* SPECIFY SUB-CLOCK OSCILLATOR DRIVE CAPACITY ON RX11x, RX130, RX23x, RX64M or RX71M, RX65N, RX72M, RX66N, RX72N 
  * uncomment appropriate level: standard, low, middle, or high
  */
 
-/* Supported by the RX11x, RX130, RX23x, RX64M or RX71M, RX65N, RX72M */
+/* Supported by the RX11x, RX130, RX23x, RX64M or RX71M, RX65N, RX72M, RX66N, RX72N */
 #define RTC_CFG_DRIVE_CAPACITY_STD
 
-/* Supported by the RX11x, RX130, RX23x, RX64M or RX71M, RX65N, RX72M */
+/* Supported by the RX11x, RX130, RX23x, RX64M or RX71M, RX65N, RX72M, RX66N, RX72N */
 //#define RTC_CFG_DRIVE_CAPACITY_LO
 
 /* Supported by the RX11x only */

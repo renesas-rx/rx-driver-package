@@ -38,6 +38,7 @@
 *                               - BSP_PRV_CKSEL_PLL
 *                               - BSP_PRV_NORMALIZE_X10
 *                               Deleted the error check of BSP_CFG_CLOCK_SOURCE in the clock_source_select function.
+*         : 17.12.2019 2.01     Deleted the unused variables of clock_source_select function.
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -408,10 +409,6 @@ static void operating_frequency_set (void)
 ***********************************************************************************************************************/
 static void clock_source_select (void)
 {
-    volatile uint8_t i;
-    volatile uint8_t dummy;
-    volatile uint8_t tmp;
-
     /* Set the oscillation source of the main clock oscillator. */
     SYSTEM.MOFCR.BIT.MOSEL = BSP_CFG_MAIN_CLOCK_SOURCE;
 

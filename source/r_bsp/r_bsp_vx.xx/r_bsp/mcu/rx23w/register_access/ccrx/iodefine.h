@@ -16,20 +16,27 @@
 *
 * Copyright (C) 2013 Renesas Electronics Corporation. All rights reserved.
 ***********************************************************************************************************************/
-/********************************************************************************/
-/*                                                                              */
-/* Device     : RX/RX200/RX23W                                                  */
-/* File Name  : iodefine.h                                                      */
-/* Abstract   : Definition of I/O Register.                                     */
-/* History    : V0.5  (2018-12-20)  [Hardware Manual Revision : 0.50]           */
-/*            : V0.5A (2018-12-20)  [Hardware Manual Revision : 0.50]           */
-/*            : V1.0  (2019-02-28)  [Hardware Manual Revision : 1.00]           */
-/*            : V1.0A (2019-04-24)  [Hardware Manual Revision : 1.00]           */
-/*            : V1.0B (2019-05-22)  [Hardware Manual Revision : 1.00]           */
-/* Note       : This is a typical example.                                      */
-/*                                                                              */
-/*  Copyright(c) 2019 Renesas Electronics Corporation.                          */
-/*                                                                              */
+/*******************************************************************************
+*
+* Device     : RX/RX200/RX23W
+*
+* File Name  : iodefine.h
+*
+* Abstract   : Definition of I/O Register.
+*
+* History    : V0.50  (2018-12-20)  [Hardware Manual Revision : 0.50]
+*            : V0.50A (2018-12-20)  [Hardware Manual Revision : 0.50]
+*            : V1.00  (2019-02-28)  [Hardware Manual Revision : 1.00]
+*            : V1.00A (2019-04-24)  [Hardware Manual Revision : 1.00]
+*            : V1.00B (2019-05-22)  [Hardware Manual Revision : 1.00]
+*            : V1.00C (2019-08-01)  [Hardware Manual Revision : 1.00]
+*            : V1.00D (2019-10-04)  [Hardware Manual Revision : 1.00]
+*
+* NOTE       : THIS IS A TYPICAL EXAMPLE.
+*
+*  Copyright(c) 2019 Renesas Electronics Corporation.
+*
+*********************************************************************************/
 /********************************************************************************/
 /*                                                                              */
 /*  DESCRIPTION : Definition of ICU Register                                    */
@@ -120,14 +127,13 @@
 #define	IEN_RTC_CUP			IEN7
 #define	IEN_ICU_IRQ0		IEN0
 #define	IEN_ICU_IRQ1		IEN1
-#define	IEN_ICU_BLEIRQ		IEN3
+#define	IEN_BLE_BLEIRQ		IEN3
 #define	IEN_ICU_IRQ4		IEN4
 #define	IEN_ICU_IRQ5		IEN5
 #define	IEN_ICU_IRQ6		IEN6
 #define	IEN_ICU_IRQ7		IEN7
 #define	IEN_ELC_ELSR8I		IEN0
 #define	IEN_LVD_LVD1		IEN0
-#define	IEN_CMPA_CMPA1		IEN0
 #define	IEN_USB0_USBR0		IEN2
 #define	IEN_VBATT_VBTLVDI	IEN3
 #define	IEN_RTC_ALM			IEN4
@@ -169,9 +175,6 @@
 #define	IEN_MTU4_TGIC4		IEN0
 #define	IEN_MTU4_TGID4		IEN1
 #define	IEN_MTU4_TCIV4		IEN2
-#define	IEN_MTU5_TGIU5		IEN3
-#define	IEN_MTU5_TGIV5		IEN4
-#define	IEN_MTU5_TGIW5		IEN5
 #define	IEN_TPU0_TGI0A		IEN6
 #define	IEN_TPU0_TGI0B		IEN7
 #define	IEN_TPU0_TGI0C		IEN0
@@ -278,14 +281,13 @@
 #define	VECT_RTC_CUP		63
 #define	VECT_ICU_IRQ0		64
 #define	VECT_ICU_IRQ1		65
-#define	VECT_ICU_BLEIRQ		67
+#define	VECT_BLE_BLEIRQ		67
 #define	VECT_ICU_IRQ4		68
 #define	VECT_ICU_IRQ5		69
 #define	VECT_ICU_IRQ6		70
 #define	VECT_ICU_IRQ7		71
 #define	VECT_ELC_ELSR8I		80
 #define	VECT_LVD_LVD1		88
-#define	VECT_CMPA_CMPA1		88
 #define	VECT_USB0_USBR0		90
 #define	VECT_VBATT_VBTLVDI	91
 #define	VECT_RTC_ALM		92
@@ -327,9 +329,6 @@
 #define	VECT_MTU4_TGIC4		136
 #define	VECT_MTU4_TGID4		137
 #define	VECT_MTU4_TCIV4		138
-#define	VECT_MTU5_TGIU5		139
-#define	VECT_MTU5_TGIV5		140
-#define	VECT_MTU5_TGIW5		141
 #define	VECT_TPU0_TGI0A		142
 #define	VECT_TPU0_TGI0B		143
 #define	VECT_TPU0_TGI0C		144
@@ -438,6 +437,7 @@
 #define	MSTP_SMCI1	SYSTEM.MSTPCRB.BIT.MSTPB30
 #define	MSTP_SCI5	SYSTEM.MSTPCRB.BIT.MSTPB26
 #define	MSTP_SMCI5	SYSTEM.MSTPCRB.BIT.MSTPB26
+#define	MSTP_BLE	SYSTEM.MSTPCRB.BIT.MSTPB25
 #define	MSTP_CRC	SYSTEM.MSTPCRB.BIT.MSTPB23
 #define	MSTP_RIIC0	SYSTEM.MSTPCRB.BIT.MSTPB21
 #define	MSTP_USB0	SYSTEM.MSTPCRB.BIT.MSTPB19
@@ -512,7 +512,6 @@
 #define	MTU3	(*(volatile struct st_mtu3       __evenaccess *)0xD0A00)
 #define	MTU4	(*(volatile struct st_mtu4       __evenaccess *)0xD0A00)
 #define	POE		(*(volatile struct st_poe        __evenaccess *)0x88900)
-#define	PORT	(*(volatile struct st_port       __evenaccess *)0x8C120)
 #define	PORT0	(*(volatile struct st_port0      __evenaccess *)0x8C000)
 #define	PORT1	(*(volatile struct st_port1      __evenaccess *)0x8C001)
 #define	PORT2	(*(volatile struct st_port2      __evenaccess *)0x8C002)
@@ -572,10 +571,11 @@ IR_RSCAN_COMFRXINT=52,IR_RSCAN_RXFINT,IR_RSCAN_TXINT,IR_RSCAN_CHERRINT,IR_RSCAN_
 IR_DOC_DOPCF,
 IR_CTSU_CTSUWR=60,IR_CTSU_CTSURD,IR_CTSU_CTSUFN,
 IR_RTC_CUP,
-IR_ICU_IRQ0,IR_ICU_IRQ1,IR_ICU_BLEIRQ=67,IR_ICU_IRQ4,IR_ICU_IRQ5,IR_ICU_IRQ6,IR_ICU_IRQ7,
+IR_ICU_IRQ0,IR_ICU_IRQ1,
+IR_BLE_BLEIRQ=67,
+IR_ICU_IRQ4,IR_ICU_IRQ5,IR_ICU_IRQ6,IR_ICU_IRQ7,
 IR_ELC_ELSR8I=80,
 IR_LVD_LVD1=88,
-IR_CMPA_CMPA1=88,
 IR_USB0_USBR0=90,
 IR_VBATT_VBTLVDI,
 IR_RTC_ALM,IR_RTC_PRD,
@@ -589,8 +589,7 @@ IR_MTU1_TGIA1,IR_MTU1_TGIB1,IR_MTU1_TCIV1,IR_MTU1_TCIU1,
 IR_MTU2_TGIA2,IR_MTU2_TGIB2,IR_MTU2_TCIV2,IR_MTU2_TCIU2,
 IR_MTU3_TGIA3,IR_MTU3_TGIB3,IR_MTU3_TGIC3,IR_MTU3_TGID3,IR_MTU3_TCIV3,
 IR_MTU4_TGIA4,IR_MTU4_TGIB4,IR_MTU4_TGIC4,IR_MTU4_TGID4,IR_MTU4_TCIV4,
-IR_MTU5_TGIU5,IR_MTU5_TGIV5,IR_MTU5_TGIW5,
-IR_TPU0_TGI0A,IR_TPU0_TGI0B,IR_TPU0_TGI0C,IR_TPU0_TGI0D,IR_TPU0_TCI0V,
+IR_TPU0_TGI0A=142,IR_TPU0_TGI0B,IR_TPU0_TGI0C,IR_TPU0_TGI0D,IR_TPU0_TCI0V,
 IR_TPU1_TGI1A,IR_TPU1_TGI1B,IR_TPU1_TCI1V,IR_TPU1_TCI1U,
 IR_TPU2_TGI2A,IR_TPU2_TGI2B,IR_TPU2_TCI2V,IR_TPU2_TCI2U,
 IR_TPU3_TGI3A,IR_TPU3_TGI3B,IR_TPU3_TGI3C,IR_TPU3_TGI3D,IR_TPU3_TCI3V,
@@ -605,7 +604,7 @@ IR_DMAC_DMAC0I=198,IR_DMAC_DMAC1I,IR_DMAC_DMAC2I,IR_DMAC_DMAC3I,
 IR_SCI1_ERI1=218,IR_SCI1_RXI1,IR_SCI1_TXI1,IR_SCI1_TEI1,
 IR_SCI5_ERI5,IR_SCI5_RXI5,IR_SCI5_TXI5,IR_SCI5_TEI5,
 IR_BLE_ERI,IR_BLE_RXI,IR_BLE_TXI,IR_BLE_TEI,
-IR_SCI8_RXI8=231,IR_SCI8_TXI8,IR_SCI8_TEI8,
+IR_SCI8_ERI8,IR_SCI8_RXI8,IR_SCI8_TXI8,IR_SCI8_TEI8,
 IR_SCI12_ERI12=238,IR_SCI12_RXI12,IR_SCI12_TXI12,IR_SCI12_TEI12,IR_SCI12_SCIX0,IR_SCI12_SCIX1,IR_SCI12_SCIX2,IR_SCI12_SCIX3,
 IR_RIIC0_EEI0,IR_RIIC0_RXI0,IR_RIIC0_TXI0,IR_RIIC0_TEI0
 } enum_ir_t;
@@ -632,8 +631,7 @@ DTCE_MTU1_TGIA1=121,DTCE_MTU1_TGIB1,
 DTCE_MTU2_TGIA2=125,DTCE_MTU2_TGIB2,
 DTCE_MTU3_TGIA3=129,DTCE_MTU3_TGIB3,DTCE_MTU3_TGIC3,DTCE_MTU3_TGID3,
 DTCE_MTU4_TGIA4=134,DTCE_MTU4_TGIB4,DTCE_MTU4_TGIC4,DTCE_MTU4_TGID4,DTCE_MTU4_TCIV4,
-DTCE_MTU5_TGIU5,DTCE_MTU5_TGIV5,DTCE_MTU5_TGIW5,
-DTCE_TPU0_TGI0A,DTCE_TPU0_TGI0B,DTCE_TPU0_TGI0C,DTCE_TPU0_TGI0D,
+DTCE_TPU0_TGI0A=142,DTCE_TPU0_TGI0B,DTCE_TPU0_TGI0C,DTCE_TPU0_TGI0D,
 DTCE_TPU1_TGI1A=147,DTCE_TPU1_TGI1B,
 DTCE_TPU2_TGI2A=151,DTCE_TPU2_TGI2B,
 DTCE_TPU3_TGI3A=155,DTCE_TPU3_TGI3B,DTCE_TPU3_TGI3C,DTCE_TPU3_TGI3D,
@@ -668,10 +666,11 @@ IER_RSCAN_COMFRXINT=0x06,IER_RSCAN_RXFINT=0x06,IER_RSCAN_TXINT=0x06,IER_RSCAN_CH
 IER_DOC_DOPCF=0x07,
 IER_CTSU_CTSUWR=0x07,IER_CTSU_CTSURD=0x07,IER_CTSU_CTSUFN=0x07,
 IER_RTC_CUP=0x07,
-IER_ICU_IRQ0=0x08,IER_ICU_IRQ1=0x08,IER_ICU_BLEIRQ=0x08,IER_ICU_IRQ4=0x08,IER_ICU_IRQ5=0x08,IER_ICU_IRQ6=0x08,IER_ICU_IRQ7=0x08,
+IER_ICU_IRQ0=0x08,IER_ICU_IRQ1=0x08,
+IER_BLE_BLEIRQ=0x08,
+IER_ICU_IRQ4=0x08,IER_ICU_IRQ5=0x08,IER_ICU_IRQ6=0x08,IER_ICU_IRQ7=0x08,
 IER_ELC_ELSR8I=0x0A,
 IER_LVD_LVD1=0x0B,
-IER_CMPA_CMPA1=0x0B,
 IER_USB0_USBR0=0x0B,
 IER_VBATT_VBTLVDI=0x0B,
 IER_RTC_ALM=0x0B,IER_RTC_PRD=0x0B,
@@ -685,7 +684,6 @@ IER_MTU1_TGIA1=0x0F,IER_MTU1_TGIB1=0x0F,IER_MTU1_TCIV1=0x0F,IER_MTU1_TCIU1=0x0F,
 IER_MTU2_TGIA2=0x0F,IER_MTU2_TGIB2=0x0F,IER_MTU2_TCIV2=0x0F,IER_MTU2_TCIU2=0x10,
 IER_MTU3_TGIA3=0x10,IER_MTU3_TGIB3=0x10,IER_MTU3_TGIC3=0x10,IER_MTU3_TGID3=0x10,IER_MTU3_TCIV3=0x10,
 IER_MTU4_TGIA4=0x10,IER_MTU4_TGIB4=0x10,IER_MTU4_TGIC4=0x11,IER_MTU4_TGID4=0x11,IER_MTU4_TCIV4=0x11,
-IER_MTU5_TGIU5=0x11,IER_MTU5_TGIV5=0x11,IER_MTU5_TGIW5=0x11,
 IER_TPU0_TGI0A=0x11,IER_TPU0_TGI0B=0x11,IER_TPU0_TGI0C=0x12,IER_TPU0_TGI0D=0x12,IER_TPU0_TCI0V=0x12,
 IER_TPU1_TGI1A=0x12,IER_TPU1_TGI1B=0x12,IER_TPU1_TCI1V=0x12,IER_TPU1_TCI1U=0x12,
 IER_TPU2_TGI2A=0x12,IER_TPU2_TGI2B=0x13,IER_TPU2_TCI2V=0x13,IER_TPU2_TCI2U=0x13,
@@ -722,10 +720,11 @@ IPR_RSCAN_COMFRXINT=52,IPR_RSCAN_RXFINT=53,IPR_RSCAN_TXINT=54,IPR_RSCAN_CHERRINT
 IPR_DOC_DOPCF=57,
 IPR_CTSU_CTSUWR=60,IPR_CTSU_CTSURD=60,IPR_CTSU_CTSUFN=60,
 IPR_RTC_CUP=63,
-IPR_ICU_IRQ0=64,IPR_ICU_IRQ1=65,IPR_ICU_BLEIRQ=67,IPR_ICU_IRQ4=68,IPR_ICU_IRQ5=69,IPR_ICU_IRQ6=70,IPR_ICU_IRQ7=71,
+IPR_ICU_IRQ0=64,IPR_ICU_IRQ1=65,
+IPR_BLE_BLEIRQ=67,
+IPR_ICU_IRQ4=68,IPR_ICU_IRQ5=69,IPR_ICU_IRQ6=70,IPR_ICU_IRQ7=71,
 IPR_ELC_ELSR8I=80,
 IPR_LVD_LVD1=88,
-IPR_CMPA_CMPA1=88,
 IPR_USB0_USBR0=90,
 IPR_VBATT_VBTLVDI=91,
 IPR_RTC_ALM=92,IPR_RTC_PRD=93,
@@ -739,7 +738,6 @@ IPR_MTU1_TGIA1=121,IPR_MTU1_TGIB1=121,IPR_MTU1_TCIV1=123,IPR_MTU1_TCIU1=123,
 IPR_MTU2_TGIA2=125,IPR_MTU2_TGIB2=125,IPR_MTU2_TCIV2=127,IPR_MTU2_TCIU2=127,
 IPR_MTU3_TGIA3=129,IPR_MTU3_TGIB3=129,IPR_MTU3_TGIC3=129,IPR_MTU3_TGID3=129,IPR_MTU3_TCIV3=133,
 IPR_MTU4_TGIA4=134,IPR_MTU4_TGIB4=134,IPR_MTU4_TGIC4=134,IPR_MTU4_TGID4=134,IPR_MTU4_TCIV4=138,
-IPR_MTU5_TGIU5=139,IPR_MTU5_TGIV5=139,IPR_MTU5_TGIW5=139,
 IPR_TPU0_TGI0A=142,IPR_TPU0_TGI0B=142,IPR_TPU0_TGI0C=142,IPR_TPU0_TGI0D=142,IPR_TPU0_TCI0V=146,
 IPR_TPU1_TGI1A=147,IPR_TPU1_TGI1B=147,IPR_TPU1_TCI1V=149,IPR_TPU1_TCI1U=149,
 IPR_TPU2_TGI2A=151,IPR_TPU2_TGI2B=151,IPR_TPU2_TCI2V=153,IPR_TPU2_TCI2U=153,
@@ -767,6 +765,7 @@ IPR_CMT3_=7,
 IPR_RSPI0_=44,
 IPR_DOC_=57,
 IPR_CTSU_=60,
+IPR_LVD_=88,
 IPR_VBATT_=91,
 IPR_SSI0_=108,
 IPR_SSI0_SSI=108,
@@ -776,8 +775,6 @@ IPR_MTU2_TGI=125,
 IPR_MTU2_TCI=127,
 IPR_MTU3_TGI=129,
 IPR_MTU4_TGI=134,
-IPR_MTU5_=139,
-IPR_MTU5_TGI=139,
 IPR_TPU0_TGI=142,
 IPR_TPU1_TGI=147,
 IPR_TPU1_TCI=149,
@@ -794,7 +791,6 @@ IPR_TMR2_=180,
 IPR_TMR3_=183,
 IPR_SCI1_=218,
 IPR_SCI5_=222,
-IPR_BLE_=226,
 IPR_SCI8_=230
 } enum_ipr_t;
 
@@ -1249,8 +1245,6 @@ typedef struct st_ctsu {
 			unsigned short CTSUSPMD:2;
 		} BIT;
 	} CTSUERRS;
-	char           wk0[7730848];
-	unsigned char  CTSUTRMR;
 } st_ctsu_t;
 
 typedef struct st_da {
@@ -1513,150 +1507,12 @@ typedef struct st_elc {
 			unsigned char :7;
 		} BIT;
 	} ELCR;
-	char           wk0[1];
 	union {
 		unsigned char BYTE;
 		struct {
 			unsigned char ELS:8;
 		} BIT;
-	} ELSR1;
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR2;
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR3;
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR4;
-	char           wk1[2];
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR7;
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR8;
-	char           wk2[1];
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR10;
-	char           wk3[1];
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR12;
-	char           wk4[1];
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR14;
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR15;
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR16;
-	char           wk5[1];
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR18;
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR19;
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR20;
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR21;
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR22;
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR23;
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR24;
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR25;
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR26;
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR27;
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR28;
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char ELS:8;
-		} BIT;
-	} ELSR29;
+	} ELSR[30];
 	union {
 		unsigned char BYTE;
 		struct {
@@ -3434,20 +3290,6 @@ typedef struct st_poe {
 		} BIT;
 	} ICSR3;
 } st_poe_t;
-
-typedef struct st_port {
-	union {
-		unsigned char BYTE;
-		struct {
-			unsigned char :2;
-			unsigned char PSEL5:1;
-			unsigned char :1;
-			unsigned char PSEL3:1;
-			unsigned char :2;
-			unsigned char PSEL0:1;
-		} BIT;
-	} PSRB;
-} st_port_t;
 
 typedef struct st_port0 {
 	union {
@@ -9929,7 +9771,8 @@ typedef struct st_system {
 			unsigned long MSTPB30:1;
 			unsigned long :3;
 			unsigned long MSTPB26:1;
-			unsigned long :2;
+			unsigned long MSTPB25:1;
+			unsigned long :1;
 			unsigned long MSTPB23:1;
 			unsigned long :1;
 			unsigned long MSTPB21:1;
@@ -10265,8 +10108,7 @@ typedef struct st_system {
 	union {
 		unsigned char BYTE;
 		struct {
-			unsigned char :2;
-			unsigned char LVD2LVL:2;
+			unsigned char :4;
 			unsigned char LVD1LVL:4;
 		} BIT;
 	} LVDLVLR;
@@ -11483,9 +11325,7 @@ typedef struct st_usb {
 	union {
 		unsigned short WORD;
 		struct {
-			unsigned short :8;
-			unsigned short VDCEN:1;
-			unsigned short :6;
+			unsigned short :15;
 			unsigned short VDDUSBE:1;
 		} BIT;
 	} USBMC;

@@ -63,6 +63,10 @@
 *         : 28.06.2019 3.10    Added support for RX23W.
 *         : 15.08.2019 3.20    Added support for RX72M.
                                Fixed warnings in IAR.
+*         : 25.11.2019 3.30    Added support for RX13T.
+*         :                    Modified comment of API function to Doxygen style.
+*         :                    Fixed to comply with GSCE Coding Standards Rev.6.00.
+*         : 30.12.2019 3.40    Added support for RX66N, RX72N.
 *******************************************************************************/
 
 /*******************************************************************************
@@ -77,22 +81,28 @@ Includes   <System Includes> , "Project Includes"
 /*******************************************************************************
 Macro definitions
 *******************************************************************************/
-#define    DTC_ACT_BIT_MASK            (0x8000) /* DTC Active flag (DTCSTS.ACT) bit mask */
-#define    DTC_VECT_NR_MASK            (0x00FF) /* DTC-Activating Vector Number bits mask */
-#define    DTC_MAX_16BITS_COUNT_VAL    (65536)  /* The maximum value of 16bit count value */
-#define    DTC_MAX_8BITS_COUNT_VAL     (256)    /* The maximum value of 8bit count value */
-#define    DTC_MIN_COUNT_VAL           (1)      /* The minimum of count value  and block size */
-#define    DTC_ESPSEL_BIT_MASK         (0x8000) /* DTC Sequence transfer vector number setting bit mask */
+#define    DTC_PRV_ACT_BIT_MASK            (0x8000) /* DTC Active flag (DTCSTS.ACT) bit mask */
+#define    DTC_PRV_VECT_NR_MASK            (0x00FF) /* DTC-Activating Vector Number bits mask */
+#define    DTC_PRV_MAX_16BITS_COUNT_VAL    (65536)  /* The maximum value of 16bit count value */
+#define    DTC_PRV_MAX_8BITS_COUNT_VAL     (256)    /* The maximum value of 8bit count value */
+#define    DTC_PRV_MIN_COUNT_VAL           (1)      /* The minimum of count value  and block size */
+#define    DTC_PRV_ESPSEL_BIT_MASK         (0x8000) /* DTC Sequence transfer vector number setting bit mask */
 
 /*******************************************************************************
 Typedef definitions
 *******************************************************************************/
 
+/*******************************************************************************
+Exported global variables (to be accessed by other files)
+*******************************************************************************/
+extern const dtc_activation_source_t g_source_array[];
+uint32_t    * gp_dtc_table_work[2];
+
 
 /*******************************************************************************
 Private variables and functions
 *******************************************************************************/
-static bool is_opened = false; /* Indicate whether DTC is opened. */
+static bool s_is_opened = false; /* Indicate whether DTC is opened. */
 
 static dtc_err_t r_dtc_set_transfer_data(dtc_transfer_data_t *p_transfer_data,
                                          dtc_transfer_data_cfg_t *p_cfg);
@@ -103,26 +113,27 @@ static void r_dtc_release_hw_lock(void);
 static bool r_dtc_check_dmac_locking_sw(void);
 static dtc_err_t r_dtc_check_create_param(dtc_transfer_data_t *p_transfer_data, dtc_transfer_data_cfg_t *p_data_cfg);
 
-/*******************************************************************************
-Exported global variables (to be accessed by other files)
-*******************************************************************************/
-extern const dtc_activation_source_t g_source_array[];
-uint32_t    * g_dtc_table_work[2];
 
-/*******************************************************************************
+
+/***********************************************************************************************************************
 * Function Name: R_DTC_Open
-* Description  : Initializes the DTC module. It's only called once.
-* Arguments    : None
-* Return Value : DTC_SUCCESS -
-*                    Successful operation
-*                DTC_ERR_OPENED -
-*                    The DTC has been already initialized.
-*                DTC_ERR_BUSY -
-*                    DTC is opened already.
-*******************************************************************************/
+********************************************************************************************************************//**
+* @brief This function is run first when using the APIs of the DTC FIT module.
+* @retval DTC_SUCCESS Successful operation
+* @retval DTC_ERR_OPENED DTC has been initialized already.
+* @retval DTC_ERR_BUSY Resource has been locked by other process.
+* @details Locks*1 the DTC and starts supplying clock to DTC, then initializes DTC vector table, address mode,
+* Data Transfer Read Skip. When setting DTC_CFG_DISABLE_ALL_ACT_SOURCE to DTC_ENABLE in r_dtc_rx_config.h, all DTCER
+* registers are cleared. When setting DTC_CFG_USE_SEQUENCE_TRANSFER to DTC_ENABLE, the area used in DTC index table is
+* secured.\n\n
+* Note: 1. The DTC FIT module uses the r_bsp default lock function. As a result, the DTC is in the locked state after a
+* successful end.
+* @note Set \#define BSP_CFG_HEAP_BYTES in r_bsp_config.h to the value greater than \#define DTC_VECTOR_TABLE_SIZE_BYTES
+* in r_dtc_rx_target.h. This is to secure the DTC Vector table area using the malloc() function in the DTC FIT module.
+*/
 dtc_err_t R_DTC_Open(void)
 {
-    uint8_t * dtc_table_work2 = 0;
+    uint8_t * p_dtc_table_work2 = 0;
 
     /* Check hw lock require */
     if (false == r_dtc_acquire_hw_lock())
@@ -131,29 +142,29 @@ dtc_err_t R_DTC_Open(void)
         return DTC_ERR_BUSY;
     }
 
-    if (true == is_opened) /* DTC is opened. */
+    if (true == s_is_opened) /* DTC is opened. */
     {
         r_dtc_release_hw_lock();
         return DTC_ERR_OPENED;
     }
 
     /* Allocate memory size */
-    g_dtc_table_work[0] = (uint32_t *)malloc(DTC_VECTOR_TABLE_SIZE_BYTES);
+    gp_dtc_table_work[0] = (uint32_t *)malloc(DTC_VECTOR_TABLE_SIZE_BYTES);
 
-    if (0 == g_dtc_table_work[0])
+    if (0 == gp_dtc_table_work[0])
     {
         r_dtc_release_hw_lock();
         return DTC_ERR_OPENED;
     }
 
-    g_dtc_table_work[1] = g_dtc_table_work[0];
+    gp_dtc_table_work[1] = gp_dtc_table_work[0];
 
-    /* Cast type of "g_dtc_table_work" to match type of "dtc_table_work2" */
-    dtc_table_work2 = (uint8_t *)g_dtc_table_work[1];
-    dtc_table_work2 = (dtc_table_work2 + 0x400);
+    /* Cast type of "gp_dtc_table_work" to match type of "p_dtc_table_work2" */
+    p_dtc_table_work2 = (uint8_t *)gp_dtc_table_work[1];
+    p_dtc_table_work2 = (p_dtc_table_work2 + 0x400);
 
-    /* Cast type of "dtc_table_work2" to match type of "dtc_table_work2" */
-    dtc_table_work2 = (uint8_t *)((uint32_t)dtc_table_work2 & 0xfffffc00);
+    /* Cast type of "p_dtc_table_work2" to match type of "p_dtc_table_work2" */
+    p_dtc_table_work2 = (uint8_t *)((uint32_t)p_dtc_table_work2 & 0xfffffc00);
 
 #if (DTC_ENABLE == DTC_CFG_DISABLE_ALL_ACT_SOURCE) /* Clear all DTCER registers. */
 
@@ -165,13 +176,13 @@ dtc_err_t R_DTC_Open(void)
     r_dtc_module_enable();
 
     /* Set DTC Vector Table Base Register. */
-    DTC.DTCVBR = dtc_table_work2;
+    DTC.DTCVBR = p_dtc_table_work2;
 
 #if (DTC_ENABLE == DTC_CFG_USE_SEQUENCE_TRANSFER)
-    dtc_table_work2 = (dtc_table_work2 + 0x400);
+    p_dtc_table_work2 = (p_dtc_table_work2 + 0x400);
 
     /* Set address of the dtc index table. */
-    DTC.DTCIBR = dtc_table_work2;
+    DTC.DTCIBR = p_dtc_table_work2;
 #endif /* (DTC_ENABLE == DTC_CFG_USE_SEQUENCE_TRANSFER) */
 
     /* Set DTC address mode. */
@@ -188,37 +199,46 @@ dtc_err_t R_DTC_Open(void)
 #else /* Disable Data Read Skip. */
     DTC.DTCCR.BIT.RRS = 0;
 #endif /* DTC_TRANSFER_DATA_READ_SKIP_EN */
-    is_opened = true; /* DTC module is initialized successfully. */
+    s_is_opened = true; /* DTC module is initialized successfully. */
 
     return DTC_SUCCESS;
 }
 /* End of function R_DTC_Open */
 
-/*******************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_DTC_Create
-* Description  : Creates the transfer data for a specified interrupt source.
-* Arguments    : act_source -
-*                    Activation source
-*                p_transfer_data -
-*                    Pointer to start address of Transfer data area on RAM
-*                p_data_cfg -
-*                    Pointer to contains the settings for Transfer data
-*                chain_transfer_nr -
-*                    Number of chain transfer
-* Return Value : DTC_SUCCESS -
-*                    Successful operation
-*                DTC_ERR_NOT_OPEN -
-*                    The DTC is not initialized yet.
-*                DTC_ERR_INVALID_ARG -
-*                    Parameters are invalid.
-*                DTC_ERR_NULL_PTR -
-*                    The pointers are NULL.
-*******************************************************************************/
+********************************************************************************************************************//**
+* @brief This function is used to make DTC register settings and to specify the activation source.
+* @param[in] act_source Activation source.
+* @param[in] p_transfer_data Pointer to start address of Transfer data area on RAM.
+* @param[in] p_data_cfg Pointer to settings for Transfer data. In the case of DTCb, the setting to the following
+* structure members is invalid. This function sets the following values.\n
+* p_data_cfg->writeback_disable = DTC_WRITEBACK_ENABLE;\n
+* p_data_cfg->sequence_end = DTC_SEQUENCE_TRANSFER_CONTINUE;\n
+* p_data_cfg->refer_index_table_enable = DTC_REFER_INDEX_TABLE_DISABLE;\n
+* p_data_cfg->disp_add_enable = DTC_SRC_ADDR_DISP_ADD_DISABLE;\n
+* @param[in] chain_transfer_nr Number of chain transfer.\n
+* The number of Transfer data and corresponding configurations is (number of chain transfer + 1).
+* Example: if chain_transfer_nr = 1, it means that there are 2 continuous Transfer data and 2 corresponding configurations
+* and the first configuration enable the chain transfer.\n
+* See Section 3 in application note for details.
+* @retval DTC_SUCCESS Successful operation
+* @retval DTC_ERR_NOT_OPEN DTC is not initialized yet.
+* @retval DTC_ERR_INVALID_ARG Parameters are invalid.
+* @retval DTC_ERR_NULL_PTR Argument pointers are NULL.
+* @details Writes the configuration to Transfer data. Writes the start address of Transfer data corresponding to interrupt
+* number into DTC vector table.
+* @note Before calling R_DTC_Create(), user must disable the current interrupt request (the interrupt source is passed to
+* R_DTC_Create()) by clearing Interrupt Request Enable bit IERm.IENj:\n\n
+* ICU.IER[m].BIT.IENj = 0;\n\n
+* Then, enable the interrupt request disabled after R_DTC_Create() is ended. The correspondence between IERm.IENj bit and
+* interrupt source is described in Interrupt Vector Table, chapter Interrupt Controller (ICU) of User's Manual: Hardware.
+*/
 dtc_err_t R_DTC_Create(dtc_activation_source_t act_source, dtc_transfer_data_t *p_transfer_data,
                        dtc_transfer_data_cfg_t *p_data_cfg, uint32_t chain_transfer_nr)
 {
     uint32_t  count                             = chain_transfer_nr + 1;
-    uint32_t *ptr                               = NULL;
+    uint32_t *p_ptr                             = NULL;
     uint8_t   dtce_backup                       = 0;
     uint8_t   rrs_backup                        = 0;
     dtc_err_t ret                               = DTC_SUCCESS;
@@ -230,7 +250,7 @@ dtc_err_t R_DTC_Create(dtc_activation_source_t act_source, dtc_transfer_data_t *
         return ret;
     }
 
-    if (false == is_opened) /* DTC is not initialized yet. */
+    if (false == s_is_opened) /* DTC is not initialized yet. */
     {
         r_dtc_release_hw_lock();
         return DTC_ERR_NOT_OPEN;
@@ -283,10 +303,10 @@ dtc_err_t R_DTC_Create(dtc_activation_source_t act_source, dtc_transfer_data_t *
     }
 
     /* The row in Vector table corresponding to act_source */
-    ptr = (uint32_t *)((uint32_t)DTC.DTCVBR + (4 * act_source));
+    p_ptr = (uint32_t *)((uint32_t)DTC.DTCVBR + (4 * act_source));
 
     /* Write start address of Transfer data to Vector table. */
-    *ptr = (uint32_t)p_transfer_data_backup;
+    *p_ptr = (uint32_t)p_transfer_data_backup;
 
     /* Restore RRS bit. */
     DTC.DTCCR.BIT.RRS = rrs_backup;
@@ -298,28 +318,36 @@ dtc_err_t R_DTC_Create(dtc_activation_source_t act_source, dtc_transfer_data_t *
 }
 /* End of function R_DTC_Create */
 
-/*******************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_DTC_CreateSeq
-* Description  : Creates the sequence transfer data for a specified interrupt source.
-* Arguments    : act_source -
-*                    Activation source
-*                p_transfer_data -
-*                    Pointer to start address of Transfer data area on RAM
-*                p_data_cfg -
-*                    Pointer to contains the settings for Transfer data
-*                sequence_transfer_nr -
-*                    Number of sequence transfer
-*                sequence_no
-*                    Sequence number
-* Return Value : DTC_SUCCESS -
-*                    Successful operation
-*                DTC_ERR_NOT_OPEN -
-*                    The DTC is not initialized yet.
-*                DTC_ERR_INVALID_ARG -
-*                    Parameters are invalid.
-*                DTC_ERR_NULL_PTR -
-*                    The pointers are NULL.
-*******************************************************************************/
+********************************************************************************************************************//**
+* @brief This function performs the setting of the DTC register used in the sequence transfer and the activation source.
+* @param[in] act_source Activation source
+* @param[in] p_transfer_data Pointer to the start address in the transfer information area in RAM.
+* @param[in] p_data_cfg Pointer to the transfer information setting\n
+* Set the following structure members.\n
+* p_data_cfg->writeback_disable\n
+* p_data_cfg->sequence_end\n
+* p_data_cfg->refer_index_table_enable\n
+* p_data_cfg->disp_add_enable\n
+* @param[in] sequence_transfer_nr Transfer information counts per sequence transfer (0 - 4294967295)\n
+* See Section 3 in application note for details.\n\n
+* @param[in] sequence_no Sequence number (0 - 255)\n
+* The type definition of the transfer information and the data structure are the same as R_DTC_Create(). Total of 256 ways
+* of the sequence information can be set.
+* @retval DTC_SUCCESS Successful operation
+* @retval DTC_ERR_NOT_OPEN DTC is not initialized yet.
+* @retval DTC_ERR_INVALID_ARG Arguments are invalid.
+* @retval DTC_ERR_NULL_PTR Argument pointers are NULL.
+* @details This function writes the setting information to the transfer information. Start address of the transfer
+* information for the sequence number is written to DTC index table.
+* @note Before calling R_DTC_CreateSeq(), user must disable the current interrupt request (the interrupt source is passed
+* to R_DTC_CreateSeq()) by clearing Interrupt Request Enable bit (IERm.IENj):\n\n
+* ICU.IER[m].BIT.IENj = 0;\n\n
+* Then, enable the interrupt request disabled after R_DTC_CreateSeq() is ended. The correspondence between IERm.IENj bit
+* and interrupt source is described in Interrupt Vector Table, chapter Interrupt Controller (ICU) of User's Manual:
+* Hardware.
+*/
 dtc_err_t R_DTC_CreateSeq(dtc_activation_source_t act_source, dtc_transfer_data_t *p_transfer_data,
                           dtc_transfer_data_cfg_t *p_data_cfg, uint32_t sequence_transfer_nr,
                           uint8_t sequence_no)
@@ -328,7 +356,7 @@ dtc_err_t R_DTC_CreateSeq(dtc_activation_source_t act_source, dtc_transfer_data_
     return DTC_ERR_INVALID_ARG;
 #else
     uint32_t  count                             = sequence_transfer_nr;
-    uint32_t *ptr                               = NULL;
+    uint32_t *p_ptr                             = NULL;
     uint8_t   dtce_backup                       = 0;
     uint8_t   rrs_backup                        = 0;
     dtc_err_t ret                               = DTC_SUCCESS;
@@ -343,7 +371,7 @@ dtc_err_t R_DTC_CreateSeq(dtc_activation_source_t act_source, dtc_transfer_data_
         }
     }
 
-    if (false == is_opened) /* DTC is not initialized yet. */
+    if (false == s_is_opened) /* DTC is not initialized yet. */
     {
         r_dtc_release_hw_lock();
         return DTC_ERR_NOT_OPEN;
@@ -354,21 +382,23 @@ dtc_err_t R_DTC_CreateSeq(dtc_activation_source_t act_source, dtc_transfer_data_
 
     /* Store old value of DTCERn.DTCE bit. */
     dtce_backup = ICU.DTCER[act_source].BIT.DTCE;
+
     /* Disable the interrupt source. Clear the DTCER */
     ICU.DTCER[act_source].BIT.DTCE = 0;
 
     /* Store old value of DTCCR.RRS bit. */
     rrs_backup = DTC.DTCCR.BIT.RRS;
+
     /* Clear RRS bit. */
     DTC.DTCCR.BIT.RRS = 0;
 
     /* The row in dtc index table corresponding to sequence_no. */
-    ptr = (uint32_t *)((uint32_t)DTC.DTCIBR + (4 * sequence_no));
+    p_ptr = (uint32_t *)((uint32_t)DTC.DTCIBR + (4 * sequence_no));
 
     if (0 == count)
     {
         /* Set the cpu interrupt to the sequence number. */
-        *ptr = DTC_INVALID_CMND;
+        *p_ptr = DTC_INVALID_CMND;
     }
     else
     {
@@ -376,10 +406,12 @@ dtc_err_t R_DTC_CreateSeq(dtc_activation_source_t act_source, dtc_transfer_data_
         /* WAIT_LOOP */
         while (count > 0)
         {
-            if (DTC_SUCCESS != r_dtc_set_transfer_data(p_transfer_data, p_data_cfg))
-            { /* Fail to apply configurations for Transfer data. */
+            /* Fail to apply configurations for Transfer data. */
+            if (r_dtc_set_transfer_data(p_transfer_data, p_data_cfg) != DTC_SUCCESS)
+            {
                 /* Restore RRS bit */
                 DTC.DTCCR.BIT.RRS = rrs_backup;
+
                 /* Restore the DTCE bit. */
                 ICU.DTCER[act_source].BIT.DTCE = dtce_backup;
                 return DTC_ERR_INVALID_ARG;
@@ -393,11 +425,12 @@ dtc_err_t R_DTC_CreateSeq(dtc_activation_source_t act_source, dtc_transfer_data_
         }
 
         /* Write start address of Transfer data to dtc index table. */
-        *ptr = (uint32_t)p_transfer_data_backup;
+        *p_ptr = (uint32_t)p_transfer_data_backup;
     }
 
     /* Restore RRS bit. */
     DTC.DTCCR.BIT.RRS = rrs_backup;
+
     /* Restore the DTCE bit. */
     ICU.DTCER[act_source].BIT.DTCE = dtce_backup;
 
@@ -406,15 +439,25 @@ dtc_err_t R_DTC_CreateSeq(dtc_activation_source_t act_source, dtc_transfer_data_
 }
 /* End of function R_DTC_CreateSeq */
 
-/*******************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_DTC_Close
-* Description  : Disables power of DTC module.
-* Arguments    : None
-* Return Value : DTC_SUCCESS -
-*                    Successful operation
-*                DTC_SUCCESS_DMAC_BUSY -
-*                    One or some DMAC resources are locked by another process.
-*******************************************************************************/
+********************************************************************************************************************//**
+* @brief This function is used to release the resources of the DTC.
+* @retval DTC_SUCCESS Successful operation
+* @retval DTC_SUCCESS_DMAC_BUSY Successful operation.One or some DMAC resources are locked.
+* @details Unlocks*1 the DTC and disable all DTC activation source by clearing the DTC Activation Enable Register DTCERn;
+* stop supplying clock to DTC and put it to Module stop state. If in addition all DMAC channels have been unlocked, the
+* function sets the DMAC and DTC to the module stop state.*2\n\n
+* Note:\n 1. The DTC FIT module uses the r_bsp default lock function. As a result, the DTC is in the unlocked state after
+* a successful end.\n 2. Because a shared bit is used as both the DMAC module stop setting bit and the DTC module stop
+* setting bit, the function confirms that all DMAC channels are unlocked before making the module stop setting. (For
+* details, see the "Low Power Consumption" section in the User's Manual: Hardware.)\n
+* See Section 3 in application note for details.
+* @note When controlling the DMAC without using the DMAC FIT module, make sure to monitor the usage of the DMAC and
+* control locking and unlocking of the DMAC so that calling this function does not set the DMAC to the module stop state.
+* Note that even if the DMAC has not been activated, it is necessary to keep it in the locked state when not making DMAC
+* transfer settings.
+*/
 dtc_err_t R_DTC_Close(void)
 {
     /* Clear DTCE bits. */
@@ -424,11 +467,11 @@ dtc_err_t R_DTC_Close(void)
     DTC.DTCST.BIT.DTCST = 0;
 
     /* DTC is closed. */
-    is_opened = false;
+    s_is_opened = false;
 
-    /* Cast type of "g_dtc_table_work" to match type of parameter in "free" function */
-    free((void *)g_dtc_table_work[1]);
-    g_dtc_table_work[1] = NULL;
+    /* Cast type of "gp_dtc_table_work" to match type of parameter in "free" function */
+    free((void *)gp_dtc_table_work[1]);
+    gp_dtc_table_work[1] = NULL;
 
     /* Check DMAC locking. */
     if (true == r_dtc_check_dmac_locking_sw())
@@ -450,32 +493,40 @@ dtc_err_t R_DTC_Close(void)
 }
 /* End of function R_DTC_Close */
 
-/*******************************************************************************
+/***********************************************************************************************************************
 * Function Name: R_DTC_Control
-* Description  : Starts / Stops DTC, enables or disables Data transfer read skip,
-*                selects an interrupt source as DTC activation.
-* Arguments    : command -
-*                    Action will be done
-*                p_stat -
-*                    Pointer to the status of DTC module when command is 
-*                     DTC_CMD_GET_STATUS, casted to void *.
-*                p_args -
-*                    Pointer to argument of command, casted to void *.
-* Return Value : DTC_SUCCESS -
-*                    Successful operation
-*                DTC_ERR_NOT_OPEN -
-*                    The DTC is not initialized yet.
-*                DTC_ERR_INVALID_COMMAND -
-*                    Command parameters are invalid. Or, forced data change failed.
-*                DTC_ERR_NULL_PTR -
-*                    The argument is NULL when commnad is valid.
-*                DTC_ERR_ACT -
-*                    Data transfer is in progress.
-*******************************************************************************/
+********************************************************************************************************************//**
+* @brief This function controls the operation of the DTC.
+* @param[in] command DTC control command
+* @param[in] p_stat Pointer to the status when command is DTC_CMD_STATUS_GET.\n
+* See Section 3 in application note for details.
+* @param[in] p_args Pointer to the argument structure when command is DTC_CMD_ACT_SRC_ENABLE,DTC_CMD_ACT_SRC_DISABLE,
+* DTC_CMD_CHAIN_TRANSFER_ABORT, DTC_CMD_SEQUENCE_TRANSFER_ENABLE, or DTC_CMD_CHANGING_DATA_FORCIBLY_SET.\n
+* See Section 3 in application note for details.
+* @retval [DTC_SUCCESS] Successful operation
+* @retval [DTC_ERR_NOT_OPEN] DTC is not initialized yet.
+* @retval [DTC_ERR_INVALID_COMMAND] Command parameters are invalid or DTC_CMD_CHANGING_DATA_FORCIBLY_SET command error.
+* @retval [DTC_ERR_NULL_PTR] Argument pointers are NULL.
+* @retval [DTC_ERR_ACT] Data transfer is in progress.
+* @details Processing is performed depending on the command.\n
+* See Section 3 in application note for details.
+* @note When the command is DTC_CMD_GET_STATUS, the vector number is valid if only the DTC is in the progress
+* (p_stat->in_progress is true). With command DTC_CMD_ENABLE_ACT_SRC, DTC_CMD_DISABLE_ACT_SRC or
+* DTC_CMD_SEQUENCE_TRANSFER_ABORT, before calling R_DTC_Control(), user must disable the current interrupt request
+* (the interrupt source is passed to R_DTC_Control()) by clearing Interrupt Request Enable bit (IERm.IENj);\n\n
+* ICU.IER[m].BIT.IENj = 0;\n\n
+* After processing of R_DTC_Control() is ended, the interrupt request disabled is enabled. The correspondence between
+* IERm.IENj bit and interrupt source is described in Interrupt Vector Table, chapter Interrupt Controller (ICU) of
+* User's Manual: Hardware. With abort processing, user must re-create the Chain transfer data after the transfer is
+* aborted because the old Transfer data are destroyed. If an invalid value is attempted to set with
+* DTC_CMD_CHANGING_DATA_FORCIBLY_SET, R_DTC_Control() returns DTC_ERR_INVALID_COMMAND R_DTC_Control() may already update
+* some registers before the invalid value is detected. This occurs only when users try
+* to change FORCIBLY DTC with Invalid Value.
+*/
 dtc_err_t R_DTC_Control(dtc_command_t command, dtc_stat_t *p_stat, dtc_cmd_arg_t *p_args)
 {
     uint32_t             count                   = 0;
-    uint32_t            *ptr                     = NULL;
+    uint32_t            *p_ptr                   = NULL;
     uint8_t              dtce_backup             = 0;
     uint8_t              rrs_backup              = 0;
     dtc_transfer_data_t  *p_transfer_data_backup = NULL;
@@ -512,7 +563,7 @@ dtc_err_t R_DTC_Control(dtc_command_t command, dtc_stat_t *p_stat, dtc_cmd_arg_t
 
 #endif /* DTC_CFG_PARAM_CHECKING_ENABLE */
 
-    if (false == is_opened)
+    if (false == s_is_opened)
     {
         r_dtc_release_hw_lock();
         return DTC_ERR_NOT_OPEN;
@@ -524,48 +575,48 @@ dtc_err_t R_DTC_Control(dtc_command_t command, dtc_stat_t *p_stat, dtc_cmd_arg_t
         {
             /* DTC Module start*/
             DTC.DTCST.BIT.DTCST = 1;
-        break;
+            break;
         }
 
         case DTC_CMD_DTC_STOP: /* Stop DTC module. */
         {
             /* DTC Module stop*/
             DTC.DTCST.BIT.DTCST = 0;
-        break;
+            break;
         }
 
         case DTC_CMD_DATA_READ_SKIP_ENABLE: /* Enable Transfer Data Read Skip. */
         {
             /* Set Read Skip Enable bit*/
             DTC.DTCCR.BIT.RRS = 1;
-        break;
+            break;
         }
 
         case DTC_CMD_DATA_READ_SKIP_DISABLE: /* Disable Transfer Data Read Skip. */
         {
             /* Clear Read Skip Enable bit*/
             DTC.DTCCR.BIT.RRS = 0;
-        break;
+            break;
         }
 
         case DTC_CMD_ACT_SRC_ENABLE: /* Select one interrupt as a DTC activation source. */
         {
             /* Set Activation source for DTC*/
             ICU.DTCER[p_args->act_src].BIT.DTCE = 1;
-        break;
+            break;
         }
 
         case DTC_CMD_ACT_SRC_DISABLE: /* Remove one interrupt as a DTC activation source. */
         {
             /* Clear Activation source*/
             ICU.DTCER[p_args->act_src].BIT.DTCE = 0;
-        break;
+            break;
         }
 
         case DTC_CMD_STATUS_GET:
         {
             /* Check DTC Status*/
-            if (0 == (DTC.DTCSTS.WORD & DTC_ACT_BIT_MASK)) /* DTC transfer operation is not in progress. */
+            if (0 == (DTC.DTCSTS.WORD & DTC_PRV_ACT_BIT_MASK)) /* DTC transfer operation is not in progress. */
             {
                 p_stat->in_progress = false;
 
@@ -576,41 +627,50 @@ dtc_err_t R_DTC_Control(dtc_command_t command, dtc_stat_t *p_stat, dtc_cmd_arg_t
                 p_stat->in_progress = true;
 
                 /* Get the current vector number. */
-                p_stat->vect_nr = (uint8_t)(DTC.DTCSTS.WORD & DTC_VECT_NR_MASK); /* get lower 8 bits: 0-7*/
+                p_stat->vect_nr = (uint8_t)(DTC.DTCSTS.WORD & DTC_PRV_VECT_NR_MASK); /* get lower 8 bits: 0-7*/
             }
-        break;
+            break;
         }
 
         case DTC_CMD_CHAIN_TRANSFER_ABORT:
         {
             r_dtc_abort_chain_transfer(p_args->chain_transfer_nr);
-        break;
+            break;
         }
 
 #if (DTC_IP_VER_DTCb <= DTC_IP)
+
         case DTC_CMD_SEQUENCE_TRANSFER_ENABLE:
-            /* Set the sequence transfer vector number and 
-               sequence transfer is enabled. */
-            DTC.DTCSQE.WORD = (DTC_ESPSEL_BIT_MASK | (uint16_t)p_args->act_src);
-        break;
+
+            /* Set the sequence transfer vector number and sequence transfer is enabled. */
+            DTC.DTCSQE.WORD = (DTC_PRV_ESPSEL_BIT_MASK | (uint16_t)p_args->act_src);
+            break;
 
         case DTC_CMD_SEQUENCE_TRANSFER_DISABLE:
+
             /* Sequence transfer is disabled. */
-            DTC.DTCSQE.WORD &= (~DTC_ESPSEL_BIT_MASK);
-        break;
+            DTC.DTCSQE.WORD &= (~DTC_PRV_ESPSEL_BIT_MASK);
+            break;
 
         case DTC_CMD_SEQUENCE_TRANSFER_ABORT:
-            if (DTC.DTCSTS.WORD & DTC_ACT_BIT_MASK) /* DTC transfer operation is in progress. */
+
+            /* DTC transfer operation is in progress. */
+            if (DTC.DTCSTS.WORD & DTC_PRV_ACT_BIT_MASK)
             {
-              unsigned short tmp = DTC.DTCSQE.BIT.VECN;
+                /* Store value of VECN of DTCSQE Register to "tmp" variable */
+                uint16_t tmp = DTC.DTCSQE.BIT.VECN;
+
+                /* Compare value of VECN of DTCSTS Register with "tmp" variable */
                 if (DTC.DTCSTS.BIT.VECN == tmp)
                 {
                     return DTC_ERR_ACT;
                 }
             }
+
             /* Abort the sequence transfer. */
             DTC.DTCOR.BIT.SQTFRL = 1;
-        break;
+            break;
+
 #endif /* (DTC_IP_VER_DTCb <= DTC_IP) */
 
         case DTC_CMD_CHANGING_DATA_FORCIBLY_SET:
@@ -636,7 +696,7 @@ dtc_err_t R_DTC_Control(dtc_command_t command, dtc_stat_t *p_stat, dtc_cmd_arg_t
             /* WAIT_LOOP */
             while (count > 0)
             {
-                if (DTC_SUCCESS != r_dtc_set_transfer_data(p_args->p_transfer_data, p_args->p_data_cfg))
+                if (r_dtc_set_transfer_data(p_args->p_transfer_data, p_args->p_data_cfg) != DTC_SUCCESS)
                 {
                     /* Fail to apply configurations for Transfer data. */
                     /* Restore RRS bit */
@@ -655,22 +715,22 @@ dtc_err_t R_DTC_Control(dtc_command_t command, dtc_stat_t *p_stat, dtc_cmd_arg_t
             }
 
             /* The row in Vector table corresponding to act_source */
-            ptr = (uint32_t *)((uint32_t)DTC.DTCVBR + (4 * p_args->act_src));
+            p_ptr = (uint32_t *)((uint32_t)DTC.DTCVBR + (4 * p_args->act_src));
 
             /* Write start address of Transfer data to Vector table. */
-            *ptr = (uint32_t)p_transfer_data_backup;
+            *p_ptr = (uint32_t)p_transfer_data_backup;
 
             /* Restore RRS bit */
             DTC.DTCCR.BIT.RRS = rrs_backup;
 
             /* Restore the DTCE bit. */
             ICU.DTCER[p_args->act_src].BIT.DTCE = dtce_backup;
-        break;
+            break;
         }
         default:
         {
             return DTC_ERR_INVALID_COMMAND;
-        break;
+            break;
         }
     }
 
@@ -680,12 +740,12 @@ dtc_err_t R_DTC_Control(dtc_command_t command, dtc_stat_t *p_stat, dtc_cmd_arg_t
 
 /*******************************************************************************
 * Function Name: R_DTC_GetVersion
-* Description  : Returns the version of this module. The version number is 
-*                encoded such that the top two bytes are the major version
-*                number and the bottom two bytes are the minor version number.
-* Arguments    : none
-* Return Value : version number
-*******************************************************************************/
+****************************************************************************//**
+* @brief This function is used to get the driver version information.
+* @return Version_number Upper 2 bytes: major version, lower 2 bytes: minor version
+* @details Returns the version information.
+* @note None
+*/
 uint32_t R_DTC_GetVersion(void)
 {
     uint32_t version = 0;
@@ -717,24 +777,29 @@ static dtc_err_t r_dtc_set_transfer_data(dtc_transfer_data_t *p_transfer_data,
     dtc_mrb_t                          t_mrb;
     dtc_cra_t                          t_cra;
     dtc_crb_t                          t_crb;
-    /* Cast type of "p_transfer_data" to match type of "td_ptr" */
-    volatile dtc_internal_registers_t *td_ptr = (volatile dtc_internal_registers_t *)p_transfer_data;
+
+    /* Cast type of "p_transfer_data" to match type of "p_td_ptr" */
+    volatile dtc_internal_registers_t *p_td_ptr = (volatile dtc_internal_registers_t *)p_transfer_data;
 
     /* Set for MRA - . */
 #if (DTC_IP_VER_DTCb <= DTC_IP)
 #if (DTC_ENABLE != DTC_CFG_SHORT_ADDRESS_MODE) /* Full-address mode */
     dtc_mrc_t                          t_mrc;
+
+    /* Casting to match type of "t_mrc.BYTE" */
     t_mrc.BYTE = (uint8_t)(p_cfg->disp_add_enable);
 #endif /* (DTC_ENABLE == DTC_CFG_SHORT_ADDRESS_MODE) */
+    /* Casting to match type of "t_mra.BYTE" */
+    t_mra.BYTE = ((((uint8_t)p_cfg->writeback_disable | (uint8_t)p_cfg->src_addr_mode) | (uint8_t)p_cfg->data_size) | (uint8_t)p_cfg->transfer_mode);
 
-    t_mra.BYTE = ((((uint8_t)p_cfg->writeback_disable | (uint8_t)p_cfg->src_addr_mode) |
-                           (uint8_t)p_cfg->data_size) | (uint8_t)p_cfg->transfer_mode);
+    /* Casting to match type of "t_mrb.BYTE" */
     t_mrb.BYTE = (((((((uint8_t)p_cfg->sequence_end |(uint8_t)p_cfg->refer_index_table_enable) | (uint8_t)p_cfg->dest_addr_mode) |
                            (uint8_t)p_cfg->repeat_block_side) | (uint8_t)p_cfg->response_interrupt) |
                            (uint8_t)p_cfg->chain_transfer_enable) | (uint8_t)p_cfg->chain_transfer_mode);
 #else
     /* Casting to match type of "t_mra.BYTE" */
     t_mra.BYTE = (uint8_t)(p_cfg->src_addr_mode | p_cfg->data_size | p_cfg->transfer_mode);
+
     /* Casting to match type of "t_mrb.BYTE" */
     t_mrb.BYTE = (uint8_t)(p_cfg->dest_addr_mode | p_cfg->repeat_block_side | p_cfg->response_interrupt |
                            p_cfg->chain_transfer_enable | p_cfg->chain_transfer_mode);
@@ -744,7 +809,7 @@ static dtc_err_t r_dtc_set_transfer_data(dtc_transfer_data_t *p_transfer_data,
     {
         case 0x0: /* Normal mode */
         {
-            if (DTC_MAX_16BITS_COUNT_VAL == p_cfg->transfer_count)/* Transfer count = 65536 */
+            if (DTC_PRV_MAX_16BITS_COUNT_VAL == p_cfg->transfer_count)/* Transfer count = 65536 */
             {
                 t_cra.WORD = 0x0000;
             }
@@ -753,20 +818,21 @@ static dtc_err_t r_dtc_set_transfer_data(dtc_transfer_data_t *p_transfer_data,
                 /* Cast type of "p_cfg->transfer_count" to uint16_t to match type of "t_cra.WORD" */
                 t_cra.WORD = (uint16_t)p_cfg->transfer_count;
             }
-        break;
+            break;
         }
 
         case 0x1: /* Repeat mode */
         {
             /* Set counter. */
-            if (p_cfg->transfer_count < DTC_MAX_8BITS_COUNT_VAL) /* count 1-255 */
+            if (p_cfg->transfer_count < DTC_PRV_MAX_8BITS_COUNT_VAL) /* count 1-255 */
             {
                 /* Cast type of "p_cfg->transfer_count" to match type of "t_cra.BYTE.CRA_H" */
                 t_cra.BYTE.CRA_H = (uint8_t)p_cfg->transfer_count;
+
                 /* Cast type of "p_cfg->transfer_count" to match type of "t_cra.BYTE.CRA_L" */
                 t_cra.BYTE.CRA_L = (uint8_t)p_cfg->transfer_count;
             }
-            else if (DTC_MAX_8BITS_COUNT_VAL == p_cfg->transfer_count)
+            else if (DTC_PRV_MAX_8BITS_COUNT_VAL == p_cfg->transfer_count)
             {
                 t_cra.BYTE.CRA_H = 0x00;
                 t_cra.BYTE.CRA_L = 0x00;
@@ -775,13 +841,13 @@ static dtc_err_t r_dtc_set_transfer_data(dtc_transfer_data_t *p_transfer_data,
             {
                 return DTC_ERR_INVALID_ARG;
             }
-        break;
+            break;
         }
 
         case 0x2: /* DTC_TRANSFER_MODE_BLOCK - Block transfer mode */
         {
             /* Set counter. */
-            if (DTC_MAX_16BITS_COUNT_VAL == p_cfg->transfer_count)/* Transfer count = 65536 */
+            if (DTC_PRV_MAX_16BITS_COUNT_VAL == p_cfg->transfer_count)/* Transfer count = 65536 */
             {
                 t_crb.WORD = 0x0000;
             }
@@ -791,14 +857,15 @@ static dtc_err_t r_dtc_set_transfer_data(dtc_transfer_data_t *p_transfer_data,
                 t_crb.WORD = (uint16_t)p_cfg->transfer_count;
             }
 
-            if (p_cfg->block_size < DTC_MAX_8BITS_COUNT_VAL) /* Block size 1-255 */
+            if (p_cfg->block_size < DTC_PRV_MAX_8BITS_COUNT_VAL) /* Block size 1-255 */
             {
                 /* Cast type of "p_cfg->block_size" to match type of "t_cra.BYTE.CRA_H" */
                 t_cra.BYTE.CRA_H = (uint8_t)p_cfg->block_size;
+
                 /* Cast type of "p_cfg->block_size" to match type of "t_cra.BYTE.CRA_L" */
                 t_cra.BYTE.CRA_L = (uint8_t)p_cfg->block_size;
             }
-            else if (DTC_MAX_8BITS_COUNT_VAL == p_cfg->block_size) /* Block size = 256 */
+            else if (DTC_PRV_MAX_8BITS_COUNT_VAL == p_cfg->block_size) /* Block size = 256 */
             {
                 t_cra.BYTE.CRA_H = 0;
                 t_cra.BYTE.CRA_L = 0;
@@ -807,48 +874,48 @@ static dtc_err_t r_dtc_set_transfer_data(dtc_transfer_data_t *p_transfer_data,
             {
                 return DTC_ERR_INVALID_ARG;
             }
-        break;
+            break;
         }
 
         default:
         {
             return DTC_ERR_INVALID_ARG;
-        break;
+            break;
         }
     }
 
 #if (DTC_ENABLE == DTC_CFG_SHORT_ADDRESS_MODE) /* Short-address mode */
     /* settings for fist long word: MRA & SAR */
-    td_ptr->FIRST_LWORD.LWORD   =  0; /* clear */
-    td_ptr->FIRST_LWORD.REG.MRA =  t_mra; /* 1 byte MRA */
-    td_ptr->FIRST_LWORD.LWORD   |= (p_cfg->source_addr & 0x00FFFFFF); /* 3 byte SAR */
+    p_td_ptr->FIRST_LWORD.LWORD   =  0; /* clear */
+    p_td_ptr->FIRST_LWORD.REG.MRA =  t_mra; /* 1 byte MRA */
+    p_td_ptr->FIRST_LWORD.LWORD   |= (p_cfg->source_addr & 0x00FFFFFF); /* 3 byte SAR */
 
     /* settings for second long word: MRB & DAR */
-    td_ptr->SECOND_LWORD.LWORD   =  0; /* clear */
-    td_ptr->SECOND_LWORD.REG.MRB =  t_mrb; /* 1 byte MRB */
-    td_ptr->SECOND_LWORD.LWORD   |= (p_cfg->dest_addr & 0x00FFFFFF); /* 3 byte DAR */
+    p_td_ptr->SECOND_LWORD.LWORD   =  0; /* clear */
+    p_td_ptr->SECOND_LWORD.REG.MRB =  t_mrb; /* 1 byte MRB */
+    p_td_ptr->SECOND_LWORD.LWORD   |= (p_cfg->dest_addr & 0x00FFFFFF); /* 3 byte DAR */
 
     /* settings for third long word: CRA & CRB */
-    td_ptr->THIRD_LWORD.REG.CRA.WORD = t_cra.WORD;
-    td_ptr->THIRD_LWORD.REG.CRB.WORD = t_crb.WORD;
+    p_td_ptr->THIRD_LWORD.REG.CRA.WORD = t_cra.WORD;
+    p_td_ptr->THIRD_LWORD.REG.CRB.WORD = t_crb.WORD;
 
 #else /* Full-address mode */
     /* settings for fist long word: MRA & MRB */
-    td_ptr->FIRST_LWORD.REG.MRA.BYTE = t_mra.BYTE; /* 1 byte MRA */
-    td_ptr->FIRST_LWORD.REG.MRB.BYTE = t_mrb.BYTE; /* 1 byte MRB */
+    p_td_ptr->FIRST_LWORD.REG.MRA.BYTE = t_mra.BYTE; /* 1 byte MRA */
+    p_td_ptr->FIRST_LWORD.REG.MRB.BYTE = t_mrb.BYTE; /* 1 byte MRB */
 #if (DTC_IP_VER_DTCb <= DTC_IP)
-    td_ptr->FIRST_LWORD.REG.MRC.BYTE = t_mrc.BYTE; /* 1 byte MRC */
+    p_td_ptr->FIRST_LWORD.REG.MRC.BYTE = t_mrc.BYTE; /* 1 byte MRC */
 #endif /* (DTC_IP_VER_DTCb <= DTC_IP) */
 
     /* settings for second long word: SAR */
-    td_ptr->SECOND_LWORD.SAR = p_cfg->source_addr; /* 4 byte SAR */
+    p_td_ptr->SECOND_LWORD.SAR = p_cfg->source_addr; /* 4 byte SAR */
 
     /* settings for third long word: DAR */
-    td_ptr->THIRD_LWORD.DAR = p_cfg->dest_addr; /* 4 byte DAR */
+    p_td_ptr->THIRD_LWORD.DAR = p_cfg->dest_addr; /* 4 byte DAR */
 
     /* settings for fourth long word: CRA & CRB */
-    td_ptr->FOURTH_LWORD.REG.CRA.WORD = t_cra.WORD;
-    td_ptr->FOURTH_LWORD.REG.CRB.WORD = t_crb.WORD;
+    p_td_ptr->FOURTH_LWORD.REG.CRA.WORD = t_cra.WORD;
+    p_td_ptr->FOURTH_LWORD.REG.CRB.WORD = t_crb.WORD;
 #endif /* (DTC_ENABLE == DTC_CFG_SHORT_ADDRESS_MODE) */
     return DTC_SUCCESS;
 }
@@ -902,7 +969,7 @@ static bool r_dtc_abort_chain_transfer(uint32_t chain_transfer_nr)
     /* Set status register*/
     status_reg = DTC.DTCSTS.WORD;
 
-    volatile dtc_internal_registers_t *td_ptr = NULL;
+    volatile dtc_internal_registers_t *p_td_ptr = NULL;
 
     if (0 == (status_reg & 0x8000)) /* DTC is not active. */
     {
@@ -910,18 +977,18 @@ static bool r_dtc_abort_chain_transfer(uint32_t chain_transfer_nr)
     }
 
     status_reg &= 0xFF; /* Get the vector number. */
-    td_ptr = (((volatile dtc_internal_registers_t *)*((uint32_t *)DTC.DTCVBR + status_reg)) + chain_transfer_nr) - 1;
+    p_td_ptr = (((volatile dtc_internal_registers_t *)*((uint32_t *)DTC.DTCVBR + status_reg)) + chain_transfer_nr) - 1;
 
     /* Clear all CHNE bit */
     /* WAIT_LOOP */
     while (cnt < chain_transfer_nr)
     {
 #if (DTC_DISABLE == DTC_CFG_SHORT_ADDRESS_MODE) /* Full address mode */
-        td_ptr->FIRST_LWORD.REG.MRB.BIT.CHNE = 0;
+        p_td_ptr->FIRST_LWORD.REG.MRB.BIT.CHNE = 0;
 #else /* Short address mode */
-        td_ptr->SECOND_LWORD.REG.MRB.BIT.CHNE = 0;
+        p_td_ptr->SECOND_LWORD.REG.MRB.BIT.CHNE = 0;
 #endif
-        td_ptr--;
+        p_td_ptr--;
         cnt++;
     }
 
@@ -1033,8 +1100,8 @@ static dtc_err_t r_dtc_check_create_param(dtc_transfer_data_t *p_transfer_data,
         return DTC_ERR_NULL_PTR;
     }
 
-    if ((p_data_cfg->transfer_count < DTC_MIN_COUNT_VAL) ||
-        (p_data_cfg->transfer_count > DTC_MAX_16BITS_COUNT_VAL))
+    if ((p_data_cfg->transfer_count < DTC_PRV_MIN_COUNT_VAL) ||
+        (p_data_cfg->transfer_count > DTC_PRV_MAX_16BITS_COUNT_VAL))
     {
         return DTC_ERR_INVALID_ARG;
     }
@@ -1050,7 +1117,7 @@ static dtc_err_t r_dtc_check_create_param(dtc_transfer_data_t *p_transfer_data,
     {
         return DTC_ERR_INVALID_ARG;
     }
-
+    /* Casting to match type of "uint32_t" */
     if (((uint32_t)p_transfer_data > 0x007FFFFF) && ((uint32_t)p_transfer_data < 0xFF800000))
     {
         return DTC_ERR_INVALID_ARG;

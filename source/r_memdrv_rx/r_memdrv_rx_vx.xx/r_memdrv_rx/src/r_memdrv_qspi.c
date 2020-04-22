@@ -24,7 +24,7 @@
 /************************************************************************************************
 * System Name  : MEMDRV software
 * File Name    : r_memdrv_qspi.c
-* Version      : 1.01
+* Version      : 1.02
 * Device       : -
 * Abstract     : IO I/F module
 * Tool-Chain   : -
@@ -38,6 +38,7 @@
 *              : 15.12.2018 1.00     Initial Release
 *              : 04.04.2019 1.01     Added support for GNUC and ICCRX.
 *                                    Fixed coding style.
+*              : 22.11.2019 1.02     Modified check driver interface.
 *************************************************************************************************/
 
 /************************************************************************************************
@@ -48,8 +49,8 @@ Includes <System Includes> , "Project Includes"
 #include "./src/r_memdrv_rx_private.h"           /* MEMDRV driver Private module definitions       */
 
 /* Check driver interface. */
-#if (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_QSPI_SMSTR) | \
-    (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_QSPI_SMSTR)
+#if ((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR == MEMDRV_DRVR_RX_FIT_QSPI_SMSTR)) || \
+    ((MEMDRV_CFG_DEV1_INCLUDED == 1) && (MEMDRV_CFG_DEV1_MODE_DRVR == MEMDRV_DRVR_RX_FIT_QSPI_SMSTR))
 
 /************************************************************************************************
 Macro definitions
@@ -2187,7 +2188,8 @@ static uint8_t qspi_baud_cal(uint8_t devno)
 
     }
 
-    #if defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) ||defined (BSP_MCU_RX65N)
+#if defined(BSP_MCU_RX64M) || defined(BSP_MCU_RX71M) || defined(BSP_MCU_RX65N) || defined(BSP_MCU_RX66N) || \
+    defined(BSP_MCU_RX72M) || defined(BSP_MCU_RX72N)
         f = BSP_PCLKB_HZ;
     #else
         f = BSP_PCLKA_HZ;
@@ -2224,7 +2226,7 @@ static uint8_t qspi_baud_cal(uint8_t devno)
     return bps_result;
 } /* End of function qspi_baud_cal() */
 
-#else /* MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_QSPI_SMSTR */
+#else
 memdrv_err_t r_memdrv_qspi_open(uint8_t devno, st_memdrv_info_t * p_memdrv_info)
 {
     R_MEMDRV_Log(MEMDRV_DEBUG_ERR_ID, (uint32_t)MEMDRV_ERR_SUB, __LINE__);
@@ -2290,7 +2292,6 @@ memdrv_err_t r_memdrv_qspi_rx_data(uint8_t devno, st_memdrv_info_t * p_memdrv_in
     return MEMDRV_ERR_OTHER;
 } /* End of function r_memdrv_qspi_rx_data() */
 
-#endif  /* (MEMDRV_CFG_DEV0_MODE_DRVR & MEMDRV_DRVR_RX_FIT_QSPI_SMSTR) |
-           (MEMDRV_CFG_DEV1_MODE_DRVR & MEMDRV_DRVR_RX_FIT_QSPI_SMSTR) */
-
+#endif  /* ((MEMDRV_CFG_DEV0_INCLUDED == 1) && (MEMDRV_CFG_DEV0_MODE_DRVR == MEMDRV_DRVR_RX_FIT_QSPI_SMSTR)) || \
+           ((MEMDRV_CFG_DEV1_INCLUDED == 1) && (MEMDRV_CFG_DEV1_MODE_DRVR == MEMDRV_DRVR_RX_FIT_QSPI_SMSTR))
 /* End of File */

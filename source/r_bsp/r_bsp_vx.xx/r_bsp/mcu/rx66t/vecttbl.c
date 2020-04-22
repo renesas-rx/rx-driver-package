@@ -28,6 +28,8 @@
 *                                (Exception functions moved to the common file (r_bsp_interrupts.c).)
 *                                Added support for GNUC and ICCRX.
 *                                Fixed coding style.
+*         : 31.07.2019 3.00      Fixed initialization for option-setting memory.
+*         : 08.10.2019 2.01      Changed for added support of Renesas RTOS (RI600V4 or RI600PX).
 ***********************************************************************************************************************/
 
 /***********************************************************************************************************************
@@ -125,14 +127,18 @@ const uint32_t __ROMCODEreg = BSP_CFG_ROMCODE_REG_VALUE;
 
 const uint32_t __SPCCreg    __attribute__ ((section(".ofs1"))) = 0xffffffff;
 const uint32_t __TMEFreg    __attribute__ ((section(".ofs2"))) = BSP_CFG_TRUSTED_MODE_FUNCTION;
-const uint32_t __OSIS1reg   __attribute__ ((section(".ofs3"))) = BSP_CFG_ID_CODE_LONG_1;
-const uint32_t __OSIS2reg   __attribute__ ((section(".ofs3"))) = BSP_CFG_ID_CODE_LONG_2;
-const uint32_t __OSIS3reg   __attribute__ ((section(".ofs3"))) = BSP_CFG_ID_CODE_LONG_3;
-const uint32_t __OSIS4reg   __attribute__ ((section(".ofs3"))) = BSP_CFG_ID_CODE_LONG_4;
-const uint32_t __TMINFreg   __attribute__ ((section(".ofs4"))) = 0xffffffff;
-const uint32_t __MDEreg     __attribute__ ((section(".ofs4"))) = BSP_PRV_MDE_VALUE;
-const uint32_t __OFS0reg    __attribute__ ((section(".ofs4"))) = BSP_CFG_OFS0_REG_VALUE;
-const uint32_t __OFS1reg    __attribute__ ((section(".ofs4"))) = BSP_CFG_OFS1_REG_VALUE;
+const st_ofsm_sec_ofs3_t __ofsm_sec_ofs3   __attribute__ ((section(".ofs3"))) = {
+    BSP_CFG_ID_CODE_LONG_1, /* __OSIS1reg */
+    BSP_CFG_ID_CODE_LONG_2, /* __OSIS2reg */
+    BSP_CFG_ID_CODE_LONG_3, /* __OSIS3reg */
+    BSP_CFG_ID_CODE_LONG_4  /* __OSIS4reg */
+};
+const st_ofsm_sec_ofs4_t __ofsm_sec_ofs4   __attribute__ ((section(".ofs4"))) = {
+    0xffffffff, /* __TMINFreg */
+    BSP_PRV_MDE_VALUE, /* __MDEreg */
+    BSP_CFG_OFS0_REG_VALUE, /* __OFS0reg */
+    BSP_CFG_OFS1_REG_VALUE  /* __OFS1reg */
+};
 const uint32_t __ROMCODEreg __attribute__ ((section(".ofs5"))) = BSP_CFG_ROMCODE_REG_VALUE;
 
 #elif defined(__ICCRX__)
@@ -154,6 +160,10 @@ const uint32_t __ROMCODEreg __attribute__ ((section(".ofs5"))) = BSP_CFG_ROMCODE
 /***********************************************************************************************************************
 * The following array fills in the exception vector table.
 ***********************************************************************************************************************/
+#if BSP_CFG_RTOS_USED == 4  /* Renesas RI600V4 & RI600PX */
+     /* System configurator generates the ritble.src as interrupt & exception vector tables. */
+#else /* BSP_CFG_RTOS_USED!=4 */
+
 #if defined(__CCRX__) || defined(__GNUC__)
 R_BSP_ATTRIB_SECTION_CHANGE_EXCEPTVECT void (* const Except_Vectors[])(void) =
 {
@@ -205,6 +215,8 @@ R_BSP_ATTRIB_SECTION_CHANGE_RESETVECT void (* const Reset_Vector[])(void) =
 };
 R_BSP_ATTRIB_SECTION_CHANGE_END
 #endif /* defined(__CCRX__), defined(__GNUC__) */
+
+#endif/* BSP_CFG_RTOS_USED */
 
 #endif /* BSP_CFG_STARTUP_DISABLE == 0 */
 

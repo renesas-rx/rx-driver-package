@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer
  *
- * Copyright (C) 2014(2018) Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2014(2020) Renesas Electronics Corporation. All rights reserved.
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name     : r_usb_hcdc.h
@@ -30,6 +30,7 @@
  *                           "usb_hcdc_set_pipe_registration","usb_hcdc_class_check" is added.
  *         : 31.03.2018 1.23 Supporting Smart Configurator
  *         : 16.11.2018 1.24 Supporting BSP_CFG_RTOS_USED
+ *         : 01.03.2020 1.30 RX72N/RX66N is added and uITRON is supported.
  ***********************************************************************************************************************/
 #ifndef R_USB_HCDC_H
 #define R_USB_HCDC_H
@@ -44,7 +45,7 @@
 #define     USB_NOPIPE                      ((uint8_t)0xFF)
 
 /* Host Sample Task */
-#if (BSP_CFG_RTOS_USED == 0)
+#if (BSP_CFG_RTOS_USED == 0)                          /* Non-OS */
 #define USB_HCDC_TSK        (USB_TID_6)               /* Task ID */
 #define USB_HCDC_MBX        (USB_HCDC_TSK)            /* Mailbox ID */
 #define USB_HCDC_MPL        (USB_HCDC_TSK)            /* Memorypool ID */

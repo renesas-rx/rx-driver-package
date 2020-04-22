@@ -31,6 +31,7 @@
  *         : 01.12.2014 1.00    First Release
  *         : 01.12.2017 1.10    Added support for RX130
  *         : 20.05.2019 1.11    Updated version to 1.11
+ *         : 31.07.2019 1.13    Added support for RX13T
  ******************************************************************************/
 
 #ifndef UID_INTERFACE_HEADER_FILE
@@ -41,7 +42,7 @@
  ******************************************************************************/
 /* Version Number of API. */
 #define UID_RX_VERSION_MAJOR           (1)
-#define UID_RX_VERSION_MINOR           (11)
+#define UID_RX_VERSION_MINOR           (13)
 
 /*******************************************************************************
  Typedef definitions

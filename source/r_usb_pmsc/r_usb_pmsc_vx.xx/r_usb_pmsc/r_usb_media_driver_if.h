@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer
  *
- * Copyright (C) 2014(2018) Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2014(2020) Renesas Electronics Corporation. All rights reserved.
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name     : r_usb_media_driver_if.h
@@ -30,6 +30,7 @@
  *         : 30.09.2015 1.11 RX63N/RX631 is added.
  *         : 30.09.2016 1.20 RX65N/RX651 is added.
  *         : 31.03.2018 1.23 Supporting Smart Configurator
+ *         : 01.03.2020 1.30 RX72N/RX66N is added and uITRON is supported.
  ***********************************************************************************************************************/
 
 #ifndef R_USB_MEDIA_DRIVER_IF_H    /* Multiple inclusion prevention */
@@ -142,3 +143,7 @@ usb_media_ret_t     R_USB_media_ioctl(usb_ioctl_cmd_t   ioctl_cmd,      /* Contr
                                       void          *ioctl_data);   /* Data transfer buffer */
 
 #endif /* R_USB_MEDIA_DRIVER_IF_H */
+
+/***********************************************************************************************************************
+End  Of File
+***********************************************************************************************************************/

@@ -14,7 +14,7 @@
  * following link:
  * http://www.renesas.com/disclaimer
  *
- * Copyright (C) 2014(2018) Renesas Electronics Corporation. All rights reserved.
+ * Copyright (C) 2014(2020) Renesas Electronics Corporation. All rights reserved.
  ***********************************************************************************************************************/
 /***********************************************************************************************************************
  * File Name    : r_usb_pcdc_driver.c
@@ -29,6 +29,7 @@
  *         : 30.09.2017 1.22 Changed function name "pcdc_read_complete"->"usb_pcdc_read_complete"
  *                           "pcdc_write_complete"->"usb_pcdc_write_complete"
  *         : 31.03.2018 1.23 Supporting Smart Configurator
+ *         : 01.03.2020 1.30 RX72N/RX66N is added and uITRON is supported.
  ***********************************************************************************************************************/
 
 /******************************************************************************
@@ -97,9 +98,9 @@ void usb_pcdc_read_complete (usb_utr_t *mess, uint16_t data1, uint16_t data2)
             break;
         }
         ctrl.module = USB_CFG_USE_USBIP;
-#if (BSP_CFG_RTOS_USED == 1)
-        ctrl.p_data = (void *)mess->cur_task_hdl;
-#endif /* (BSP_CFG_RTOS_USED == 1) */
+#if (BSP_CFG_RTOS_USED != 0)        /* Use RTOS */
+        ctrl.p_data = (void *)mess->task_id;
+#endif /* (BSP_CFG_RTOS_USED != 0) */
         usb_set_event(USB_STS_READ_COMPLETE, &ctrl);
     }
 }
@@ -141,9 +142,9 @@ void usb_pcdc_write_complete (usb_utr_t *mess, uint16_t data1, uint16_t data2)
             ctrl.status = USB_ERR_NG;
         }
         ctrl.module = USB_CFG_USE_USBIP;
-#if (BSP_CFG_RTOS_USED == 1)
-        ctrl.p_data = (void *)mess->cur_task_hdl;
-#endif /* (BSP_CFG_RTOS_USED == 1) */
+#if (BSP_CFG_RTOS_USED != 0)        /* Use RTOS */
+        ctrl.p_data = (void *)mess->task_id;
+#endif /* (BSP_CFG_RTOS_USED != 0) */
         usb_set_event(USB_STS_WRITE_COMPLETE, &ctrl);
     }
 }

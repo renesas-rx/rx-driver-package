@@ -5,12 +5,12 @@ r_dtc_rx
 
 Document Number 
 ---------------
-R01AN1819EJ0320
-R01AN1819JJ0320
+R01AN1819EJ0330
+R01AN1819JJ0330
 
 Version
 -------
-v3.20
+v3.30
 
 Overview
 --------
@@ -41,9 +41,12 @@ Supported MCUs
 * RX65N MCU
 * RX651 MCU
 * RX66T MCU
+* RX66N MCU
 * RX72T MCU
 * RX23W MCU
 * RX72M MCU
+* RX13T MCU
+* RX72N MCU
 
 Boards Tested On
 ----------------
@@ -62,9 +65,12 @@ Boards Tested On
 * RSKRX65N
 * RSKRX65N_2MB
 * RSKRX66T
+* RSKRX66N
 * RSKRX72T
 * RSKRX23W
 * RSKRX72M
+* RSKRX13T
+* RSKRX72N
 Limitations
 -----------
 * None
@@ -106,8 +112,8 @@ Refer to "Adding Firmware Integration Technology Modules to CS+ Projects (R01AN1
 Toolchain(s) Used
 -----------------
 * Renesas RX v3.01.00
-* GCC for Renesas RX 4.8.4.201803
-* IAR C/C++ Compiler for Renesas RX 4.11.1
+* GCC for Renesas RX 4.8.4.201902
+* IAR C/C++ Compiler for Renesas RX 4.12.1
 
 File Structure
 --------------
@@ -166,12 +172,22 @@ r_dtc_rx
         |       r_dtc_rx_target.h
         |       r_dtc_rx_target_if.h
         |
+        +---rx66n
+        |       r_dtc_rx_target.c
+        |       r_dtc_rx_target.h
+        |       r_dtc_rx_target_if.h
+        |
         +---rx71m
         |       r_dtc_rx_target.c
         |       r_dtc_rx_target.h
         |       r_dtc_rx_target_if.h
         |
         +---rx72m
+        |       r_dtc_rx_target.c
+        |       r_dtc_rx_target.h
+        |       r_dtc_rx_target_if.h
+        |
+        +---rx72n
         |       r_dtc_rx_target.c
         |       r_dtc_rx_target.h
         |       r_dtc_rx_target_if.h
@@ -197,6 +213,11 @@ r_dtc_rx
         |       r_dtc_rx_target_if.h
         |
         +---rx130
+        |       r_dtc_rx_target.c
+        |       r_dtc_rx_target.h
+        |       r_dtc_rx_target_if.h
+        |
+        +---rx13t
         |       r_dtc_rx_target.c
         |       r_dtc_rx_target.h
         |       r_dtc_rx_target_if.h

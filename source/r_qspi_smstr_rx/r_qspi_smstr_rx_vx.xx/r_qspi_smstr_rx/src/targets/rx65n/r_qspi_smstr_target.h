@@ -85,6 +85,9 @@ Macro definitions
     #define QSPI_NUM_CHANNELS   (0)
 #endif
 
+#if (QSPI_NUM_CHANNELS == 0)
+    #error "ERROR !!! The number of QSPI channels cannot be 0."
+#endif
 
 /* **** Definition of bit of Open-Drain Control Register **** */
 /* ==== QSPI channel 0. ==== */

@@ -59,6 +59,8 @@
  *         : 15.10.2018 2.40     Added RX72T support.
  *         : 20.06.2019 2.42     Added RX23W support.
  *         : 30.07.2019 2.43     Added RX72M support.
+ *         : 10.10.2019 2.44     Added RX13T support.
+ *         : 22.11.2019 2.45     Added RX66N, RX72N support.
  **********************************************************************************************************************/
 /* Guards against multiple inclusion */
 #ifndef RIIC_CONFIG_H
@@ -77,6 +79,7 @@
 /*  RX111: ch0,    ,     */
 /*  RX113: ch0,    ,     */
 /*  RX130: ch0,    ,     */
+/*  RX13T: ch0,    ,     */
 /*  RX230: ch0,    ,     */
 /*  RX231: ch0,    ,     */
 /*  RX23T: ch0,    ,     */
@@ -86,9 +89,11 @@
 /*  RX64M: ch0,    , ch2 */
 /*  RX65N: ch0, ch1, ch2 */
 /*  RX66T: ch0,    ,     */
+/*  RX66N: ch0, ch1, ch2 */
 /*  RX71M: ch0,    , ch2 */
 /*  RX72T: ch0,    ,     */
 /*  RX72M: ch0, ch1, ch2 */
+/*  RX72N: ch0, ch1, ch2 */
     #define RIIC_CFG_CH0_INCLUDED           (1)
     #define RIIC_CFG_CH1_INCLUDED           (0)
     #define RIIC_CFG_CH2_INCLUDED           (0)

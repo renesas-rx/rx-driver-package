@@ -29,8 +29,8 @@
 *           05.04.2019 4.00    Modified comment.
 ***********************************************************************************************************************/
 
-#ifndef S12AD_RX113_IF_H
-#define S12AD_RX113_IF_H
+#ifndef S12AD_PRV_RX113_IF_H
+#define S12AD_PRV_RX113_IF_H
 
 /******************************************************************************
 Includes   <System Includes> , "Project Includes"
@@ -39,6 +39,35 @@ Includes   <System Includes> , "Project Includes"
 /******************************************************************************
 Macro definitions
 *******************************************************************************/
+#define ADC_SST_CNT_MIN     (6)
+#define ADC_SST_CNT_MAX     (255)
+#define ADC_SST_CNT_DEFAULT (20)
+
+/* for ADC_CMD_ENABLE_CHANS */
+
+/* Bitwise OR these masks together for desired channels */
+#define ADC_MASK_CH0    (1<<0)
+#define ADC_MASK_CH1    (1<<1)
+#define ADC_MASK_CH2    (1<<2)
+#define ADC_MASK_CH3    (1<<3)
+#define ADC_MASK_CH4    (1<<4)
+#define ADC_MASK_CH5    (1<<5)
+#define ADC_MASK_CH6    (1<<6)
+#define ADC_MASK_CH7    (1<<7)
+#define ADC_MASK_CH8    (1<<8)
+#define ADC_MASK_CH9    (1<<9)
+#define ADC_MASK_CH10   (1<<10)
+#define ADC_MASK_CH11   (1<<11)
+#define ADC_MASK_CH12   (1<<12)
+#define ADC_MASK_CH13   (1<<13)
+#define ADC_MASK_CH14   (1<<14)
+#define ADC_MASK_CH15   (1<<15)
+#define ADC_MASK_CH21   (1<<21)
+
+#define ADC_MASK_GROUPB_OFF     (0)
+#define ADC_MASK_ADD_OFF        (0)
+
+#define ADC_REG_ARRAY_MAX   (17)
 
 /*****************************************************************************
 Typedef definitions
@@ -174,9 +203,6 @@ typedef enum e_adc_sst_reg          // sample state registers
     ADC_SST_REG_MAX = ADC_SST_VOLTAGE
 } adc_sst_reg_t;
 
-#define ADC_SST_CNT_MIN     (6)
-#define ADC_SST_CNT_MAX     (255)
-#define ADC_SST_CNT_DEFAULT (20)
 
 typedef struct st_adc_time
 {
@@ -184,30 +210,6 @@ typedef struct st_adc_time
     uint8_t         num_states;     // ch8-15 use the same value
 } adc_time_t;
 
-
-/* for ADC_CMD_ENABLE_CHANS */
-
-/* Bitwise OR these masks together for desired channels */
-#define ADC_MASK_CH0    (1<<0)
-#define ADC_MASK_CH1    (1<<1)
-#define ADC_MASK_CH2    (1<<2)
-#define ADC_MASK_CH3    (1<<3)
-#define ADC_MASK_CH4    (1<<4)
-#define ADC_MASK_CH5    (1<<5)
-#define ADC_MASK_CH6    (1<<6)
-#define ADC_MASK_CH7    (1<<7)
-#define ADC_MASK_CH8    (1<<8)
-#define ADC_MASK_CH9    (1<<9)
-#define ADC_MASK_CH10   (1<<10)
-#define ADC_MASK_CH11   (1<<11)
-#define ADC_MASK_CH12   (1<<12)
-#define ADC_MASK_CH13   (1<<13)
-#define ADC_MASK_CH14   (1<<14)
-#define ADC_MASK_CH15   (1<<15)
-#define ADC_MASK_CH21   (1<<21)
-
-#define ADC_MASK_GROUPB_OFF     (0)
-#define ADC_MASK_ADD_OFF        (0)
 
 typedef struct st_adc_ch_cfg            // bit 0 is ch0; bit 15 is ch15
 {
@@ -244,8 +246,6 @@ typedef enum e_adc_reg
     ADC_REG_MAX = ADC_REG_DBLTRIG
 } adc_reg_t;
 
-#define ADC_REG_ARRAY_MAX   (17)
-
 
 /* ADC_READALL() ARGUMENT DEFINITIONS */
 
@@ -258,5 +258,5 @@ typedef struct st_adc_data
 } adc_data_t;
 
 
-#endif /* S12AD_RX113_IF_H */
+#endif /* S12AD_PRV_RX113_IF_H */
 
