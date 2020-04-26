@@ -5,7 +5,7 @@ MODULE_NAME_LIST = 	r_ble_qe_utility r_ble_rx23w r_bsp r_byteq r_can_rx r_cmt_rx
 					r_jpegd_rx r_jpege_rx r_lcdc_rx r_longq r_lpc_rx r_lpt_rx r_lvd_rx\
 					r_mesh_rx23w r_memdrv_rx r_mmcif_rx r_mpc_rx r_pdc_rx r_ptp_light_rx r_ptp_rx\
 					r_qspi_smstr_rx r_riic_rx r_rscan_rx r_rspi_rx r_rtc_rx r_s2_rx\
-					r_s12ad_rx r_sci_iic_rx r_sci_rx r_scif_rx r_sdc_sdmem_rx r_sdhi_rx\
+					r_s12ad_rx r_sci_iic_rx r_sci_rx r_scif_rx r_sdc_sdmem_rx r_sdhi_rx r_sdc_sdio_rx\
 					r_sdsi_rx r_simple_glcdc_config_rx r_simple_graphic_rx r_src_api_rx\
 					r_ssi_api_rx r_sys_time_rx r_t4_dns_client_rx r_t4_driver_rx r_t4_file_driver_rx\
 					r_t4_ftp_server_rx r_t4_http_server_rx r_t4_rx r_t4_sntp_client_rx\
