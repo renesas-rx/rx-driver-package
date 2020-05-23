@@ -44,7 +44,7 @@
         <details>This driver is a device driver to control the SD mode SDIO using SD Host Interface (SDHI).</details>
         <function>SD Card</function>
         <incdir>r_config</incdir>
-        <incdir>r_sdc_sd_rx</incdir>
+        <incdir>r_sdc_sdio_rx</incdir>
     </package>
 
 </refinfo>
