@@ -37,7 +37,7 @@
 Includes   <System Includes> , "Project Includes"
 ******************************************************************************/
 #include "platform.h"
-#include "r_sdc_sd_rx_config.h"
+#include "r_sdc_sdio_rx_config.h"
 #if (SDC_SD_CFG_DRIVER_MODE & SDC_SD_MODE_IO)
 #include ".\src\sdio\r_sdc_sdio_target.h"
 #endif /* (SDC_SD_CFG_DRIVER_MODE & SDC_SD_MODE_IO) */
