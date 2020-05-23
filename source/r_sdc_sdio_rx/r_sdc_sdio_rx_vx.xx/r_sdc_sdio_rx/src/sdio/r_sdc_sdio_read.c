@@ -177,12 +177,12 @@ sdc_sd_status_t r_sdc_sdio_Read(uint32_t card_no, sdc_sdio_access_t * p_sdc_sdio
         /* ---- Executes I/O Read Extended operation. ---- */
         if ((p_sdc_sdio_access->op_code & SDC_SDIO_BLOCK_MODE))
         {
-            nop();    /* Because a compiler doesn't put an assembler out. */
+            R_BSP_NOP();    /* Because a compiler doesn't put an assembler out. */
             r_sdc_sdio_read_block_sub(card_no, p_sdc_sdio_access);
         }
         else
         {
-            nop();    /* Because a compiler doesn't put an assembler out. */
+            R_BSP_NOP();    /* Because a compiler doesn't put an assembler out. */
             r_sdc_sdio_read_byte_sub(card_no, p_sdc_sdio_access);
         }
     }
@@ -282,12 +282,12 @@ sdc_sd_status_t r_sdc_sdio_ReadSoftwareTrans(uint32_t card_no, sdc_sdio_access_t
         /* ---- Executes I/O Read Extended operation. ---- */
         if ((p_sdc_sdio_access->op_code & SDC_SDIO_BLOCK_MODE))
         {
-            nop();    /* Because a compiler doesn't put an assembler out. */
+            R_BSP_NOP();    /* Because a compiler doesn't put an assembler out. */
             r_sdc_sdio_read_block_sub(card_no, p_sdc_sdio_access);
         }
         else
         {
-            nop();    /* Because a compiler doesn't put an assembler out. */
+            R_BSP_NOP();    /* Because a compiler doesn't put an assembler out. */
             r_sdc_sdio_read_byte_sub(card_no, p_sdc_sdio_access);
         }
     }
