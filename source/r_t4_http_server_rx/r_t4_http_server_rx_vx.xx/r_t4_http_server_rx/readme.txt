@@ -5,12 +5,12 @@ r_t4_http_server_rx
 
 Document Number
 ---------------
-R20AN0075JJ0105-RX-T4
-R20AN0075EJ0105-RX-T4
+R20AN0075JJ0106-RX-T4
+R20AN0075EJ0106-RX-T4
 
 Version
 -------
-v1.05
+v1.06
 
 Overview
 --------
@@ -54,8 +54,8 @@ None
 How to add to your project
 --------------------------
 Please refer to the Adding Firmware Integration Technology Modules to Projects.
-"r01an1723ju0111_rx.pdf/r01an1826jj0102_rx.pdf(R20AN0075JJ0105-RX-T4)"
-"r01an1723eu0111_rx.pdf/r01an1826ej0102_rx.pdf(R20AN0075EJ0105-RX-T4)"
+"r01an1723ju0111_rx.pdf/r01an1826jj0102_rx.pdf(R20AN0075JJ0106-RX-T4)"
+"r01an1723eu0111_rx.pdf/r01an1826ej0102_rx.pdf(R20AN0075EJ0106-RX-T4)"
 
 Toolchain(s) Used
 -----------------
@@ -70,9 +70,9 @@ r_t4_http_server_rx
 +---doc
 |   |
 |   +---ja
-|   |        r20an0075jj0105-rx-t4.pdf
+|   |        r20an0075jj0106-rx-t4.pdf
 |   +---en
-|            r20an0075ej0105-rx-t4.pdf
+|            r20an0075ej0106-rx-t4.pdf
 |
 +---ref
 |           r_t4_http_server_rx_config_reference.h

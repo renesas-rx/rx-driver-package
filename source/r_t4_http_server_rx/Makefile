@@ -1,5 +1,5 @@
 MODULE_NAME = 	r_t4_http_server_rx
-VERSION = 		v1.05
+VERSION = 		v1.06
 
 CONFIG_FOLDER = r_config
 TARGET_FOLDER = ../../FITModules

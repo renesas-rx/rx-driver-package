@@ -36,17 +36,7 @@ Macro definitions
 ******************************************************************************/
 /* Version Number of API. */
 #define T4_HTTP_SERVER_VERSION_MAJOR       (1)
-#define T4_HTTP_SERVER_VERSION_MINOR       (05)
-
-typedef struct sys_time_
-{
-    uint32_t sec;
-    uint32_t min;
-    uint32_t hour;
-    uint32_t day;
-    uint32_t month;
-    uint32_t year;
-}SYS_TIME;
+#define T4_HTTP_SERVER_VERSION_MINOR       (06)
 
 typedef struct httpd_resource_type
 {
@@ -61,19 +51,28 @@ typedef struct httpd_resource_type
 
 #define QUERY_PARAM_SIZE (80)
 
+#define HTTP_POST_CALLBACK_EVENT_INITIALIZE 0
+#define HTTP_POST_CALLBACK_EVENT_PROCEEDING 1
+#define HTTP_POST_CALLBACK_EVENT_FINALIZE   2
+#define HTTP_POST_CALLBACK_EVENT_ABORT      3
+
 typedef struct httpd_resource_info_type
 {
     HTTPD_RESOURCE res;
-    uint8_t   param[QUERY_PARAM_SIZE+1];  /* parameter after "?" */
+    uint8_t   param[QUERY_PARAM_SIZE + 1]; /* parameter after "?" */
 } HTTPD_RESOURCE_INFO;
 
 /******************************************************************************
 Exported global variables and functions (to be accessed by other files)
 ******************************************************************************/
-void          R_httpd(void);
-uint32_t      R_T4_HTTP_SERVER_GetVersion(void);
-void          R_httpd_pending_release_request(ID cepid);
+int32_t       R_TCPIP_HttpServerOpen(void);
+int32_t       R_TCPIP_HttpServerClose(void);
+void          R_TCPIP_HttpServerProcess(void);
+uint32_t      R_TCPIP_HttpServerGetVersion(void);
+void          R_TCPIP_HttpServerPendingReleaseRequest(ID cepid);
+void          R_TCPIP_HttpServerReset(uint8_t channel);
 
+ER            R_TCPIP_HttpServerCallback(ID cepid, FN fncd , VP p_parblk);
 #endif /* _R_T4_HTTP_SERVER_RX_IF_H_ */
 
 /* Copyright 2011 RENESAS ELECTRONICS CORPORATION */

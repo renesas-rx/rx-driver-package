@@ -25,6 +25,7 @@
 *         : 09.05.2014 1.03    First Release
 *         : 01.07.2014 1.04    Clean up source code
 *         : 01.04.2016 1.05    XML file update
+*         : 30.11.2016 1.06    Included r_sys_time_rx_if.h.
 ***********************************************************************************************************************/
 #ifndef R_T4_HTTP_SERVER_RX_CONFIG_H
 #define R_T4_HTTP_SERVER_RX_CONFIG_H
@@ -35,7 +36,7 @@
 Macro definitions
 ******************************************************************************/
 // HTTPd version code
-#define HTTPD_VERSION_CODE "Renesas Embedded Web Server/1.05"
+#define HTTPD_VERSION_CODE "Renesas Embedded Web Server/1.06"
 
 // HTTPd root directory in memory card. FORMAT : "directory_name1/directory_name2..."
 
@@ -70,7 +71,7 @@ Macro definitions
     {"xls", "application/vnd.ms-excel"}, /* application  */\
     {"doc", "application/msword"},       /* application  */\
     {"cgi", "text/html"},                /* text         */\
-     
+
 // If user uses CGI function, please specify cgi file name, and number of cgi files.
 #define MAX_CGI_FILE   1
 
@@ -79,9 +80,13 @@ Macro definitions
 #endif /* NULL */
 #define CGI_FILE_NAME_TABLE_LIST \
     {"cgi_smpl.cgi", NULL, NULL},
-//extern ER cgi_sample_function(ID cepid, void *res_info);
+//extern ER http_server_cgi_callback(ID cepid, void *res_info);
 //#define CGI_FILE_NAME_TABLE_LIST \
-//    {"cgi_smpl.cgi", cgi_sample_function, NULL},
+//    {"cgi_smpl.cgi", http_server_cgi_callback, NULL},
+
+#define HTTP_POST_CALLBACK_FUNCTION NULL
+//#define HTTP_POST_CALLBACK_FUNCTION http_server_post_callback
+//extern void http_server_post_callback(ID id, uint8_t event, uint8_t *file_name, uint8_t *receive_data, uint32_t receive_data_size, uint32_t uploaded_file_size);
 
 // Line feed code which server uses.
 #define LF_CODE   "\r\n"
@@ -103,6 +108,9 @@ Macro definitions
 
 // body buffer size  to transmit : needs BODY_BUF_SIZE * HTTP_TCP_CEP_NUM byte RAM
 #define BODY_BUF_SIZE 2048
+
+// no communication timeout timer initial value (unit = 1s)
+#define NO_COMMUNICATION_TIMEOUT_TIMER 10
 
 #endif /* R_T4_HTTP_SERVER_RX_CONFIG_H */
 
